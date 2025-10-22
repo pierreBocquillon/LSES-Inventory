@@ -170,7 +170,7 @@ export default {
           let instance = this.instances.find(i => i.id === item.id)
           if(instance) {
             for(let contentItem of instance.content) {
-              if(new Date(contentItem.date) < new Date(new Date().toLocaleDateString()) && !contentItem.locked) {
+              if(new Date(contentItem.date) < new Date() && !contentItem.locked) {
                 needToBeTrashed += parseInt(contentItem.amount)
               }
             }

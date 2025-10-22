@@ -4,11 +4,15 @@
 
       <h3 class="text-center">Logs :</h3>
 
-      <v-data-table :headers="[{ title: 'Date', key: 'id' }, { title: 'Type', key: 'type' }, { title: 'Description', key: 'description' }]" :items="logs" items-per-page="-1" no-data-text="Aucun log">
+      <v-data-table :headers="[{ title: 'Date', key: 'id' }, { title: 'Utilisateur', key: 'user' }, { title: 'Type', key: 'type' }, { title: 'Description', key: 'description' }]" :items="logs" items-per-page="-1" no-data-text="Aucun log">
         <template v-slot:bottom />
 
         <template v-slot:item.id="{ item }">
           <span class="font-weight-regular">{{ new Date(parseInt(item.id)).toLocaleString() }}</span>
+        </template>
+        
+        <template v-slot:item.user="{ item }">
+          <span class="font-weight-regular">{{ profiles.find(profile => profile.id === item.user)?.name || 'Utilisateur supprimé' }}</span>
         </template>
         
         <template v-slot:item.type="{ item }">
@@ -30,7 +34,8 @@ import { useUserStore } from '@/store/user.js'
 
 import Swal from 'sweetalert2/dist/sweetalert2.js'
 
-import Log from '../classes/Log' 
+import Log from '../classes/Log'
+import Profile from '@/classes/Profile.js'
 
 export default {
   props : [],
@@ -38,10 +43,12 @@ export default {
     return {
       userStore: useUserStore(),
       logs: [],
+      profiles: [],
     }
   },
 
   async mounted() {
+    this.profiles = await Profile.getAll()
     this.logs = await Log.getAll()
     this.logs.sort((a, b) => parseInt(b.id) - parseInt(a.id))
     
