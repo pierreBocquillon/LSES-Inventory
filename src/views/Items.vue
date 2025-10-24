@@ -8,7 +8,8 @@
         <template v-slot:bottom />
 
         <template v-slot:item.name="{ item }">
-          <h3 class="font-weight-regular">{{ item.icon }} {{ item.name }}</h3>
+          <h3 class="font-weight-regular">{{ item.icon }} {{ item.name }} 
+            <v-icon class="ml-3" size="small" v-if="item.isSecure" color="error">mdi-lock</v-icon></h3>
         </template>
 
         <template v-slot:item.weight="{ item }">
@@ -74,6 +75,7 @@
 
           <v-text-field type="number" v-model="currentItem.wanted" label="Stock souhaité"/>
 
+          <v-switch hide-details color="primary" label="Commande sécurisée" v-model="currentItem.isSecure"></v-switch>
           <v-switch hide-details color="primary" label="Contient des instances" v-model="currentItem.isInstantiated"></v-switch>
           <v-switch v-if="currentItem.isInstantiated" hide-details color="primary" label="Instances par date" v-model="currentItem.instanceByDate"></v-switch>
 

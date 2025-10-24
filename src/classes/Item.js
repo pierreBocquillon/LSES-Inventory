@@ -5,11 +5,11 @@ let collectionName = "items"
 
 function docToInstance(document) {
   let data = document.data()
-  return data ? new Item(document.id, data.icon, data.name, data.storage, data.weight, data.seller, data.amount, data.wanted, data.isInstantiated, data.instanceByDate) : null
+  return data ? new Item(document.id, data.icon, data.name, data.storage, data.weight, data.seller, data.amount, data.wanted, data.isInstantiated, data.instanceByDate, data.isSecure) : null
 }
 
 class Item {
-  constructor(id, icon, name, storage, weight, seller, amount=0, wanted=0, isInstantiated=false, instanceByDate=false) {
+  constructor(id, icon, name, storage, weight, seller, amount=0, wanted=0, isInstantiated=false, instanceByDate=false, isSecure=false) {
     this.id = id
     this.icon = icon
     this.name = name
@@ -20,11 +20,12 @@ class Item {
     this.wanted = wanted
     this.isInstantiated = isInstantiated
     this.instanceByDate = instanceByDate
+    this.isSecure = isSecure
   }
 
   static initOne(name="") {
     let id = Item.createId(name)
-    const newItem = new Item(id, "", name, "", 0, "", 0, 0, false, false)
+    const newItem = new Item(id, "", name, "", 0, "", 0, 0, false, false, false)
     return newItem
   }
   
@@ -87,6 +88,7 @@ class Item {
       wanted: this.wanted,
       isInstantiated: this.isInstantiated,
       instanceByDate: this.instanceByDate,
+      isSecure: this.isSecure,
     }
 
     if (this.id) {

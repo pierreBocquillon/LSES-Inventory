@@ -1,7 +1,7 @@
 <template>
   <div>
     <template v-for="companyAlert in alerts" :key="companyAlert.company.id">
-      <v-card class="mb-5 pa-3 rounded-xl" :color="(companyAlert.maxAlertLevel >= 2 ? 'error' : 'warning')" variant="tonal">
+      <v-card class="mb-5 pa-3 rounded-xl" :color="(companyAlert.maxAlertLevel >= 2 ? 'error' : companyAlert.maxAlertLevel >= 1 ? 'warning' : 'success')" variant="tonal">
         <div class="d-flex flex-row align-center justify-start flex-wrap">
           <h2>{{ companyAlert.company.icon }} {{ companyAlert.company.name }} :</h2>
           <h3 class="pl-3">{{ companyAlert.totalItemCount }} item(s) ({{ companyAlert.totalWeight }} kg)</h3>
@@ -40,13 +40,15 @@
           <h3 class="text-center mb-5">Commande ({{ orderWeight }}kg):</h3>
           <table class="w-100">
             <tbody>
-              <tr v-for="item in orderData.items" :key="item.id">
-                <td>{{ item.info.icon }} {{ item.info.name }} ({{ Math.max(item.item.wanted - item.item.amount, 0) }})</td>
-                <td style="width: 100px;">
-                  <v-text-field hide-details variant="plain" type="number" density="compact" v-model="item.orderNeeded"></v-text-field>
-                </td>
-                <td style="width: 100px;">({{ Math.round(item.orderNeeded * item.info.weight * 100)/100 }}kg)</td>
-              </tr>
+              <template v-for="item in orderData.items" :key="item.id">
+                <tr v-if="!item.item.isSecure || ['Direction','Admin'].includes(this.userStore.profile.role)">
+                  <td>{{ item.info.icon }} {{ item.info.name }} ({{ Math.max(item.item.wanted - item.item.amount, 0) }})</td>
+                  <td style="width: 100px;">
+                    <v-text-field hide-details variant="plain" type="number" density="compact" v-model="item.orderNeeded"></v-text-field>
+                  </td>
+                  <td style="width: 100px;">({{ Math.round(item.orderNeeded * item.info.weight * 100)/100 }}kg)</td>
+                </tr>
+              </template>
               <tr v-if="needToBeTrashed > 0 && orderData.company.canDestroy">
                 <td colspan="3">&nbsp;</td>
               </tr>
@@ -76,6 +78,7 @@ import Instance from '@/classes/Instance.js'
 import Swal from 'sweetalert2/dist/sweetalert2.js'
 
 import logger from '../../functions/logger'
+import { max } from 'lodash'
 
 export default {
   props: ["items", "storages", "companies"],
@@ -136,7 +139,7 @@ export default {
         if(parseInt(item.wanted) <= 10) threshold = 1
         if(parseInt(item.amount) <= 50) threshold = 5
 
-        if(parseInt(item.wanted) > 0 && parseInt(item.amount) < parseInt(item.wanted)){
+        if(parseInt(item.wanted) > 0 && parseInt(item.amount) < parseInt(item.wanted) && (!item.isSecure || ['Direction','Admin'].includes(this.userStore.profile.role))) {
           if(parseInt(item.amount) <= parseInt(item.wanted) * 0.25){
             tmp_alert.alertLevel = 2
           }else if(parseInt(item.amount) <= parseInt(item.wanted) * 0.5){
@@ -156,8 +159,14 @@ export default {
           }
         }
       })
-      alerts = Object.values(alerts).filter(comp => comp.totalAlertLevel > 0)
-      alerts.sort((a, b) => b.totalAlertLevel - a.totalAlertLevel)
+      alerts = Object.values(alerts)//.filter(comp => comp.totalAlertLevel > 0)
+      alerts.sort((a, b) => {
+        if (b.maxAlertLevel == a.maxAlertLevel) {
+          return b.totalWeight - a.totalWeight
+        }else{
+          return b.maxAlertLevel - a.maxAlertLevel
+        }
+      })
       return alerts
     },
     orderWeight() {
@@ -218,6 +227,8 @@ export default {
         let maxWeight = this.orderData.mode
         let ratio = maxWeight / currentAlert.totalWeight
         let currentWeight = 0
+
+        if(maxWeight <= 0) this.orderData.destroy = 0
 
         let sortedItems = JSON.parse(JSON.stringify(currentAlert.items)).sort((a, b) => {
           if (b.alertLevel !== a.alertLevel) {

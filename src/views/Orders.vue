@@ -4,8 +4,8 @@
 
       <v-tabs v-model="tab" class="mt-5" background-color="#0f0e22" color="primary" slider-color="primary" align-tabs="center" justify-center>
         <v-tab value="orders">Commandes</v-tab>
-        <v-tab value="alert" v-if="['Agent','Direction','Admin'].includes(this.userStore.profile.role)">Alertes</v-tab>
-        <v-tab value="history" v-if="['Direction','Admin'].includes(this.userStore.profile.role)">Historique</v-tab>
+        <v-tab value="alert" v-if="['User','Agent','Direction','Admin'].includes(this.userStore.profile.role)">Alertes</v-tab>
+        <v-tab value="history" v-if="['Agent','Direction','Admin'].includes(this.userStore.profile.role)">Historique</v-tab>
       </v-tabs>
       
       <v-tabs-window v-model="tab">
@@ -14,7 +14,7 @@
           <OrderTab :items="items" :storages="storages" :companies="companies" />
         </v-tabs-window-item>
 
-        <v-tabs-window-item value="alert" v-if="['Agent','Direction','Admin'].includes(this.userStore.profile.role)">
+        <v-tabs-window-item value="alert" v-if="['User','Agent','Direction','Admin'].includes(this.userStore.profile.role)">
           <AlertTab :items="items" :storages="storages" :companies="companies" />
         </v-tabs-window-item>
 
