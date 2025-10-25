@@ -3,14 +3,17 @@
     <v-card class="ma-5 pa-5 rounded-xl h-100">
 
       <v-tabs v-model="tab" class="mt-5" background-color="#0f0e22" color="primary" slider-color="primary" align-tabs="center" justify-center>
-        <v-tab v-for="storage in storages" :key="storage.id" :value="storage.id">{{ storage.icon }} {{ storage.name }} </v-tab>
+        <v-tab v-for="storage in storages" :key="storage.id" :value="storage.id">
+          {{ storage.icon }} {{ storage.name }}
+          <v-badge color="primary" v-if="deltaTime[storage.id] >= 12" :content="1" offset-x="-5" floating></v-badge>
+        </v-tab>
       </v-tabs>
       
       <v-tabs-window v-model="tab">
         <v-tabs-window-item v-for="storage in storages" :key="storage.id" :value="storage.id">
 
-          <h3 class="my-5 text-center font-weight-regular text-success" v-if="deltaTime < 6">💾 Derniere mise à jour : {{ new Date(saveDates[storage.id]?.date).toLocaleString().slice(0, 16) }}</h3>
-          <h3 class="my-5 text-center font-weight-regular text-warning" v-else-if="deltaTime < 12">💾 Derniere mise à jour : {{ new Date(saveDates[storage.id]?.date).toLocaleString().slice(0, 16) }}</h3>
+          <h3 class="my-5 text-center font-weight-regular text-success" v-if="deltaTime[storage.id] < 6">💾 Derniere mise à jour : {{ new Date(saveDates[storage.id]?.date).toLocaleString().slice(0, 16) }}</h3>
+          <h3 class="my-5 text-center font-weight-regular text-warning" v-else-if="deltaTime[storage.id] < 12">💾 Derniere mise à jour : {{ new Date(saveDates[storage.id]?.date).toLocaleString().slice(0, 16) }}</h3>
           <h3 class="my-5 text-center font-weight-regular text-error" v-else>💾 Derniere mise à jour : {{ new Date(saveDates[storage.id]?.date).toLocaleString().slice(0, 16) }}</h3>
 
           <v-row>
@@ -126,15 +129,23 @@
               <v-text-field type="number" variant="solo-filled" v-model="item.amount" class="ma-0 pa-0" hide-details style="max-width: 100px;" @change="currentInstance.save(); updateItem(currentItem)"/>
             </template>
             <template v-slot:item.locked="{ item }" v-if="currentItem.instanceByDate">
-              <v-icon class="cursor-pointer" color="primary" @click="item.locked = false" v-if="item.locked">mdi-lock</v-icon>
-              <v-icon class="cursor-pointer" color="secondary" @click="item.locked = true" v-else>mdi-lock-open-variant</v-icon>
+              <template v-if="['Agent','Direction','Admin'].includes(this.userStore.profile.role)">
+                <v-icon class="cursor-pointer" color="primary" @click="item.locked = false" v-if="item.locked">mdi-lock</v-icon>
+                <v-icon class="cursor-pointer" color="secondary" @click="item.locked = true" v-else>mdi-lock-open-variant</v-icon>
+              </template>
+              <template v-else>
+                <v-icon color="primary" v-if="item.locked">mdi-lock</v-icon>
+                <v-icon color="secondary" v-else>mdi-lock-open-variant</v-icon>
+              </template>
             </template>
             <template v-slot:item.actions="{ item }" v-else>
-              <v-icon class="cursor-pointer" color="error" @click="currentInstance.content = currentInstance.content.filter(i => i.name != item.name)" >mdi-delete</v-icon>
+              <template v-if="['Agent','Direction','Admin'].includes(this.userStore.profile.role)">
+                <v-icon class="cursor-pointer" color="error" @click="currentInstance.content = currentInstance.content.filter(i => i.name != item.name)" >mdi-delete</v-icon>
+              </template>
             </template>
           </v-data-table>
           
-          <div class="d-flex justify-center align-center mt-5" v-if="!currentItem.instanceByDate">
+          <div class="d-flex justify-center align-center mt-5" v-if="!currentItem.instanceByDate && ['Agent','Direction','Admin'].includes(this.userStore.profile.role)">
             <v-btn variant="tonal" color="success" @click="openNameDialog">Ajouter une instance</v-btn>
           </div>
 
@@ -211,8 +222,8 @@ export default {
       dialogName: false,
       instanceName: '',
 
-      instanceDateHeader: [{ title: 'Date', key: 'date', align: 'start' }, { title: 'Quantité', key: 'amount', align: 'start' }, { title: '', key: 'locked', align: 'end' }],
-      instanceNameHeader: [{ title: 'Nom', key: 'name', align: 'start' }, { title: 'Quantité', key: 'amount', align: 'start' }, { title: '', key: 'actions', align: 'end' }],
+      instanceDateHeader: [{ title: 'Date', key: 'date', align: 'start' }, { title: 'Quantité', key: 'amount', align: 'start' }, { title: '', key: 'locked', align: 'end', sortable: false }],
+      instanceNameHeader: [{ title: 'Nom', key: 'name', align: 'start' }, { title: 'Quantité', key: 'amount', align: 'start' }, { title: '', key: 'actions', align: 'end', sortable: false }],
     }
   },
 
@@ -258,11 +269,16 @@ export default {
       return filteredItems
     },
     deltaTime(){
-      if(this.saveDates[this.tab]){
-        return (new Date().getTime() - new Date(this.saveDates[this.tab].date).getTime()) / (1000 * 60 * 60)
-      }else{
-        return 9999
+      let deltaTime = {}
+      for(let storage of this.storages){
+        if(this.saveDates[storage.id] == undefined){
+          deltaTime[storage.id] = 9999
+        }
+        if(this.saveDates[storage.id]){
+          deltaTime[storage.id] = (new Date().getTime() - new Date(this.saveDates[storage.id].date).getTime()) / (1000 * 60 * 60)
+        }
       }
+      return deltaTime
     },
   },
 

@@ -78,7 +78,6 @@ import Instance from '@/classes/Instance.js'
 import Swal from 'sweetalert2/dist/sweetalert2.js'
 
 import logger from '../../functions/logger'
-import { max } from 'lodash'
 
 export default {
   props: ["items", "storages", "companies"],
