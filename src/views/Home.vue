@@ -108,6 +108,13 @@ export default {
       let currentGroup = []
       for(let group of this.navItems) {
         for(let item of group) {
+          let itemRoute = this.$router.resolve({ path: item.link })
+          if(itemRoute && itemRoute.meta && itemRoute.meta.roles){
+            item.roles = itemRoute.meta.roles
+          }else{
+            item.roles = this.roles.map(r => r.role)
+          }
+          
           if(item.roles.includes(this.userStore.profile.role) && item.link != this.$route.path) {
             item.notif = 0
             if(item.link == '/users') {

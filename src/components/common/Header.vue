@@ -42,6 +42,7 @@ import { getAuth, signOut } from "firebase/auth"
 import { useUserStore } from '@/store/user.js'
 
 import navItems from '@/config/navItems.js'
+import roles from '@/config/roles.js'
 
 import Profile from '@/classes/Profile.js'
 import Company from '@/classes/Company.js'
@@ -55,6 +56,7 @@ export default {
     return {
       userStore: useUserStore(),
       navItems,
+      roles,
       unsub: [],
       waitingUsers: [],
       companies: [],
@@ -117,6 +119,13 @@ export default {
       let currentGroup = []
       for(let group of this.navItems) {
         for(let item of group) {
+          let itemRoute = this.$router.resolve({ path: item.link })
+          if(itemRoute && itemRoute.meta && itemRoute.meta.roles){
+            item.roles = itemRoute.meta.roles
+          }else{
+            item.roles = this.roles.map(r => r.role)
+          }
+
           if(item.roles.includes(this.userStore.profile.role) && item.link != this.$route.path) {
             item.notif = 0
             if(item.link == '/users') {

@@ -9,12 +9,12 @@
         </v-card>
       </v-dialog>
     
-      <Header v-if="ready && $route.meta.showNav && canAccess"></Header>
-      <v-main v-if="ready && canAccess">
+      <Header v-if="ready && $route.meta.showNav && canAccess && hasGoodRole"></Header>
+      <v-main v-if="ready && canAccess && hasGoodRole">
         <router-view class="w-100"/>
       </v-main>
 
-      <v-main v-else-if="ready">
+      <v-main v-else-if="ready && !canAccess">
         <div class="d-flex flex-column justify-center align-center" style="height: 100vh;">
           <v-card class="pa-4 rounded-xl" style="max-width: 600px; width: 100%; overflow: auto;">
             <v-card-title class="text-center">
@@ -25,6 +25,23 @@
               <p class="text-center mb-3">Vous devez être connecté pour accéder à cette page.</p>
               <div class="d-flex flex-column justify-center align-center">
                 <v-btn @click="$router.push('/login')" color="primary" class="mt-3">Aller à la page de connexion</v-btn>
+              </div>
+            </v-card-text>
+          </v-card>
+        </div>
+      </v-main>
+
+      <v-main v-else-if="ready && !hasGoodRole">
+        <div class="d-flex flex-column justify-center align-center" style="height: 100vh;">
+          <v-card class="pa-4 rounded-xl" style="max-width: 600px; width: 100%; overflow: auto;">
+            <v-card-title class="text-center">
+              <img :src="require('@/assets/images/logo.png')" height="150" />
+              <h1 class="text-h4 mb-3 text-primary">Accès refusé</h1>
+            </v-card-title>
+            <v-card-text>
+              <p class="text-center mb-3">Vous n'avez pas les autorisations nécessaires pour accéder à cette page.</p>
+              <div class="d-flex flex-column justify-center align-center">
+                <v-btn @click="$router.push('/')" color="primary" class="mt-3">Aller à la page d'accueil</v-btn>
               </div>
             </v-card-text>
           </v-card>
@@ -64,11 +81,8 @@ export default {
   data() {
     return {
       unsub: [],
-
       userStore: useUserStore(),
-
       loginModalIsOpen: false,
-
       ready: false,
     }
   },
@@ -106,6 +120,17 @@ export default {
   computed: {
     showLoader() {
       return !this.ready
+    },
+    hasGoodRole(){
+      if(this.$route.meta.roles && this.$route.meta.roles.length > 0){
+        if(this.userStore.profile && this.$route.meta.roles.includes(this.userStore.profile.role)){
+          return true
+        }else{
+          return false
+        }
+      }else{
+        return true
+      }
     },
     canAccess() {
       if(!this.$route.meta.needAccount){

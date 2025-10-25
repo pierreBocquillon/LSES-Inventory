@@ -11,7 +11,7 @@
           Préparation
           <v-badge color="primary" v-if="alerts.length > 0" :content="alerts.length" offset-x="-5" floating></v-badge>
         </v-tab>
-        <v-tab value="history" v-if="['Agent','Direction','Admin'].includes(this.userStore.profile.role)">
+        <v-tab value="history" v-if="['PoleStock','Direction','Admin'].includes(this.userStore.profile.role)">
           Historique
         </v-tab>
       </v-tabs>
@@ -22,7 +22,7 @@
           <OrderTab :items="items" :storages="storages" :companies="companies" />
         </v-tabs-window-item>
 
-        <v-tabs-window-item value="alert" v-if="['User','Agent','Direction','Admin'].includes(this.userStore.profile.role)">
+        <v-tabs-window-item value="alert" v-if="['User','PoleStock','Direction','Admin'].includes(this.userStore.profile.role)">
           <AlertTab :items="items" :storages="storages" :companies="companies" />
         </v-tabs-window-item>
 

@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { nextTick } from 'vue'
 
+
 const routes = [
   {
     name: 'Accueil',
@@ -9,6 +10,7 @@ const routes = [
     meta: {
       needAccount: true,
       showNav: true,
+      roles:['User','PoleStock','Direction','Admin']
     }
   },
   {
@@ -18,6 +20,7 @@ const routes = [
     meta: {
       needAccount: true,
       showNav: true,
+      roles:['User','PoleStock','Direction','Admin']
     }
   },
   {
@@ -27,6 +30,7 @@ const routes = [
     meta: {
       needAccount: true,
       showNav: true,
+      roles:['User','PoleStock','Direction','Admin']
     }
   },
   {
@@ -36,6 +40,7 @@ const routes = [
     meta: {
       needAccount: true,
       showNav: true,
+      roles:['PoleStock','Direction','Admin']
     }
   },
   {
@@ -45,6 +50,7 @@ const routes = [
     meta: {
       needAccount: true,
       showNav: true,
+      roles:['PoleStock','Direction','Admin']
     }
   },
   {
@@ -54,6 +60,7 @@ const routes = [
     meta: {
       needAccount: true,
       showNav: true,
+      roles:['PoleStock','Direction','Admin']
     }
   },
   {
@@ -63,6 +70,7 @@ const routes = [
     meta: {
       needAccount: true,
       showNav: true,
+      roles:['Direction','Admin']
     }
   },
   {
@@ -72,6 +80,7 @@ const routes = [
     meta: {
       needAccount: true,
       showNav: true,
+      roles:['Direction','Admin']
     }
   },
   {
@@ -96,6 +105,10 @@ const routes = [
 const router = createRouter({
   history: createWebHistory(process.env.BASE_URL),
   routes,
+})
+
+router.beforeEach((to, from, next) => {
+  next()
 })
 
 router.afterEach((to, from) => {
