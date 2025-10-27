@@ -62,8 +62,8 @@
                     </v-expansion-panel-title>
                     <v-expansion-panel-text>
                       <h3 class="font-weight-regular">Nombre d'items : {{ currentStorageItems.reduce((total, item) => total + parseFloat(item.amount), 0) }}</h3>
-                      <h3 class="font-weight-regular">Poids total : {{ currentStorageItems.reduce((total, item) => total + Math.round((parseFloat(item.weight) * parseFloat(item.amount))*1000)/1000, 0) }} Kg</h3>
-                      <h3 class="font-weight-regular">Poids restant : {{ storage.maxWeight - currentStorageItems.reduce((total, item) => total + Math.round((parseFloat(item.weight) * parseFloat(item.amount))*1000)/1000, 0) }} Kg</h3>
+                      <h3 class="font-weight-regular">Poids total : {{ Math.round(currentStorageItems.reduce((total, item) => total + (parseFloat(item.weight) * parseFloat(item.amount)), 0)*1000)/1000 }} Kg</h3>
+                      <h3 class="font-weight-regular">Poids restant : {{ Math.round((storage.maxWeight - currentStorageItems.reduce((total, item) => total + (parseFloat(item.weight) * parseFloat(item.amount)), 0))*1000)/1000 }} Kg</h3>
                     </v-expansion-panel-text>
                   </v-expansion-panel>
               </v-expansion-panels>
@@ -122,7 +122,7 @@
           <v-data-table :headers="currentItem.instanceByDate ? instanceDateHeader : instanceNameHeader" :items="currentInstance?.content" items-per-page="-1" no-data-text="Aucune instance">
             <template v-slot:bottom />
             <template v-slot:item.date="{ item }">
-              <h3 class="font-weight-regular text-error" v-if="new Date(item.date) < new Date()">{{ item.date }}</h3>
+              <h3 class="font-weight-regular text-error" v-if="new Date(item.date.split('/').reverse().join('-')).setHours(0,0,0,0) < new Date().setHours(0,0,0,0)">{{ item.date }}</h3>
               <h3 class="font-weight-regular" v-else>{{ item.date }}</h3>
             </template>
             <template v-slot:item.amount="{ item }">
