@@ -5,6 +5,7 @@
         <div class="d-flex flex-row align-center justify-start flex-wrap">
           <h2>Commande - {{ getCompagnyInfo(order).icon }} {{ getCompagnyInfo(order).name }} :</h2>
           <v-spacer></v-spacer>
+          <v-btn variant="tonal" color="info" class="ml-3 rounded-xl" @click="copyMessage(order)">📄 Copier</v-btn>
           <v-btn variant="tonal" color="error" class="ml-3 rounded-xl" @click="deleteOrder(order)">❌ Annuler</v-btn>
           <v-btn variant="tonal" color="success" class="ml-3 rounded-xl" @click="payOrder(order)">💵 Valider</v-btn>
         </div>
@@ -51,6 +52,24 @@ export default {
     }))
   },
   methods: {
+    copyMessage(order){
+      let message = "Commande - " + this.getCompagnyInfo(order).icon + " " + this.getCompagnyInfo(order).name + " :\n\n"
+      order.items.forEach(orderItem => {  
+        if (orderItem && orderItem.amount > 0 && orderItem.id && this.getItemInfo(orderItem.id)) {
+          message += this.getItemInfo(orderItem.id).icon + " " + this.getItemInfo(orderItem.id).name + " - " + orderItem.amount + "\n"
+        }
+      })
+      message += "\n(" + order.weight + " kg)"
+      navigator.clipboard.writeText(message).then(() => {
+        Swal.fire({
+          title: 'Copié !',
+          text: `Le message de la commande a été copié dans le presse-papier.`,
+          icon: 'success',
+          timer: 2000,
+          showConfirmButton: false
+        })
+      })
+    },
     getCompagnyInfo(order){
       return this.companies.find(c => c.id == order.company)
     },

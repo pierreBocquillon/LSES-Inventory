@@ -114,7 +114,7 @@
 
     </v-card>
 
-    <v-dialog v-model="dialogInstance" max-width="600px">
+    <v-dialog v-model="dialogInstance" max-width="600px" persistent>
       <v-card>
         <v-card-text>
           <h3 class="text-center">{{ currentItem.icon }} {{ currentItem.name }}</h3>
@@ -126,7 +126,7 @@
               <h3 class="font-weight-regular" v-else>{{ item.date }}</h3>
             </template>
             <template v-slot:item.amount="{ item }">
-              <v-text-field type="number" variant="solo-filled" v-model="item.amount" class="ma-0 pa-0" hide-details style="max-width: 100px;" @change="currentInstance.save(); updateItem(currentItem)"/>
+              <v-text-field type="number" variant="solo-filled" v-model="item.amount" class="ma-0 pa-0" hide-details style="max-width: 100px;"/>
             </template>
             <template v-slot:item.locked="{ item }" v-if="currentItem.instanceByDate">
               <template v-if="['PoleStock','Direction','Admin'].includes(this.userStore.profile.role)">
@@ -296,31 +296,30 @@ export default {
       }
       logger.log(this.userStore.profile.id, 'INVENTAIRE', `Mise à jour de l'item ${item.icon}${item.name} dans ${this.storages.find(storage => storage.id === item.storage)?.icon}${this.storages.find(storage => storage.id === item.storage)?.name}. (Nouvelle quantité : ${item.amount})`)
     },
-    openInstanceDialog(item) {
+    async openInstanceDialog(item) {
       this.dialogInstance = true
       this.currentItem = item
 
-      this.nestedUnsub.push(Instance.listenById(item.id, instance => {
-        this.currentInstance = instance
+      let instance = await Instance.getById(item.id)
+      this.currentInstance = instance
 
-        if (!this.currentInstance) {
-          this.currentInstance = Instance.initOne()
-          this.currentInstance.id = item.id
-          this.currentInstance.save()
-        }
-        if(item.instanceByDate){
-          this.currentInstance.content = this.currentInstance.content.filter(instance => instance.amount > 0)
-          for(let i = 0; i < 7; i++){
-            let date = new Date()
-            date.setDate(date.getDate() + i)
-            if(!this.currentInstance.content.find(instance => instance.date == date.toLocaleDateString())){
-              this.currentInstance.content.push({ date: date.toLocaleDateString(), amount: 0, locked: false })
-            }
+      if (!this.currentInstance) {
+        this.currentInstance = Instance.initOne()
+        this.currentInstance.id = item.id
+        this.currentInstance.save()
+      }
+      if(item.instanceByDate){
+        this.currentInstance.content = this.currentInstance.content.filter(instance => instance.amount > 0)
+        for(let i = 0; i < 7; i++){
+          let date = new Date()
+          date.setDate(date.getDate() + i)
+          if(!this.currentInstance.content.find(instance => instance.date == date.toLocaleDateString())){
+            this.currentInstance.content.push({ date: date.toLocaleDateString(), amount: 0, locked: false })
           }
-          this.currentInstance.content.sort((a, b) => new Date(a.date) - new Date(b.date))
-          this.currentInstance.save()
         }
-      }))
+        this.currentInstance.content.sort((a, b) => new Date(a.date) - new Date(b.date))
+        this.currentInstance.save()
+      }
     },
     closeInstanceDialog() {
       this.dialogInstance = false
