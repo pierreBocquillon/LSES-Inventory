@@ -9,7 +9,7 @@
               <h1 class="mx-3">|</h1>
               <h2>{{ getCompagnyInfo(history).icon }} {{ getCompagnyInfo(history).name }}</h2>
               <h1 class="mx-3">|</h1>
-              <h2>( {{ history.weight }} kg - {{ history.price }} $ )</h2>
+              <h2>( {{ Math.round(history.weight*100)/100 }} kg - {{ history.price }} $ )</h2>
               <v-spacer></v-spacer>
               <v-btn color="error" variant="text" @click.prevent.stop="deleteHistory(history)" v-if="['Direction','Admin'].includes(this.userStore.profile.role)"><v-icon>mdi-delete-outline</v-icon> &nbsp; Supprimer</v-btn>
             </div>

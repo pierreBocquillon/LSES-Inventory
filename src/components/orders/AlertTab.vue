@@ -4,7 +4,7 @@
       <v-card class="mb-5 pa-3 rounded-xl" :color="(companyAlert.maxAlertLevel >= 2 ? 'error' : companyAlert.maxAlertLevel >= 1 ? 'warning' : 'success')" variant="tonal">
         <div class="d-flex flex-row align-center justify-start flex-wrap">
           <h2>{{ companyAlert.company.icon }} {{ companyAlert.company.name }} :</h2>
-          <h3 class="pl-3">{{ companyAlert.totalItemCount }} item(s) ({{ companyAlert.totalWeight }} kg)</h3>
+          <h3 class="pl-3">{{ companyAlert.totalItemCount }} item(s) ({{ Math.round(companyAlert.totalWeight*100)/100 }} kg)</h3>
           <v-spacer></v-spacer>
           <v-btn color="accent" class="ml-3 rounded-xl" @click="openOrderCreationDialog(companyAlert.company)" v-if="!companyOrders.includes(companyAlert.company.id)">🛒Faire une commande</v-btn>
           <v-chip color="primary" class="py-5" v-else><h3 class="font-weight-regular">Une commande est en cours</h3></v-chip>
@@ -37,7 +37,7 @@
     <v-dialog v-model="orderDialog" max-width="600px">
       <v-card class="rounded-xl">
         <v-card-text>
-          <h3 class="text-center mb-5">Commande ({{ orderWeight }}kg):</h3>
+          <h3 class="text-center mb-5">Commande ({{ Math.round(orderWeight*100)/100 }}kg):</h3>
           <table class="w-100">
             <tbody>
               <template v-for="item in orderData.items" :key="item.id">
@@ -178,7 +178,7 @@ export default {
           let instance = this.instances.find(i => i.id === item.id)
           if(instance) {
             for(let contentItem of instance.content) {
-              if(new Date(contentItem.date) < new Date() && !contentItem.locked) {
+              if(new Date(contentItem.date.split('/').reverse().join('-')).setHours(0,0,0,0) < new Date().setHours(0,0,0,0) && !contentItem.locked) {
                 needToBeTrashed += parseInt(contentItem.amount)
               }
             }
@@ -318,9 +318,9 @@ export default {
 
       await order.save()
       this.orderDialog = false
-      
-      logger.log(this.userStore.profile.id, 'COMMANDES', `Création d'une commande chez ${this.orderData.company.icon}${this.orderData.company.name} (${this.orderWeight} kg)`)
-      
+
+      logger.log(this.userStore.profile.id, 'COMMANDES', `Création d'une commande chez ${this.orderData.company.icon}${this.orderData.company.name} (${Math.round(this.orderWeight*100)/100} kg)`)
+
       Swal.fire({
         title: 'Commande enregistrée',
         text: `La commande chez ${this.orderData.company.name} a été enregistrée avec succès.`,

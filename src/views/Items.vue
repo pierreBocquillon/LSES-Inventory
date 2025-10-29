@@ -133,6 +133,7 @@ export default {
     }))
     this.unsub.push(Item.listenAll(items => {
       this.items = items
+      this.items.sort((a, b) => a.name.localeCompare(b.name))
     }))
   },
 

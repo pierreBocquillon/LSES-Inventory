@@ -18,7 +18,7 @@
           <div class="pl-3 d-flex flex-row align-center justify-start mt-5 mb-2" v-if="order.destroy && order.destroy > 0">
             🗑️ Destruction - {{ order.destroy }}
           </div>
-          <h3 class="mt-5">({{ order.weight }} kg)</h3>
+          <h3 class="mt-5">({{ Math.round(order.weight*100)/100 }} kg)</h3>
         </div>
       </v-card>
     </template>
@@ -59,7 +59,7 @@ export default {
           message += this.getItemInfo(orderItem.id).icon + " " + this.getItemInfo(orderItem.id).name + " - " + orderItem.amount + "\n"
         }
       })
-      message += "\n(" + order.weight + " kg)"
+      message += "\n(" + Math.round(order.weight*100)/100 + " kg)"
       navigator.clipboard.writeText(message).then(() => {
         Swal.fire({
           title: 'Copié !',
@@ -120,7 +120,7 @@ export default {
           }
 
           history.save().then(() => {
-            logger.log(this.userStore.profile.id, 'COMMANDES', `Validation d'une commande chez ${this.getCompagnyInfo(order).icon}${this.getCompagnyInfo(order).name} (${order.weight} kg) pour un montant de ${price}$`)
+            logger.log(this.userStore.profile.id, 'COMMANDES', `Validation d'une commande chez ${this.getCompagnyInfo(order).icon}${this.getCompagnyInfo(order).name} (${Math.round(order.weight*100)/100} kg) pour un montant de ${price}$`)
             order.delete()
             if (showWarning) {
               Swal.fire(
@@ -156,7 +156,7 @@ export default {
       }).then((result) => {
         if (result.isConfirmed) {
           order.delete().then(() => {
-            logger.log(this.userStore.profile.id, 'COMMANDES', `Annulation d'une commande chez ${this.getCompagnyInfo(order).icon}${this.getCompagnyInfo(order).name} (${order.weight} kg)`)
+            logger.log(this.userStore.profile.id, 'COMMANDES', `Annulation d'une commande chez ${this.getCompagnyInfo(order).icon}${this.getCompagnyInfo(order).name} (${Math.round(order.weight*100)/100} kg)`)
             Swal.fire(
               'Annulé !',
               'La commande a été annulée.',
