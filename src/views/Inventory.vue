@@ -149,6 +149,10 @@
             <v-btn variant="tonal" color="success" @click="openNameDialog">Ajouter une instance</v-btn>
           </div>
 
+          <div class="d-flex justify-center mt-5" v-if="currentItem.instanceByDate && ['PoleStock','Direction','Admin'].includes(this.userStore.profile.role)">
+            <v-btn variant="tonal" color="success" @click="openDateDialog">Ajoute une date spécifique</v-btn>
+          </div>  
+
           <div class="d-flex justify-center mt-5">
             <v-btn variant="tonal" color="primary" @click="saveInstance">Valider</v-btn>
             <v-btn variant="tonal" color="error" class="ml-3" @click="closeInstanceDialog">Annuler</v-btn>
@@ -166,6 +170,20 @@
           <div class="d-flex justify-center mt-5">
             <v-btn variant="tonal" color="primary" @click="addInstance">Valider</v-btn>
             <v-btn variant="tonal" color="error" class="ml-3" @click="closeNameDialog">Annuler</v-btn>
+          </div>       
+        </v-card-text>
+      </v-card>
+    </v-dialog>
+    
+    <v-dialog v-model="dialogDate" max-width="600px">
+      <v-card>
+        <v-card-text>
+          <v-text-field label="Date (jj/mm/aaaa)" color="primary" base-color="primary" variant="outlined" v-model="instanceDate" class="ma-0 pa-0 mb-3" hide-details />
+          <v-text-field type="number" label="Quantité" color="primary" base-color="primary" variant="outlined" v-model="instanceAmount" class="ma-0 pa-0 mb-3" hide-details />
+
+          <div class="d-flex justify-center mt-5">
+            <v-btn variant="tonal" color="primary" @click="addDateInstance">Valider</v-btn>
+            <v-btn variant="tonal" color="error" class="ml-3" @click="closeDateDialog">Annuler</v-btn>
           </div>       
         </v-card-text>
       </v-card>
@@ -221,6 +239,10 @@ export default {
 
       dialogName: false,
       instanceName: '',
+
+      dialogDate: false,
+      instanceDate: '',
+      instanceAmount: 0,
 
       instanceDateHeader: [{ title: 'Date', key: 'date', align: 'start' }, { title: 'Quantité', key: 'amount', align: 'start' }, { title: '', key: 'locked', align: 'end', sortable: false }],
       instanceNameHeader: [{ title: 'Nom', key: 'name', align: 'start' }, { title: 'Quantité', key: 'amount', align: 'start' }, { title: '', key: 'actions', align: 'end', sortable: false }],
@@ -340,8 +362,16 @@ export default {
       this.dialogName = true
       this.instanceName = ""
     },
+    openDateDialog() {
+      this.dialogDate = true
+      this.instanceDate = new Date().toLocaleDateString()
+      this.instanceAmount = 0
+    },
     closeNameDialog() {
       this.dialogName = false
+    },
+    closeDateDialog() {
+      this.dialogDate = false
     },
     addInstance() {
       if(!this.instanceName || this.instanceName.trim() == ''){
@@ -364,7 +394,38 @@ export default {
       this.currentInstance.content.push({ name: this.instanceName.trim(), amount: 0, locked: false })
       this.currentInstance.content.sort((a, b) => a.name.localeCompare(b.name))
       this.closeNameDialog()
-    }
+    },
+    addDateInstance() {
+      if(!this.instanceDate || this.instanceDate.trim() == ''){
+        Swal.fire({
+          icon: 'error',
+          title: 'Erreur',
+          text: 'La date de l\'instance ne peut pas être vide.',
+        })
+        return
+      }
+      const dateRegex = /^(0?[1-9]|[12][0-9]|3[01])\/(0?[1-9]|1[0-2])\/\d{4}$/
+      if(!dateRegex.test(this.instanceDate.trim())){
+        Swal.fire({
+          icon: 'error',
+          title: 'Erreur',
+          text: 'Le format de la date est incorrect. Utilisez le format jj/mm/aaaa.',
+        })
+        return
+      }
+      if(this.currentInstance.content.find(instance => instance.date == this.instanceDate.trim())){
+        Swal.fire({
+          icon: 'error',
+          title: 'Erreur',
+          text: 'Une instance avec cette date existe déjà.',
+        })
+        return
+      }
+
+      this.currentInstance.content.push({ date: this.instanceDate.trim(), amount: parseInt(this.instanceAmount), locked: false })
+      this.currentInstance.content.sort((a, b) => new Date(a.date.split('/').reverse().join('-')) - new Date(b.date.split('/').reverse().join('-')))
+      this.closeDateDialog()
+    },
   },
 
   beforeUnmount() {
