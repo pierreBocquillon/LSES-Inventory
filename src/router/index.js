@@ -55,6 +55,16 @@ const routes = [
     }
   },
   {
+    name: 'Autopsie',
+    path: '/autopsie',
+    component:  () => import("@/views/Autopsie.vue"),
+    meta: {
+      needAccount: true,
+      showNav: true,
+      roles:['Admin']
+    }
+  },
+  {
     name: 'Entreprises',
     path: '/companies',
     component:  () => import("@/views/Companies.vue"),
