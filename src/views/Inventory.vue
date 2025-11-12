@@ -150,7 +150,7 @@
           </div>
 
           <div class="d-flex justify-center mt-5" v-if="currentItem.instanceByDate && ['PoleStock','Direction','Admin'].includes(this.userStore.profile.role)">
-            <v-btn variant="tonal" color="success" @click="openDateDialog">Ajoute une date spécifique</v-btn>
+            <v-btn variant="tonal" color="success" @click="openDateDialog">Ajouter une date spécifique</v-btn>
           </div>  
 
           <div class="d-flex justify-center mt-5">
