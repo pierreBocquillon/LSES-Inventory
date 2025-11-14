@@ -1,31 +1,30 @@
 import { getFirestore, doc, collection, query, where, addDoc, getDoc, getDocs, updateDoc, setDoc, onSnapshot, deleteDoc, documentId } from "firebase/firestore"
 let db = getFirestore()
 
-let collectionName = "companies"
+let collectionName = "expenseNotes"
 
 function docToInstance(document) {
   let data = document.data()
-  return data ? new Company(document.id, data.icon, data.name, data.canDestroy, data.canExpenseNote) : null
+  return data ? new ExpenseNote(document.id, data.date, data.user, data.reason, data.data, data.price, data.isPaid, data.isRefused, data.refusalComment, data.closeDate) : null
 }
 
-class Company {
-  constructor(id, icon, name, canDestroy=false, canExpenseNote=false) {
+class ExpenseNote {
+  constructor(id, date, user, reason, data, price, isPaid, isRefused, refusalComment, closeDate) {
     this.id = id
-    this.icon = icon
-    this.name = name
-    this.canDestroy = canDestroy
-    this.canExpenseNote = canExpenseNote
+    this.date = date
+    this.user = user
+    this.reason = reason
+    this.data = data
+    this.price = price
+    this.isPaid = isPaid
+    this.isRefused = isRefused
+    this.refusalComment = refusalComment
+    this.closeDate = closeDate
   }
 
-  static initOne(name="", icon="", canDestroy=false, canExpenseNote=false) {
-    let id = Company.createId(name)
-    const newCompany = new Company(id, icon, name, canDestroy, canExpenseNote)
-    return newCompany
-  }
-  
-  static createId(name) {
-    let id = name.replace(/[^a-zA-Z0-9 ]/g, "").replace(/ /g, "-").toLowerCase().replace(/-+/g, "-").replace(/^-|-$/g, "")
-    return id
+  static initOne() {
+    const newExpenseNote = new ExpenseNote(null, null, null, 'other', '', 0, false, false, '', null)
+    return newExpenseNote
   }
 
   static async getAll() {
@@ -38,8 +37,8 @@ class Company {
     return docToInstance(document)
   }
 
-  static async getByName(name) {
-    const q = query(collection(db, collectionName), where("name", "==", name))
+  static async getByUser(user) {
+    const q = query(collection(db, collectionName), where("user", "==", user))
     const documents = await getDocs(q)
     return documents.docs.map(docToInstance)
   }
@@ -60,8 +59,8 @@ class Company {
     })
   }
 
-  static async listenByName(name, callback) {
-    const q = query(collection(db, collectionName), where("name", "==", name))
+  static async listenByUser(name, callback) {
+    const q = query(collection(db, collectionName), where("user", "==", name))
     onSnapshot(q, snapshot => {
       const list = []
       snapshot.forEach(doc => {
@@ -73,17 +72,22 @@ class Company {
 
   async save() {
     const new_doc = {
-      icon: this.icon,
-      name: this.name,
-      canDestroy: this.canDestroy,
-      canExpenseNote: this.canExpenseNote
+      user: this.user,
+      date: this.date,
+      reason: this.reason,
+      data: this.data,
+      price: this.price,
+      isPaid: this.isPaid,
+      isRefused: this.isRefused,
+      refusalComment: this.refusalComment,
+      closeDate: this.closeDate
     }
 
     if (this.id) {
       await setDoc(doc(db, collectionName, this.id), new_doc)
     } else {
-      this.id = Company.createId(this.name)
-      await setDoc(doc(db, collectionName, this.id), new_doc)
+      const docRef = await addDoc(collection(db, collectionName), new_doc)
+      this.id = docRef.id
     }
   }
 
@@ -94,4 +98,4 @@ class Company {
   }
 }
 
-export default Company
+export default ExpenseNote

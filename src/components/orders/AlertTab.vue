@@ -1,7 +1,7 @@
 <template>
   <div>
     <template v-for="companyAlert in alerts" :key="companyAlert.company.id">
-      <v-card class="mb-5 pa-3 rounded-xl" :color="(companyAlert.maxAlertLevel >= 2 ? 'error' : companyAlert.maxAlertLevel >= 1 ? 'warning' : 'success')" variant="tonal">
+      <v-card class="mb-5 pa-3 rounded-xl" :color="(companyAlert.maxAlertLevel >= 2 ? 'error' : companyAlert.maxAlertLevel >= 1 ? 'primary' : 'success')" variant="tonal">
         <div class="d-flex flex-row align-center justify-start flex-wrap">
           <h2>{{ companyAlert.company.icon }} {{ companyAlert.company.name }} :</h2>
           <h3 class="pl-3">{{ companyAlert.totalItemCount }} item(s) ({{ Math.round(companyAlert.totalWeight*100)/100 }} kg)</h3>
@@ -10,7 +10,7 @@
           <v-chip color="primary" class="py-5" v-else><h3 class="font-weight-regular">Une commande est en cours</h3></v-chip>
         </div>
         <div class="py-3 pl-5">
-          <div v-for="itemAlert in companyAlert.items" :key="itemAlert.id" class="d-flex flex-row align-center justify-start mb-2" :class="(itemAlert.alertLevel >= 2 ? 'text-error' : (itemAlert.alertLevel >= 1 ? 'text-warning' : 'text-white'))">
+          <div v-for="itemAlert in companyAlert.items" :key="itemAlert.id" class="d-flex flex-row align-center justify-start mb-2" :class="(itemAlert.alertLevel >= 2 ? 'text-error' : (itemAlert.alertLevel >= 1 ? 'text-primary' : 'text-white'))">
             {{ itemAlert.info.icon }} {{ itemAlert.info.name }} - {{itemAlert.orderNeeded}} ({{ itemAlert.item.amount }}/{{ itemAlert.item.wanted }})
           </div>
           <div v-if="companyAlert.company.canDestroy && needToBeTrashed > 0" class="d-flex flex-row align-center justify-start mt-5 mb-2 text-white">
@@ -49,10 +49,10 @@
                   <td style="width: 100px;">({{ Math.round(item.orderNeeded * item.info.weight * 100)/100 }}kg)</td>
                 </tr>
               </template>
-              <tr v-if="needToBeTrashed > 0 && orderData.company.canDestroy">
+              <tr v-if="orderData.company.canDestroy">
                 <td colspan="3">&nbsp;</td>
               </tr>
-              <tr v-if="needToBeTrashed > 0 && orderData.company.canDestroy">
+              <tr v-if="orderData.company.canDestroy">
                 <td  class="text-white">🗑️ Destruction ({{needToBeTrashed}})</td>
                 <td colspan="2" style="width: 100px;">
                   <v-text-field hide-details variant="plain" type="number" density="compact" v-model="orderData.destroy"></v-text-field>
@@ -197,7 +197,7 @@ export default {
         destroy: 0,
         weight: 0,
       }
-      if( this.needToBeTrashed > 0 && company.canDestroy) {
+      if(company.canDestroy) {
         this.orderData.destroy = this.needToBeTrashed
       }
       this.orderCreationDialog = true
