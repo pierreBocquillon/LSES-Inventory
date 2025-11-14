@@ -5,22 +5,23 @@ let collectionName = "histories"
 
 function docToInstance(document) {
   let data = document.data()
-  return data ? new History(document.id, data.date, data.company, data.items, data.weight, data.price, data.payDate) : null
+  return data ? new History(document.id, data.date, data.company, data.items, data.destroy, data.weight, data.price, data.payDate) : null
 }
 
 class History {
-  constructor(id, date, company, items, weight, price, payDate) {
+  constructor(id, date, company, items, destroy, weight, price, payDate) {
     this.id = id
     this.date = date
     this.company = company
     this.items = items
+    this.destroy = destroy
     this.weight = weight
     this.price = price
     this.payDate = payDate
   }
 
   static initOne() {
-    const newHistory = new History(null, null, null, [], 0, 0, null)
+    const newHistory = new History(null, null, null, [], 0, 0, 0, null)
     return newHistory
   }
 
@@ -73,7 +74,8 @@ class History {
       items: this.items,
       weight: this.weight,
       price: this.price,
-      payDate: this.payDate
+      payDate: this.payDate,
+      destroy: this.destroy
     }
 
     if (this.id) {

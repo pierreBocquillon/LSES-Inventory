@@ -35,6 +35,9 @@
                         {{ getItemInfo(historyItem.id).icon }} {{ getItemInfo(historyItem.id).name }} - {{historyItem.amount}}
                       </div>
                     </template>
+                    <div class="mt-6 pl-3 d-flex flex-row align-center justify-start mb-2" v-if="history.destroy && history.destroy > 0">
+                      🗑️ Destruction - {{history.destroy}}
+                    </div>
                   </div>
                 </v-expansion-panel-text>
               </v-expansion-panel>

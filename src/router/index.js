@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { nextTick } from 'vue'
 
+const maintenanceMode = false
 
 const routes = [
   {
@@ -31,6 +32,16 @@ const routes = [
       needAccount: true,
       showNav: true,
       roles:['User','PoleStock','Direction','Admin']
+    }
+  },
+  {
+    name: 'Notes de frais',
+    path: '/expenseNotes',
+    component:  () => import("@/views/ExpenseNotes.vue"),
+    meta: {
+      needAccount: true,
+      showNav: true,
+      roles:['Direction','Admin']
     }
   },
   {
@@ -100,15 +111,29 @@ const routes = [
       needAccount: false,
       showNav: false,
     }
-  }
+  },
+  {
+    name: 'Maintenance',
+    path: '/maintenance',
+    component: () => import("@/views/Maintenance.vue"),
+    meta: {
+      needAccount: false,
+      showNav: false,
+    }
+  },
 ]
+
 const router = createRouter({
   history: createWebHistory(process.env.BASE_URL),
   routes,
 })
 
 router.beforeEach((to, from, next) => {
-  next()
+  if (maintenanceMode && to.path !== '/maintenance') {
+    next('/maintenance')
+  } else {
+    next()
+  }
 })
 
 router.afterEach((to, from) => {

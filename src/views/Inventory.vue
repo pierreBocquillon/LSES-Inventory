@@ -12,8 +12,8 @@
       <v-tabs-window v-model="tab">
         <v-tabs-window-item v-for="storage in storages" :key="storage.id" :value="storage.id">
 
-          <h3 class="my-5 text-center font-weight-regular text-success" v-if="deltaTime[storage.id] < 6">💾 Derniere mise à jour : {{ new Date(saveDates[storage.id]?.date).toLocaleString().slice(0, 16) }}</h3>
-          <h3 class="my-5 text-center font-weight-regular text-warning" v-else-if="deltaTime[storage.id] < 12">💾 Derniere mise à jour : {{ new Date(saveDates[storage.id]?.date).toLocaleString().slice(0, 16) }}</h3>
+          <h3 class="my-5 text-center font-weight-regular text-success" v-if="deltaTime[storage.id] < 12">💾 Derniere mise à jour : {{ new Date(saveDates[storage.id]?.date).toLocaleString().slice(0, 16) }}</h3>
+          <h3 class="my-5 text-center font-weight-regular text-primary" v-else-if="deltaTime[storage.id] < 24">💾 Derniere mise à jour : {{ new Date(saveDates[storage.id]?.date).toLocaleString().slice(0, 16) }}</h3>
           <h3 class="my-5 text-center font-weight-regular text-error" v-else>💾 Derniere mise à jour : {{ new Date(saveDates[storage.id]?.date).toLocaleString().slice(0, 16) }}</h3>
 
           <v-row>
@@ -104,7 +104,7 @@
             <template v-slot:item.needed="{ item }">
               <h3 class="font-weight-regular text-success" v-if="parseInt(item.amount) >= parseInt(item.wanted)">0</h3>
               <h3 class="font-weight-regular text-white" v-else-if="parseInt(item.amount) >= (parseInt(item.wanted) * 0.5)">{{ parseInt(item.wanted) - parseInt(item.amount) }}</h3>
-              <h3 class="font-weight-regular text-warning" v-else-if="parseInt(item.amount) >= (parseInt(item.wanted) * 0.25)">{{ parseInt(item.wanted) - parseInt(item.amount) }}</h3>
+              <h3 class="font-weight-regular text-primary" v-else-if="parseInt(item.amount) >= (parseInt(item.wanted) * 0.25)">{{ parseInt(item.wanted) - parseInt(item.amount) }}</h3>
               <h3 class="font-weight-regular text-error" v-else>{{ parseInt(item.wanted) - parseInt(item.amount) }}</h3>
             </template>
 

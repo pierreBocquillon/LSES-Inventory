@@ -5,6 +5,7 @@ let navItems = [
   [
     { title: 'Inventaire', icon: 'mdi-archive', link: '/inventory'},
     { title: 'Commandes', icon: 'mdi-file-document', link: '/orders'},
+    { title: 'Notes de frais', icon: 'mdi-receipt-text-check', link: '/expenseNotes'},
   ],
   [
     { title: 'Entreprises', icon: 'mdi-truck-delivery-outline', link: '/companies'},

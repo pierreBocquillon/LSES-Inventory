@@ -39,10 +39,10 @@
                   <td style="width: 100px;">({{ Math.round(itemData.amount * getItemInfo(itemData.id).weight * 100)/100 }}kg)</td>
                 </tr>
               </template>
-              <tr v-if="needToBeTrashed > 0 && getCompagnyInfo(editOrder).canDestroy">
+              <tr v-if="getCompagnyInfo(editOrder).canDestroy">
                 <td colspan="3">&nbsp;</td>
               </tr>
-              <tr v-if="needToBeTrashed > 0 && getCompagnyInfo(editOrder).canDestroy">
+              <tr v-if="getCompagnyInfo(editOrder).canDestroy">
                 <td  class="text-white">🗑️ Destruction ({{needToBeTrashed}})</td>
                 <td colspan="2" style="width: 100px;">
                   <v-text-field hide-details variant="plain" type="number" density="compact" v-model="editOrder.destroy"></v-text-field>
@@ -171,6 +171,9 @@ export default {
           message += this.getItemInfo(orderItem.id).icon + " " + this.getItemInfo(orderItem.id).name + " - " + orderItem.amount + "\n"
         }
       })
+      if (order.destroy && order.destroy > 0) {
+        message += "\n" + "🗑️ Destruction - " + order.destroy + "\n"
+      }
       message += "\n(" + Math.round(order.weight*100)/100 + " kg)"
       navigator.clipboard.writeText(message).then(() => {
         Swal.fire({
@@ -214,6 +217,7 @@ export default {
           history.company = orderData.company
           history.items = orderData.items
           history.weight = orderData.weight
+          history.destroy = orderData.destroy
           history.price = price
           history.payDate = new Date().getTime()
 

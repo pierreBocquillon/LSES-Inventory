@@ -1,28 +1,15 @@
 <template>
-  <div>
-    <v-card class="mt-10 rounded-xl" style="max-width: 600px; margin: auto;">
-      <v-card-text class="pa-5 d-flex flex-column align-center">
-        <div>
-          <h2>Nom : <span class="font-weight-regular">{{ userStore.profile.name }}</span></h2>
-          <h2>Rôle : <span class="font-weight-regular">{{ roles.find(role => role.role === userStore.profile.role)?.name }}</span></h2>
-        </div>
-
-        <div class="my-3 w-100">
-          <v-divider class="border-opacity-75"></v-divider>
-        </div>
-        
-        <h2>Accés rapide :</h2>
-        <div class="d-flex flex-wrap justify-center mt-4" v-for="group in filteredNavItems">
-          <v-btn v-for="item in group" :key="item.link" style="width: 150px; height: 150px;" class="rounded-lg ma-2" @click="$router.push(item.link)">
-            <div class="d-flex flex-column align-center justify-center mb-4">
-              <v-icon size="64">{{ item.icon }}</v-icon>
-              <v-badge color="primary" v-if="item.notif > 0" :content="item.notif" floating offset-x="-30" offset-y="-50"></v-badge>
-              <h3 class="font-weight-regular w-100 text-center mt-3" style="height: 16px;white-space: normal;">{{ item.title }}</h3>
-            </div>
-          </v-btn>
-        </div>
-      </v-card-text>
-    </v-card>
+  <div class="d-flex align-center justify-center" style="height: 100vh;">
+    <div>
+      <v-card class="mt-10 rounded-xl" style="max-width: 600px; margin: auto;">
+        <v-card-text class="pa-5 d-flex flex-column align-center">
+          <h1 class="text-h2 text-primary mb-3">C'est tout cassé !</h1>
+          <h2>L'application est actuellement en maintenance.</h2>
+          <v-img class="my-3" height="300" width="300" :src="require('@/assets/images/maintenance.png')"></v-img>
+          <h2 class="mt-5 font-weight-regular text-center text-justify">Si tu vois cette page, ça veut dire que je suis déjà sur le coup, alors tu peux faire une petite pause, prendre un café et revenir un peu plus tard !</h2>
+        </v-card-text>
+      </v-card>
+    </div>
   </div>
 </template>
 
@@ -38,8 +25,6 @@ import Item from '@/classes/Item.js'
 import Order from '@/classes/Order.js'
 import Storage from '@/classes/Storage.js'
 import SaveDate from '@/classes/SaveDate.js'
-import ExpenseNote from '@/classes/ExpenseNote.js'
-import { el } from 'vuetify/locale'
 
 export default {
   props : [],
@@ -50,7 +35,6 @@ export default {
       navItems,
       unsub: [],
       waitingUsers: [],
-      waitingExpenseNotes: [],
       companies: [],
       items: [],
       orders: [],
@@ -61,9 +45,6 @@ export default {
   created() {
     this.unsub.push(Profile.listenByActivated(false, users => {
       this.waitingUsers = users.filter(user => !user.rejected)
-    }))
-    this.unsub.push(ExpenseNote.listenAll(notes => {
-      this.waitingExpenseNotes = notes.filter(note => !note.isPaid && !note.isRefused)
     }))
     this.unsub.push(SaveDate.listenAll(dates => {
       this.saveDates = {}
@@ -123,21 +104,14 @@ export default {
           
           if(item.roles.includes(this.userStore.profile.role) && item.link != this.$route.path) {
             item.notif = 0
-            if(item.link == '/inventory') {
-              item.notif = this.StoragesOutdated
+            if(item.link == '/users') {
+              item.notif = this.waitingUsers.length
             }
             if(item.link == '/orders') {
               item.notif = this.orders.length + this.alerts.length
             }
-            if(item.link == '/expenseNotes') {
-              if(['Direction','Admin'].includes(this.userStore.profile.role)) {
-                item.notif = this.waitingExpenseNotes.length
-              }else{
-                item.notif = 0
-              }
-            }
-            if(item.link == '/users') {
-              item.notif = this.waitingUsers.length
+            if(item.link == '/inventory') {
+              item.notif = this.StoragesOutdated
             }
             currentGroup.push(item)
           }
