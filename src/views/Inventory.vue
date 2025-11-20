@@ -356,6 +356,13 @@ export default {
       this.currentItem.amount = totalAmount
       this.updateItem(this.currentItem)
       this.currentInstance.save()
+      fetch('https://script.google.com/macros/s/AKfycbwf0AveLsdLMQMMzR-0flSwVP-VE9Hd8OCF5pmfDBMiCkiDKN0wJhMwXxvnUmAgGx8Z/exec', {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
       this.closeInstanceDialog()
     },
     openNameDialog() {
