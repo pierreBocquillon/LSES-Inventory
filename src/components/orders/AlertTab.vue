@@ -148,6 +148,9 @@ export default {
           }
 
           tmp_alert.orderNeeded = Math.ceil((parseInt(item.wanted) - parseInt(item.amount)) / threshold) * threshold
+          if(item.maxOrder > 0 && tmp_alert.orderNeeded > item.maxOrder) {
+            tmp_alert.orderNeeded = item.maxOrder
+          }
           if(tmp_alert.orderNeeded > 0){
             alerts[tmp_alert.info.seller].items.push(tmp_alert)
             

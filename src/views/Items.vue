@@ -24,6 +24,10 @@
           <span class="font-weight-regular">{{ companies.find(company => company.id === item.seller)?.icon }} {{ companies.find(company => company.id === item.seller)?.name }}</span>
         </template>
 
+        <template v-slot:item.maxOrder="{ item }">
+          <h3 class="font-weight-regular text-error">{{ item.maxOrder === 0 ? "♾️" : item.maxOrder }}</h3>
+        </template>
+
         <template v-slot:item.actions="{ item }">
           <v-btn color="primary" variant="text" icon @click="openEditItemDialog(item)"><v-icon>mdi-pencil</v-icon></v-btn>
           <v-btn color="error" variant="text" icon @click="deleteItem(item)"><v-icon>mdi-delete</v-icon></v-btn>
@@ -74,6 +78,7 @@
           </v-select>
 
           <v-text-field type="number" v-model="currentItem.wanted" label="Stock souhaité"/>
+          <v-text-field type="number" v-model="currentItem.maxOrder" label="Commande maximale (0 = illimité)"/>
 
           <v-switch hide-details color="primary" label="Commande sécurisée" v-model="currentItem.isSecure"></v-switch>
           <v-switch hide-details color="primary" label="Contient des instances" v-model="currentItem.isInstantiated"></v-switch>
@@ -112,6 +117,7 @@ export default {
         { title: 'Stockage', key: 'storage', align: 'start' },
         { title: 'Vendeur', key: 'seller', align: 'start' },
         { title: 'Stock souhaité', key: 'wanted', align: 'start' },
+        { title: 'Commande maximale', key: 'maxOrder', align: 'start' },
         { title: '', key: 'actions', align: 'end', sortable: false },
       ],
       storages: [],
