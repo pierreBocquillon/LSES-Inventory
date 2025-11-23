@@ -8,6 +8,9 @@
       </template>
       
       <template v-slot:item.actions="{ item }">
+        <v-btn icon color="primary" variant="text" @click="resetPassword(item)" v-if="['Admin'].includes(this.userStore.profile.role)">
+          <v-icon>mdi-lock-reset</v-icon>
+        </v-btn>
         <v-btn icon color="accent" variant="text" @click="editItem(item)">
           <v-icon>mdi-pencil</v-icon>
         </v-btn>
@@ -30,11 +33,12 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
-
   </div>
 </template>
 <script>
 import Swal from 'sweetalert2/dist/sweetalert2.js'
+
+import { getFunctions, httpsCallable } from 'firebase/functions'
 
 import { useUserStore } from '@/store/user.js'
 
@@ -48,6 +52,7 @@ export default {
   data() {
     return {
       unsub: [],
+      functions: getFunctions(),
       userStore: useUserStore(),
       headers: [
         { title: 'Nom', key: 'name', sortable: true, align: 'start' },
@@ -67,6 +72,53 @@ export default {
     }))
   },
   methods: {
+    async resetPassword(user) {
+      Swal.fire({
+        title: 'Confirmer la réinitialisation',
+        text: `Êtes-vous sûr de vouloir réinitialiser le mot de passe de "${user.name}" ?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Oui',
+        cancelButtonText: 'Annuler',
+      }).then(async (result) => {
+        if (result.isConfirmed) {
+          const chars =
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZ" +
+            "abcdefghijklmnopqrstuvwxyz" +
+            "0123456789"
+
+          let password = ""
+          for (let i = 0; i < 24; i++) {
+              const randomIndex = Math.floor(Math.random() * chars.length)
+              password += chars[randomIndex]
+          }
+          let tmp_password = password
+          
+          httpsCallable(this.functions, 'changePassword')({
+            userId: user.id,
+            hash: btoa(tmp_password),
+          })
+          .then(() => {
+            Swal.fire({
+              icon: 'success',
+              title: 'Succès',
+              text: `Mot de passe réinitialisé avec succès. Nouveau mot de passe temporaire : ${tmp_password} (En validant, il sera copié dans votre presse-papier.)`,
+            }).then(() => {
+              logger.log(this.userStore.profile.id, 'PASSWORD', `Réinitialisation du mot de passe pour l'utilisateur ${user.name}`)
+              navigator.clipboard.writeText(tmp_password)
+            })
+          })
+          .catch(error => {
+            Swal.fire({
+              icon: 'error',
+              title: 'Erreur',
+              text: error.message || 'Une erreur est survenue lors de la réinitialisation du mot de passe.',
+              timer: 3000,
+            })
+          })
+        }
+      })
+    },
     closeUserDialog() {
       this.dialog = false
     },

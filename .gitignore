@@ -5,6 +5,7 @@ node_modules
 .firebase
 /src/config/firebase.js
 
+/functions/serviceAccountKey.js
 
 # local env files
 .env.local

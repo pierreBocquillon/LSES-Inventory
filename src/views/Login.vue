@@ -21,6 +21,8 @@
 <script>
 import { useUserStore } from '@/store/user.js'
 
+import { getFunctions, httpsCallable } from 'firebase/functions'
+
 import Profile from "@/classes/Profile.js"
 import Swal from 'sweetalert2/dist/sweetalert2.js'
 
@@ -51,6 +53,12 @@ export default {
     }))
   },
   methods: {
+    debugReset() {
+      httpsCallable(getFunctions(), 'changePassword')({
+        "userId":"FjLs9fn1ltWBbzgxCAv402svYz22",
+        "hash":"MTIzNDU2",
+      })
+    },
     askAccess() {
       this.$router.push('/askAccess')
     },
