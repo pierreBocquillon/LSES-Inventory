@@ -11,19 +11,19 @@
           </div>
           <h2 class="pl-3 text-white">
             <span>{{ getProfileInfo(note.user).name }} - </span>
-            <span v-if="note.reason == 'buy'">{{ getCompagnyInfo(getHystoryInfo(note.data)).icon }} {{ getCompagnyInfo(getHystoryInfo(note.data)).name }} : ({{formatMoney(note.price)}})</span>
+            <span v-if="note.reason == 'buy'">{{ getCompagnyInfo(getHystoryInfo(note.data))?.icon }} {{ getCompagnyInfo(getHystoryInfo(note.data))?.name }} : ({{formatMoney(note.price)}})</span>
             <span v-else-if="note.reason == 'vehicle'">🚗 Fourière : ({{formatMoney(note.price)}})</span>
             <span v-else>❓ Autre dépense : ({{formatMoney(note.price)}})</span>
           </h2>
           <div class="py-2 pl-5">
             <template v-if="note.reason == 'buy'">
               <div class="py-3" style="border-left: 2px #FFFFFF33 solid;">
-                <div class="pl-3 d-flex flex-row align-center justify-start mb-2 text-white">
-                  📱 Téléphone - 40
+                <div class="pl-3 d-flex flex-row align-center justify-start mb-2 text-white" v-for="item in getHystoryInfo(note.data).items" :key="index">
+                  {{ getItemInfo(item.id)?.icon }} {{ getItemInfo(item.id)?.name }} - {{ item.amount }}
                 </div>
               </div>
               <div class="mt-3 text-white">
-                <h4>Commande du {{ new Date(getHystoryInfo(note.data).payDate).toLocaleString().slice(0, 16) }} - {{getHystoryInfo(note.data).weight}} Kg</h4>
+                <h4>Commande du {{ new Date(getHystoryInfo(note.data)?.payDate).toLocaleString().slice(0, 16) }} - {{getHystoryInfo(note.data)?.weight}} Kg</h4>
               </div>
             </template>
             <div class="py-3" style="border-left: 2px #FFFFFF33 solid;" v-else-if="note.reason == 'vehicle'">
@@ -118,15 +118,19 @@ export default {
       return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(value).replace('€', '$').replace(",00", "")
     },
     getProfileInfo(id){
+      if (!id) return null
       return this.profiles.find(p => p.id == id)
     },
     getCompagnyInfo(history){
+      if (!history) return null
       return this.companies.find(c => c.id == history.company)
     },
     getHystoryInfo(history){
+      if (!history) return null
       return this.histories.find(h => h.id == history)
     },
     getItemInfo(item){
+      if (!item) return null
       return this.items.find(i => i.id == item)
     },
     refuseNote(note){
