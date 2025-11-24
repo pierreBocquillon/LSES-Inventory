@@ -66,7 +66,6 @@ import { useUserStore } from '@/store/user.js'
 import Swal from 'sweetalert2/dist/sweetalert2.js'
 
 import navItems from '@/config/navItems.js'
-import roles from '@/config/roles.js'
 
 import Profile from '@/classes/Profile.js'
 import Company from '@/classes/Company.js'
@@ -83,7 +82,6 @@ export default {
       auth : getAuth(),
       userStore: useUserStore(),
       navItems,
-      roles,
       unsub: [],
       waitingUsers: [],
       companies: [],
@@ -150,25 +148,33 @@ export default {
       let currentGroup = []
       for(let group of this.navItems) {
         for(let item of group) {
-          let itemRoute = this.$router.resolve({ path: item.link })
-          if(itemRoute && itemRoute.meta && itemRoute.meta.roles){
-            item.roles = itemRoute.meta.roles
-          }else{
-            item.roles = this.roles.map(r => r.role)
+          let tmp_item = JSON.parse(JSON.stringify(item))
+          tmp_item.permissions = []
+          tmp_item.notif = 0
+
+          let itemRoute = this.$router.resolve({ path: tmp_item.link })
+          if(itemRoute && itemRoute.meta && itemRoute.meta.permissions){
+            tmp_item.permissions = itemRoute.meta.permissions
           }
 
-          if(item.roles.includes(this.userStore.profile.role) && item.link != this.$route.path) {
-            item.notif = 0
-            if(item.link == '/users') {
-              item.notif = this.waitingUsers.length
+          let userPerms = this.userStore.profile?.permissions;
+          let hasAccess = false
+
+          if(tmp_item.permissions.length <= 0) hasAccess = true
+          else if(userPerms && userPerms.some(p => ['dev', 'admin'].includes(p))) hasAccess = true
+          else if(userPerms && tmp_item.permissions.every(p => userPerms.includes(p))) hasAccess = true
+
+          if(hasAccess && tmp_item.link != this.$route.path) {
+            if(tmp_item.link == '/users') {
+              tmp_item.notif = this.waitingUsers.length
             }
-            if(item.link == '/orders') {
-              item.notif = this.orders.length + this.alerts.length
+            if(tmp_item.link == '/orders') {
+              tmp_item.notif = this.orders.length + this.alerts.length
             }
-            if(item.link == '/inventory') {
-              item.notif = this.StoragesOutdated
+            if(tmp_item.link == '/inventory') {
+              tmp_item.notif = this.StoragesOutdated
             }
-            currentGroup.push(item)
+            currentGroup.push(tmp_item)
           }
         }
         if(currentGroup.length > 0) {
@@ -202,7 +208,7 @@ export default {
         if(parseInt(item.wanted) <= 10) threshold = 1
         if(parseInt(item.amount) <= 50) threshold = 5
 
-        if(parseInt(item.wanted) > 0 && parseInt(item.amount) < parseInt(item.wanted) && (!item.isSecure || ['Direction','Admin'].includes(this.userStore.profile.role))) {
+        if(parseInt(item.wanted) > 0 && parseInt(item.amount) < parseInt(item.wanted) && (!item.isSecure || this.userStore.profile.permissions.some(p => ['dev', 'admin', 'security'].includes(p)))) {
           if(parseInt(item.amount) <= parseInt(item.wanted) * 0.25){
             tmp_alert.alertLevel = 2
           }else if(parseInt(item.amount) <= parseInt(item.wanted) * 0.5){

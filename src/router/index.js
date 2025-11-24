@@ -11,7 +11,7 @@ const routes = [
     meta: {
       needAccount: true,
       showNav: true,
-      roles:['User','PoleStock','Direction','Admin']
+      permissions:[]
     }
   },
   {
@@ -21,7 +21,7 @@ const routes = [
     meta: {
       needAccount: true,
       showNav: true,
-      roles:['User','PoleStock','Direction','Admin']
+      permissions:[]
     }
   },
   {
@@ -31,7 +31,7 @@ const routes = [
     meta: {
       needAccount: true,
       showNav: true,
-      roles:['User','PoleStock','Direction','Admin']
+      permissions:[]
     }
   },
   {
@@ -41,7 +41,7 @@ const routes = [
     meta: {
       needAccount: true,
       showNav: true,
-      roles:['User','PoleStock','Direction','Admin']
+      permissions:[]
     }
   },
   {
@@ -51,7 +51,7 @@ const routes = [
     meta: {
       needAccount: true,
       showNav: true,
-      roles:['PoleStock','Direction','Admin']
+      permissions:['stock']
     }
   },
   {
@@ -61,7 +61,7 @@ const routes = [
     meta: {
       needAccount: true,
       showNav: true,
-      roles:['PoleStock','Direction','Admin']
+      permissions:['stock']
     }
   },
   {
@@ -71,7 +71,7 @@ const routes = [
     meta: {
       needAccount: true,
       showNav: true,
-      roles:['PoleStock','Direction','Admin']
+      permissions:['stock']
     }
   },
   {
@@ -81,7 +81,7 @@ const routes = [
     meta: {
       needAccount: true,
       showNav: true,
-      roles:['Direction','Admin']
+      permissions:['user']
     }
   },
   {
@@ -91,7 +91,7 @@ const routes = [
     meta: {
       needAccount: true,
       showNav: true,
-      roles:['Direction','Admin']
+      permissions:['logs']
     }
   },
   {
@@ -101,6 +101,7 @@ const routes = [
     meta: {
       needAccount: false,
       showNav: false,
+      permissions:[]
     }
   },
   {
@@ -110,6 +111,7 @@ const routes = [
     meta: {
       needAccount: false,
       showNav: false,
+      permissions:[]
     }
   },
   {
@@ -119,6 +121,7 @@ const routes = [
     meta: {
       needAccount: false,
       showNav: false,
+      permissions:[]
     }
   },
 ]

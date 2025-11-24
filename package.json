@@ -6,8 +6,7 @@
   "scripts": {
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
-    "deploy": "vue-cli-service build && firebase deploy",
-    "deploy-hosting": "vue-cli-service build && firebase deploy --only hosting",
+    "deploy": "vue-cli-service build && firebase deploy --only hosting",
     "deploy-functions": "vue-cli-service build && firebase deploy --only functions"
   },
   "dependencies": {

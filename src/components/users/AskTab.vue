@@ -21,8 +21,6 @@ import Swal from 'sweetalert2/dist/sweetalert2.js'
 
 import { useUserStore } from '@/store/user.js'
 
-import roles from '@/config/roles.js'
-
 import Profile from '@/classes/Profile.js'
 
 import logger from '@/functions/logger.js'
@@ -36,7 +34,6 @@ export default {
         { title: 'Nom', key: 'name', sortable: true, align: 'start' },
         { title: '', key: 'actions', sortable: false, align: 'end' },
       ],
-      roles,
       users: [],
     }
   },
@@ -82,6 +79,7 @@ export default {
           item.activated = false
           item.rejected = true
           item.role = 'User'
+          item.permissions = []
           await item.save()
           logger.log(this.userStore.profile.id, 'UTILISATEURS', `Rejet de la demande de l'utilisateur ${item.name}`)
           Swal.fire({

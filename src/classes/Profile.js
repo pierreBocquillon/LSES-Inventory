@@ -5,21 +5,22 @@ let collectionName = "profiles"
 
 function docToInstance(document) {
   let data = document.data()
-  return data ? new Profile(document.id, data.name, data.email, data.role, data.activated, data.rejected) : null
+  return data ? new Profile(document.id, data.name, data.email, data.role, data.permissions, data.activated, data.rejected) : null
 }
 
 class Profile {
-  constructor(id, name, email, role, activated, rejected) {
+  constructor(id, name, email, role, permissions, activated, rejected) {
     this.id = id
     this.name = name
     this.email = email
     this.role = role
+    this.permissions = permissions
     this.activated = activated
     this.rejected = rejected
   }
 
   static initOne(uid, name, email) {
-    const newProfile = new Profile(uid, name, email, "User", false, false)
+    const newProfile = new Profile(uid, name, email, "User", [], false, false)
     return newProfile
   }
 
@@ -105,6 +106,7 @@ class Profile {
       name: this.name,
       email: this.email,
       role: this.role,
+      permissions: this.permissions,
       activated: this.activated,
       rejected: this.rejected
     }

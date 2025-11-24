@@ -1,14 +1,23 @@
 <template>
   <div class="mt-5 d-flex flex-column align-center justify-center h-100">
+    
     <v-data-table :headers="headers" :items="users" items-per-page="-1" no-data-text="Aucun utilisateur">
       <template v-slot:bottom />
 
-      <template v-slot:item.role="{ item }">
-        <span>{{ roles.find(role => role.role === item.role)?.name || 'Inconnu' }}</span>
+      <template v-slot:item.permissions="{ item }">
+        <span v-if="item.permissions && item.permissions.length > 0">
+          <v-tooltip location="top" content-class="bg-background" text="string" v-for="perm in item.permissions">
+            <template v-slot:activator="{ props }">
+              <span v-bind="props" class="mx-1 text-h5">{{ allPermissions.find(p => p.value === perm)?.icon }}</span>
+            </template>
+            <h4>{{allPermissions.find(p => p.value === perm)?.name}}</h4>
+          </v-tooltip>
+        </span>
+        <span v-else>Aucune</span>
       </template>
       
       <template v-slot:item.actions="{ item }">
-        <v-btn icon color="primary" variant="text" @click="resetPassword(item)" v-if="['Admin'].includes(this.userStore.profile.role)">
+        <v-btn icon color="primary" variant="text" @click="resetPassword(item)" v-if="this.userStore.profile.permissions.some(p => ['dev', 'admin', 'user'].includes(p))">
           <v-icon>mdi-lock-reset</v-icon>
         </v-btn>
         <v-btn icon color="accent" variant="text" @click="editItem(item)">
@@ -23,7 +32,13 @@
         <v-card-title class="headline">Modifier un utilisateur</v-card-title>
         <v-card-text>
           <h3 class="mb-3">{{ currentUser.name }}</h3>
-          <v-select label="Rôle" v-model="currentUser.role" :items="roles" item-title="name" item-value="role"></v-select>
+          <v-select label="Permissions" v-model="currentUser.permissions" :items="myPermissions" item-title="fullname" item-value="value" multiple>
+            <template v-slot:selection="{ item, index }">
+              <div>
+                <h3 class="font-weight-regular">{{ item.raw.icon }}</h3>
+              </div>
+            </template>
+          </v-select>
           <v-btn color="error" variant="outlined" class="w-100" @click="deleteItem(currentUser)">Supprimer cet utilisateur</v-btn>
         </v-card-text>
         <v-card-actions>
@@ -42,7 +57,7 @@ import { getFunctions, httpsCallable } from 'firebase/functions'
 
 import { useUserStore } from '@/store/user.js'
 
-import roles from '@/config/roles.js'
+import permissions from '@/config/permissions.js'
 
 import Profile from '@/classes/Profile.js'
 
@@ -56,10 +71,10 @@ export default {
       userStore: useUserStore(),
       headers: [
         { title: 'Nom', key: 'name', sortable: true, align: 'start' },
-        { title: 'Role', key: 'role', sortable: true, align: 'start' },
+        { title: 'Permissions', key: 'permissions', sortable: true, align: 'start' },
         { title: '', key: 'actions', sortable: false, align: 'end' },
       ],
-      roles,
+      allPermissions: permissions,
       users: [],
 
       dialog: false,
@@ -70,6 +85,17 @@ export default {
     this.unsub.push(Profile.listenByActivated(true, users => {
       this.users = users
     }))
+  },
+  computed: {
+    myPermissions() {
+      let permissions = []
+      for(let perm of this.allPermissions) {
+        if(this.userStore.profile.permissions.includes(perm.value) || this.userStore.profile.permissions.includes('dev') || this.userStore.profile.permissions.includes('admin')) {
+          permissions.push(perm)
+        }
+      }
+      return permissions
+    },
   },
   methods: {
     async resetPassword(user) {
@@ -133,10 +159,29 @@ export default {
         return
       }
 
+      this.currentUser.permissions.sort((a, b) => {
+        const permAIndex = this.allPermissions.findIndex(p => p.value === a)
+        const permBIndex = this.allPermissions.findIndex(p => p.value === b)
+        return permAIndex - permBIndex
+      })
+
       await this.currentUser.save()
       this.closeUserDialog()
 
-      logger.log(this.userStore.profile.id, 'UTILISATEURS', `Modification du role de l'utilisateur ${this.currentUser.name} (${this.currentUser.role})`)
+      let permString = ''
+
+      if(this.currentUser.permissions.length > 0){
+        for(let perm of this.currentUser.permissions){
+          let permObj = this.allPermissions.find(p => p.value === perm)
+          if(permObj){
+            permString += permObj.icon + ' '
+          }
+        }
+      }else{
+        permString = 'Aucune'
+      }
+
+      logger.log(this.userStore.profile.id, 'UTILISATEURS', `Modification des permissions de l'utilisateur ${this.currentUser.name} (${permString})`)
 
       Swal.fire({
         icon: 'success',
@@ -162,6 +207,7 @@ export default {
           item.activated = false
           item.rejected = true
           item.role = 'User'
+          item.permissions = []
           await item.save()
 
           Swal.fire({

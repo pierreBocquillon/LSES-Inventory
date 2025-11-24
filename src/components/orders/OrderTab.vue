@@ -31,7 +31,7 @@
           <table class="w-100">
             <tbody>
               <template v-for="itemData of editOrder.items" :key="itemData.id">
-                <tr v-if="!getItemInfo(itemData.id).isSecure || ['Direction','Admin'].includes(this.userStore.profile.role)">
+                <tr v-if="!getItemInfo(itemData.id).isSecure || this.userStore.profile.permissions.some(p => ['dev', 'admin', 'security'].includes(p))">
                   <td>{{ getItemInfo(itemData.id).icon }} {{ getItemInfo(itemData.id).name }} ({{ Math.max(getItemInfo(itemData.id).wanted - getItemInfo(itemData.id).amount, 0) }})</td>
                   <td style="width: 100px;">
                     <v-text-field hide-details variant="plain" type="number" density="compact" v-model="itemData.amount"></v-text-field>

@@ -25,7 +25,7 @@
                     <h1 class="mx-3">|</h1>
                     <h2>( {{ Math.round(history.weight*100)/100 }} kg - {{ formatMoney(history.price) }} )</h2>
                     <v-spacer></v-spacer>
-                    <v-btn color="error" variant="text" @click.prevent.stop="deleteHistory(history)" v-if="['Direction','Admin'].includes(this.userStore.profile.role)"><v-icon>mdi-delete-outline</v-icon> &nbsp; Supprimer</v-btn>
+                    <v-btn color="error" variant="text" @click.prevent.stop="deleteHistory(history)" v-if="this.userStore.profile.permissions.some(p => ['dev', 'admin', 'cash'].includes(p))"><v-icon>mdi-delete-outline</v-icon> &nbsp; Supprimer</v-btn>
                   </div>
                 </v-expansion-panel-title>
                 <v-expansion-panel-text>

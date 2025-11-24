@@ -9,8 +9,8 @@
         </v-card>
       </v-dialog>
     
-      <Header v-if="ready && $route.meta.showNav && canAccess && hasGoodRole"></Header>
-      <v-main v-if="ready && canAccess && hasGoodRole">
+      <Header v-if="ready && $route.meta.showNav && canAccess && hasGoodPermissions"></Header>
+      <v-main v-if="ready && canAccess && hasGoodPermissions">
         <router-view class="w-100"/>
       </v-main>
 
@@ -31,7 +31,7 @@
         </div>
       </v-main>
 
-      <v-main v-else-if="ready && !hasGoodRole">
+      <v-main v-else-if="ready && !hasGoodPermissions">
         <div class="d-flex flex-column justify-center align-center" style="height: 100vh;">
           <v-card class="pa-4 rounded-xl" style="max-width: 600px; width: 100%; overflow: auto;">
             <v-card-title class="text-center">
@@ -121,16 +121,16 @@ export default {
     showLoader() {
       return !this.ready
     },
-    hasGoodRole(){
-      if(this.$route.meta.roles && this.$route.meta.roles.length > 0){
-        if(this.userStore.profile && this.$route.meta.roles.includes(this.userStore.profile.role)){
-          return true
-        }else{
-          return false
-        }
-      }else{
-        return true
-      }
+    hasGoodPermissions(){
+      const requiredPerms = this.$route.meta.permissions
+      if (!requiredPerms?.length) return true
+
+      const userPerms = this.userStore.profile?.permissions
+      if (!userPerms) return false
+
+      if (userPerms.some(p => ['dev', 'admin'].includes(p))) return true
+      
+      return requiredPerms.every(p => userPerms.includes(p))
     },
     canAccess() {
       if(!this.$route.meta.needAccount){

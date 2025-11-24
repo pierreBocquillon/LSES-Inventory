@@ -11,7 +11,7 @@
           Préparation
           <v-badge color="primary" v-if="alerts.length > 0" :content="alerts.length" offset-x="-5" floating></v-badge>
         </v-tab>
-        <v-tab value="history" v-if="['PoleStock','Direction','Admin'].includes(this.userStore.profile.role)">
+        <v-tab value="history" v-if="this.userStore.profile.permissions.some(p => ['dev', 'admin', 'stock'].includes(p))">
           Historique
         </v-tab>
       </v-tabs>
@@ -22,11 +22,11 @@
           <OrderTab :items="items" :storages="storages" :companies="companies" />
         </v-tabs-window-item>
 
-        <v-tabs-window-item value="alert" v-if="['User','PoleStock','Direction','Admin'].includes(this.userStore.profile.role)">
+        <v-tabs-window-item value="alert">
           <AlertTab :items="items" :storages="storages" :companies="companies" />
         </v-tabs-window-item>
 
-        <v-tabs-window-item value="history" v-if="['Direction','Admin'].includes(this.userStore.profile.role)">
+        <v-tabs-window-item value="history" v-if="this.userStore.profile.permissions.some(p => ['dev', 'admin', 'cash'].includes(p))">
           <HistoryTab :items="items" :storages="storages" :companies="companies" />
         </v-tabs-window-item>
 
@@ -111,7 +111,7 @@ export default {
         if(parseInt(item.wanted) <= 10) threshold = 1
         if(parseInt(item.amount) <= 50) threshold = 5
 
-        if(parseInt(item.wanted) > 0 && parseInt(item.amount) < parseInt(item.wanted) && (!item.isSecure || ['Direction','Admin'].includes(this.userStore.profile.role))) {
+        if(parseInt(item.wanted) > 0 && parseInt(item.amount) < parseInt(item.wanted) && (!item.isSecure || this.userStore.profile.permissions.some(p => ['dev', 'admin', 'security'].includes(p)))) {
           if(parseInt(item.amount) <= parseInt(item.wanted) * 0.25){
             tmp_alert.alertLevel = 2
           }else if(parseInt(item.amount) <= parseInt(item.wanted) * 0.5){

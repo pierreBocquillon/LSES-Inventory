@@ -6,10 +6,10 @@
         <v-tab value="my">
           Mes notes de frais
         </v-tab>
-        <v-tab value="waiting" v-if="['Admin'].includes(this.userStore.profile.role)">
+        <v-tab value="waiting" v-if="this.userStore.profile.permissions.some(p => ['dev', 'admin', 'cash'].includes(p))">
           En attente
         </v-tab>
-        <v-tab value="history" v-if="['Admin'].includes(this.userStore.profile.role)">
+        <v-tab value="history" v-if="this.userStore.profile.permissions.some(p => ['dev', 'admin', 'cash'].includes(p))">
           Historique
         </v-tab>
       </v-tabs>
@@ -20,11 +20,11 @@
           <MyTab />
         </v-tabs-window-item>
 
-        <v-tabs-window-item value="waiting" v-if="['Admin'].includes(this.userStore.profile.role)">
+        <v-tabs-window-item value="waiting" v-if="this.userStore.profile.permissions.some(p => ['dev', 'admin', 'cash'].includes(p))">
           <WaitingTab />
         </v-tabs-window-item>
 
-        <v-tabs-window-item value="history" v-if="['Admin'].includes(this.userStore.profile.role)">
+        <v-tabs-window-item value="history" v-if="this.userStore.profile.permissions.some(p => ['dev', 'admin', 'cash'].includes(p))">
           <HistoryTab />
         </v-tabs-window-item>
 

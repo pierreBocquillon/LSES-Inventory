@@ -41,7 +41,7 @@
           <table class="w-100">
             <tbody>
               <template v-for="item in orderData.items" :key="item.id">
-                <tr v-if="!item.item.isSecure || ['Direction','Admin'].includes(this.userStore.profile.role)">
+                <tr v-if="!item.item.isSecure || this.userStore.profile.permissions.some(p => ['dev', 'admin', 'security'].includes(p))">
                   <td>{{ item.info.icon }} {{ item.info.name }} ({{ Math.max(item.item.wanted - item.item.amount, 0) }})</td>
                   <td style="width: 100px;">
                     <v-text-field hide-details variant="plain" type="number" density="compact" v-model="item.orderNeeded"></v-text-field>
@@ -138,7 +138,7 @@ export default {
         if(parseInt(item.wanted) <= 10) threshold = 1
         if(parseInt(item.amount) <= 50) threshold = 5
 
-        if(parseInt(item.wanted) > 0 && parseInt(item.amount) < parseInt(item.wanted) && (!item.isSecure || ['Direction','Admin'].includes(this.userStore.profile.role))) {
+        if(parseInt(item.wanted) > 0 && parseInt(item.amount) < parseInt(item.wanted) && (!item.isSecure || this.userStore.profile.permissions.some(p => ['dev', 'admin', 'security'].includes(p)))) {
           if(parseInt(item.amount) <= parseInt(item.wanted) * 0.25){
             tmp_alert.alertLevel = 2
           }else if(parseInt(item.amount) <= parseInt(item.wanted) * 0.5){

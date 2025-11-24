@@ -129,7 +129,7 @@
               <v-text-field type="number" variant="solo-filled" v-model="item.amount" class="ma-0 pa-0" hide-details style="max-width: 100px;"/>
             </template>
             <template v-slot:item.locked="{ item }" v-if="currentItem.instanceByDate">
-              <template v-if="['PoleStock','Direction','Admin'].includes(this.userStore.profile.role)">
+              <template v-if="this.userStore.profile.permissions.some(p => ['dev', 'admin', 'stock'].includes(p))">
                 <v-icon class="cursor-pointer" color="primary" @click="item.locked = false" v-if="item.locked">mdi-lock</v-icon>
                 <v-icon class="cursor-pointer" color="secondary" @click="item.locked = true" v-else>mdi-lock-open-variant</v-icon>
               </template>
@@ -139,17 +139,17 @@
               </template>
             </template>
             <template v-slot:item.actions="{ item }" v-else>
-              <template v-if="['PoleStock','Direction','Admin'].includes(this.userStore.profile.role)">
+              <template v-if="this.userStore.profile.permissions.some(p => ['dev', 'admin', 'stock'].includes(p))">
                 <v-icon class="cursor-pointer" color="error" @click="currentInstance.content = currentInstance.content.filter(i => i.name != item.name)" >mdi-delete</v-icon>
               </template>
             </template>
           </v-data-table>
           
-          <div class="d-flex justify-center align-center mt-5" v-if="!currentItem.instanceByDate && ['PoleStock','Direction','Admin'].includes(this.userStore.profile.role)">
+          <div class="d-flex justify-center align-center mt-5" v-if="!currentItem.instanceByDate && this.userStore.profile.permissions.some(p => ['dev', 'admin', 'stock'].includes(p))">
             <v-btn variant="tonal" color="success" @click="openNameDialog">Ajouter une instance</v-btn>
           </div>
 
-          <div class="d-flex justify-center mt-5" v-if="currentItem.instanceByDate && ['PoleStock','Direction','Admin'].includes(this.userStore.profile.role)">
+          <div class="d-flex justify-center mt-5" v-if="currentItem.instanceByDate && this.userStore.profile.permissions.some(p => ['dev', 'admin', 'stock'].includes(p))">
             <v-btn variant="tonal" color="success" @click="openDateDialog">Ajouter une date spécifique</v-btn>
           </div>  
 
