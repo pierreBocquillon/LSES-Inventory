@@ -148,7 +148,7 @@ export default {
         count += 1
       }
       this.vehicles.forEach(vehicle => {
-        if (vehicle.underGuard && parseInt(vehicle.recupDate) < new Date().getTime() ) {
+        if ((vehicle.underGuard && parseInt(vehicle.recupDate) < new Date().getTime()) || vehicle.needRepair ) {
           count += 1
         }
         if (!vehicle.underGuard && !vehicle.hideAlert && (parseInt(vehicle.lastRepairDate) < new Date().getTime() - (24 * 60 * 60 * 1000))) {

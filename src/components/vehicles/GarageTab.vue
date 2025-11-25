@@ -7,15 +7,33 @@
     <v-data-table :headers="headers" :items="vehicles" items-per-page="-1" no-data-text="Aucun véhicule">
       <template v-slot:bottom />
 
-      <template v-slot:item.name="{ item }">
-        <h3 class="font-weight-regular">
-          <v-tooltip location="top" content-class="bg-background" text="string" v-if="!item.hideAlert && new Date().getTime() - parseInt(item.lastRepairDate) > (24 * 60 * 60 * 1000)">
+      <template v-slot:item.status="{ item }" >
+        <h3 :class="'font-weight-regular text-' + (item.underGuard ? 'primary' : (item.needRepair ? 'error' : 'white'))"style="width: 30px;">
+          <v-tooltip location="top" content-class="bg-background" text="string" v-if="item.needRepair">
+            <template v-slot:activator="{ props }">
+              <v-icon v-bind="props" color="error">mdi-hazard-lights</v-icon>
+            </template>
+            <h4>Attention ce vehicule doit être réparé avant utilisation</h4>
+          </v-tooltip>
+
+          <v-tooltip location="top" content-class="bg-background" text="string" v-else-if="!item.hideAlert && new Date().getTime() - parseInt(item.lastRepairDate) > (24 * 60 * 60 * 1000)">
             <template v-slot:activator="{ props }">
               <v-icon v-bind="props" color="error">mdi-alert-octagon-outline</v-icon>
             </template>
             <h4>Attention ce vehicule n'as pas etait réparé depuis le {{ new Date(parseInt(item.lastRepairDate)).toLocaleString().slice(0, 16) }}</h4>
           </v-tooltip>
+        </h3>
+      </template>
+
+      <template v-slot:item.name="{ item }">
+        <h3 :class="'font-weight-regular text-' + (item.underGuard ? 'primary' : (item.needRepair ? 'error' : 'white'))">
           {{ item.icon }} {{ item.name }}
+        </h3>
+      </template>
+
+      <template v-slot:item.imat="{ item }">
+        <h3 :class="'font-weight-regular text-' + (item.underGuard ? 'primary' : (item.needRepair ? 'error' : 'white'))">
+          {{ item.imat }}
         </h3>
       </template>
 
@@ -26,17 +44,34 @@
       </template>
 
       <template v-slot:item.recupDate="{ item }">
-        <h3 class="font-weight-regular">
-          <span class="text-error" v-if="item.underGuard && parseInt(item.recupDate) > new Date().getTime()">
+        <h2 class="font-weight-regular">
+          <span class="text-primary" v-if="item.underGuard && parseInt(item.recupDate) > new Date().getTime()">
             (A recupérer<span> le {{ new Date(parseInt(item.recupDate)).toLocaleDateString() }} à {{ new Date(parseInt(item.recupDate)).toLocaleTimeString() }}</span>)
           </span>
           <span class="text-success" v-else-if="item.underGuard">
             (A recupérer dès que possible)
           </span>
-        </h3>
+          <span class="text-error" v-else-if="item.needRepair">
+            (A réparer avant utilisation)
+          </span>
+        </h2>
       </template>
 
       <template v-slot:item.actions="{ item }">
+        
+        <v-tooltip location="top" content-class="bg-background" text="string" v-if="!item.underGuard">
+          <template v-slot:activator="{ props }">
+          <v-btn v-bind="props" color="cyan" variant="text" icon @click="repairNow(item)"><v-icon>mdi-tools</v-icon></v-btn>
+          </template>
+          <h4>Viens d'etre réparé</h4>
+        </v-tooltip>
+        
+        <v-tooltip location="top" content-class="bg-background" text="string" v-if="!item.underGuard && !item.needRepair">
+          <template v-slot:activator="{ props }">
+          <v-btn v-bind="props" color="error" variant="text" icon @click="needRepair(item)"><v-icon>mdi-hazard-lights</v-icon></v-btn>
+          </template>
+          <h4>Besoin de réparation</h4>
+        </v-tooltip>
         
         <v-tooltip location="top" content-class="bg-background" text="string" v-if="!item.underGuard">
           <template v-slot:activator="{ props }">
@@ -141,6 +176,7 @@ export default {
       unsub: [],
       userStore: useUserStore(),
       headers: [
+        { title: '', key: 'status', align: 'end', sortable: false  },
         { title: 'Nom', key: 'name', align: 'start' },
         { title: 'Immatriculation', key: 'imat', align: 'start' },
         { title: 'Localisation', key: 'where', align: 'start' },
@@ -179,6 +215,9 @@ export default {
     this.unsub.push(Vehicle.listenAll(vehicles => {
       this.vehicles = vehicles
       this.vehicles.sort((a, b) => {
+        if (a.needRepair && !b.needRepair) return -1
+        if (!a.needRepair && b.needRepair) return 1
+
         if (a.underGuard && !b.underGuard) return -1
         if (!a.underGuard && b.underGuard) return 1
         
@@ -245,6 +284,41 @@ export default {
     closeRepaDialog(){
       this.repaDialog = false
     },
+    repairNow(vehicle) {
+      Swal.fire({
+        title: 'Confirmer',
+        text: `Confirmer que le véhicule ${vehicle.icon}${vehicle.name} (${vehicle.imat}) vient d'être réparé ?`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Oui',
+        cancelButtonText: 'Annuler',
+      }).then(async (result) => {
+        if (result.isConfirmed) {
+          logger.log(this.userStore.profile.id, 'VEHICULES', `${vehicle.icon}${vehicle.name} (${vehicle.imat}) vient d'etre réparé`)
+
+          vehicle.needRepair = false
+          vehicle.lastRepairDate = new Date().getTime()
+          vehicle.save()
+        }
+      })
+    },
+    needRepair(vehicle) {
+      Swal.fire({
+        title: 'Confirmer',
+        text: `Confirmer que le véhicule ${vehicle.icon}${vehicle.name} (${vehicle.imat}) a besoin de réparation ?`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Oui',
+        cancelButtonText: 'Annuler',
+      }).then(async (result) => {
+        if (result.isConfirmed) {
+          logger.log(this.userStore.profile.id, 'VEHICULES', `${vehicle.icon}${vehicle.name} (${vehicle.imat}) a besoin de réparation`)
+          
+          vehicle.needRepair = true
+          vehicle.save()
+        }
+      })
+    },
     async repaFlotte(){
       logger.log(this.userStore.profile.id, 'VEHICULES', `Réparation de la flotte de véhicules (${Object.values(this.selectedVehicles).filter(v => v).length}/${this.vehicles.length} véhicules réparés)`)
       
@@ -255,6 +329,7 @@ export default {
         const vehicle = this.vehicles.find(v => v.id === vehicleId)
         if (vehicle) {
           vehicle.lastRepairDate = new Date().getTime()
+          vehicle.needRepair = false
           await vehicle.save()
         }
       }

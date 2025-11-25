@@ -91,10 +91,7 @@ export default {
     }))
     this.unsub.push(Vehicle.listenAll(vehicles => {
       this.vehicles = vehicles
-      this.vehicles.sort((a, b) => {
-        if (a.underGuard && !b.underGuard) return -1
-        if (!a.underGuard && b.underGuard) return 1
-        
+      this.vehicles.sort((a, b) => {        
         if(a.hideAlert && !b.hideAlert) return 1
         if(!a.hideAlert && b.hideAlert) return -1
 
