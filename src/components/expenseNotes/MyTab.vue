@@ -25,7 +25,7 @@
             </template>
             <div class="py-3" style="border-left: 2px #FFFFFF33 solid;" v-else-if="note.reason == 'vehicle'">
               <div class="pl-3 d-flex flex-row align-center justify-start mb-2 text-white">
-                🚗 {{note.data}}
+                {{getVehichleInfo(getVehichleHistoryInfo(note.data)).icon + ' ' + getVehichleInfo(getVehichleHistoryInfo(note.data)).name}}
               </div>
             </div>
             <div class="py-3" style="border-left: 2px #FFFFFF33 solid;" v-else>
@@ -53,25 +53,37 @@
         <v-card-text>
           <v-select :items="reasonlist" v-model="selectedReason" label="Motif de la note de frais" item-title="title" item-value="value"></v-select>
 
-          <div v-if="selectedReason == 'buy'">
-            <v-select :items="AvailableHistories" v-model="expenseNoteData.buy" label="Commande" item-value="id">
+            <div v-if="selectedReason == 'buy'">
+              <v-select :items="AvailableHistories" v-model="expenseNoteData.buy" label="Commande" item-value="id">
+                <template v-slot:selection="{ item, index }">
+                  <div>
+                    <h3 class="font-weight-regular">{{ new Date(item.raw.payDate).toLocaleString().slice(0, 16) }} - {{ getCompagnyInfo(item.raw).icon + ' ' + getCompagnyInfo(item.raw).name }} - {{ formatMoney(item.raw.price) }}</h3>
+                  </div>
+                </template>
+                <template v-slot:item="{ props: itemProps, item}">
+                  <v-list-item v-bind="itemProps" title>
+                    <div>
+                      <h3 class="font-weight-regular">{{ new Date(item.raw.payDate).toLocaleString().slice(0, 16) }} - {{ getCompagnyInfo(item.raw).icon + ' ' + getCompagnyInfo(item.raw).name }} - {{ formatMoney(item.raw.price) }}</h3>
+                    </div>
+                  </v-list-item>
+                </template>
+              </v-select>
+          </div>
+          <div v-if="selectedReason == 'vehicle'">
+            <v-select :items="AvailableVehicleHistories" v-model="expenseNoteData.vehicle" label="Récuperation(s)" item-value="id">
               <template v-slot:selection="{ item, index }">
                 <div>
-                  <h3 class="font-weight-regular">{{ new Date(item.raw.payDate).toLocaleString().slice(0, 16) }} - {{ getCompagnyInfo(item.raw).icon + ' ' + getCompagnyInfo(item.raw).name }} - {{ formatMoney(item.raw.price) }}</h3>
+                  <h3 class="font-weight-regular" v-if="item.raw">{{ new Date(item.raw.date).toLocaleString().slice(0, 16) }} - {{ getVehichleInfo(item.raw).icon + ' ' + getVehichleInfo(item.raw).name }} - {{ formatMoney(item.raw.price) }}</h3>
                 </div>
               </template>
               <template v-slot:item="{ props: itemProps, item}">
                 <v-list-item v-bind="itemProps" title>
                   <div>
-                    <h3 class="font-weight-regular">{{ new Date(item.raw.payDate).toLocaleString().slice(0, 16) }} - {{ getCompagnyInfo(item.raw).icon + ' ' + getCompagnyInfo(item.raw).name }} - {{ formatMoney(item.raw.price) }}</h3>
+                    <h3 class="font-weight-regular">{{ new Date(item.raw.date).toLocaleString().slice(0, 16) }} - {{ getVehichleInfo(item.raw).icon + ' ' + getVehichleInfo(item.raw).name }} - {{ formatMoney(item.raw.price) }}</h3>
                   </div>
                 </v-list-item>
               </template>
             </v-select>
-          </div>
-          <div v-if="selectedReason == 'vehicle'">
-            <v-text-field label="Nom du vehicule" v-model="expenseNoteData.vehicle"></v-text-field>
-            <v-text-field label="Montant" v-model="expenseNotePrice" type="number" suffix=" $"></v-text-field>
           </div>
           <div v-if="selectedReason == 'other'">
             <v-text-field label="Raison de la note de frais" v-model="expenseNoteData.other"></v-text-field>
@@ -94,6 +106,8 @@ import Swal from 'sweetalert2/dist/sweetalert2.js'
 import logger from '../../functions/logger'
 
 import History from '@/classes/History.js'
+import VehicleHistory from '@/classes/VehicleHistory.js'
+import Vehicle from '@/classes/Vehicle.js'
 import Item from '@/classes/Item.js'
 import Company from '@/classes/Company.js'
 import ExpenseNote from '@/classes/ExpenseNote.js'
@@ -110,6 +124,8 @@ export default {
       expenseNotes: [],
       items: [],
       companies: [],
+      vehicles: [],
+      vehicleHistories: [],
 
       newExpenseNoteDialog: false,  
       reasonlist: [
@@ -142,6 +158,12 @@ export default {
     this.unsub.push(Item.listenAll(items => {
       this.items = items
     }))
+    this.unsub.push(Vehicle.listenAll(vehicles => {
+      this.vehicles = vehicles
+    }))
+    this.unsub.push(VehicleHistory.listenAll(vehicleHistories => {
+      this.vehicleHistories = vehicleHistories.filter(h => (h.date > new Date().getTime() - 7*24*60*60*1000 && h.price > 0))
+    }))
     this.unsub.push(History.listenAll(histories => {
       this.histories = histories.filter(h => (h.payDate > new Date().getTime() - 7*24*60*60*1000 && h.price > 0))
     }))
@@ -165,6 +187,17 @@ export default {
         }
       })
       return history
+    },
+    AvailableVehicleHistories() {
+      let vehicleHistory = []
+      this.vehicleHistories.forEach(vh => {
+        if (!vh.vehicle || vh.vehicle == 'all') return
+        let vehicle = this.vehicles.find(v => v.id == vh.vehicle)
+        if (vh.message.includes('Fourrière') && vehicle) {
+          vehicleHistory.push(vh)
+        }
+      })
+      return vehicleHistory
     }
   },
   methods: {
@@ -176,6 +209,12 @@ export default {
     },
     getHystoryInfo(history){
       return this.histories.find(h => h.id == history)
+    },
+    getVehichleInfo(history){
+      return this.vehicles.find(v => v.id == history.vehicle)
+    },
+    getVehichleHistoryInfo(history){
+      return this.vehicleHistories.find(h => h.id == history)
     },
     getItemInfo(item){
       return this.items.find(i => i.id == item)
@@ -196,7 +235,10 @@ export default {
       if(this.selectedReason == 'buy') {
         let relatedHistory = this.histories.find(h => h.id == this.expenseNoteData.buy)
         newExpenseNote.price = relatedHistory ? relatedHistory.price : 0
-      } else {
+      } else if(this.selectedReason == 'vehicle') {
+        let relatedHistory = this.vehicleHistories.find(h => h.id == this.expenseNoteData.vehicle)
+        newExpenseNote.price = relatedHistory ? relatedHistory.price : 0
+      }else{
         newExpenseNote.price = this.expenseNotePrice ? parseFloat(this.expenseNotePrice) : 0
       }
       logger.log(this.userStore.profile.id, 'NOTES DE FRAIS', `Création d'une note de frais pour ${this.reasonlist.find(r => r.value === this.selectedReason)?.title} (${this.formatMoney(newExpenseNote.price)})`)

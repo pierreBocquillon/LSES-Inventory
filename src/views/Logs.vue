@@ -32,7 +32,7 @@
         </v-expansion-panel>
     </v-expansion-panels>
 
-      <v-data-table :headers="[{ title: 'Date', key: 'id' }, { title: 'Utilisateur', key: 'user' }, { title: 'Type', key: 'type' }, { title: 'Description', key: 'description' }]" :items="filteredLogs" items-per-page="-1" no-data-text="Aucun log">
+      <v-data-table :headers="[{ title: 'Date', key: 'id' }, { title: 'Utilisateur', key: 'user' }, { title: 'Type', key: 'type' }, { title: 'Description', key: 'description' }, { title: '', key: 'action', sortable: false }]" :items="filteredLogs" items-per-page="-1" no-data-text="Aucun log">
         <template v-slot:bottom />
 
         <template v-slot:item.id="{ item }">
@@ -49,6 +49,12 @@
 
         <template v-slot:item.description="{ item }">
           <span class="font-weight-regular">{{ item.description }}</span>
+        </template>
+
+        <template v-slot:item.action="{ item }">
+          <v-btn color="error" variant="text" icon @click="deleteLog(item)" v-if="userStore.profile.permissions.includes('dev')">
+            <v-icon>mdi-delete</v-icon>
+          </v-btn>
         </template>
 
       </v-data-table>
@@ -91,12 +97,21 @@ export default {
   async mounted() {
     this.profiles = await Profile.getAll()
     this.profiles.sort((a, b) => a.name.localeCompare(b.name))
-    this.logs = await Log.getAll()
-    this.logs.sort((a, b) => parseInt(b.id) - parseInt(a.id))
-    
-    if (this.logs.length > 500) {
-      this.logs = this.logs.slice(0, 500)
-    }
+    this.getLogs()
+  },
+  methods: {
+    async getLogs() {
+      this.logs = await Log.getAll()
+      this.logs.sort((a, b) => parseInt(b.id) - parseInt(a.id))
+      
+      if (this.logs.length > 500) {
+        this.logs = this.logs.slice(0, 500)
+      }
+    },
+    async deleteLog(log) {
+      await log.delete()
+      this.getLogs()
+    },
   },
   
 }

@@ -34,6 +34,7 @@
           <v-text-field v-model="currentCompany.name" label="Nom" />
           <v-switch color="primary" hide-details label="Peut detruire le sang" v-model="currentCompany.canDestroy"></v-switch>
           <v-switch color="primary" hide-details label="Notes de frais" v-model="currentCompany.canExpenseNote"></v-switch>
+          <v-switch color="primary" hide-details label="Garage auto" v-model="currentCompany.isGarage"></v-switch>
           <div class="d-flex justify-center mt-5">
             <v-btn variant="tonal" color="primary" @click="save">Valider</v-btn>
             <v-btn variant="tonal" color="error" class="ml-3" @click="closeCompanyDialog">Annuler</v-btn>

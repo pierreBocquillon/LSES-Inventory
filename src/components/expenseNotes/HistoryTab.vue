@@ -39,7 +39,7 @@
                   </template>
                   <div class="py-3" style="border-left: 2px #FFFFFF33 solid;" v-else-if="note.reason == 'vehicle'">
                     <div class="pl-3 d-flex flex-row align-center justify-start mb-2 text-white">
-                      🚗 {{note.data}}
+                      {{getVehichleInfo(getVehichleHistoryInfo(note.data)).icon + ' ' + getVehichleInfo(getVehichleHistoryInfo(note.data)).name}}
                     </div>
                   </div>
                   <div class="py-3" style="border-left: 2px #FFFFFF33 solid;" v-else>
@@ -72,6 +72,8 @@ import History from '@/classes/History.js'
 import Item from '@/classes/Item.js'
 import Company from '@/classes/Company.js'
 import ExpenseNote from '@/classes/ExpenseNote.js'
+import VehicleHistory from '@/classes/VehicleHistory.js'
+import Vehicle from '@/classes/Vehicle.js'
 
 export default {
   props: [],
@@ -88,6 +90,8 @@ export default {
       expenseNotes: [],
       items: [],
       companies: [],
+      vehicles: [],
+      vehicleHistories: [],
 
       newExpenseNoteDialog: false,  
       reasonlist: [
@@ -124,8 +128,14 @@ export default {
     this.unsub.push(Item.listenAll(items => {
       this.items = items
     }))
+    this.unsub.push(Vehicle.listenAll(vehicles => {
+      this.vehicles = vehicles
+    }))
+    this.unsub.push(VehicleHistory.listenAll(vehicleHistories => {
+      this.vehicleHistories = vehicleHistories
+    }))
     this.unsub.push(History.listenAll(histories => {
-      this.histories = histories.filter(h => (h.payDate > new Date().getTime() - 7*24*60*60*1000 && h.price > 0))
+      this.histories = histories
     }))
     this.unsub.push(ExpenseNote.listenAll(expenseNotes => {
       this.expenseNotes = expenseNotes.filter(en => (en.isPaid || en.isRefused))
@@ -149,7 +159,9 @@ export default {
           }
         }
         grouped[monthYear].expenseNotes.push(note)
-        grouped[monthYear].totalPaid += parseFloat(note.price)
+        if (!note.isRefused){
+          grouped[monthYear].totalPaid += parseFloat(note.price)
+        }
       })
       return grouped
     }
@@ -163,6 +175,12 @@ export default {
     },
     getCompagnyInfo(history){
       return this.companies.find(c => c.id == history.company)
+    },
+    getVehichleInfo(history){
+      return this.vehicles.find(v => v.id == history.vehicle)
+    },
+    getVehichleHistoryInfo(history){
+      return this.vehicleHistories.find(h => h.id == history)
     },
     getHystoryInfo(history){
       return this.histories.find(h => h.id == history)

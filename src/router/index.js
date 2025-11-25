@@ -45,6 +45,16 @@ const routes = [
     }
   },
   {
+    name: 'Garage',
+    path: '/garage',
+    component:  () => import("@/views/Garage.vue"),
+    meta: {
+      needAccount: true,
+      showNav: true,
+      permissions:['dev']
+    }
+  },
+  {
     name: 'Entreprises',
     path: '/companies',
     component:  () => import("@/views/Companies.vue"),
@@ -72,6 +82,16 @@ const routes = [
       needAccount: true,
       showNav: true,
       permissions:['stock']
+    }
+  },
+  {
+    name: 'Vehicules',
+    path: '/vehicles',
+    component:  () => import("@/views/Vehicles.vue"),
+    meta: {
+      needAccount: true,
+      showNav: true,
+      permissions:['dev']
     }
   },
   {

@@ -1,7 +1,7 @@
 <template>
   <div>
     <template v-for="companyAlert in alerts" :key="companyAlert.company.id">
-      <v-card class="mb-5 pa-3 rounded-xl" :color="(companyAlert.maxAlertLevel >= 2 ? 'error' : companyAlert.maxAlertLevel >= 1 ? 'primary' : 'success')" variant="tonal">
+      <v-card class="mb-5 pa-3 rounded-xl" v-if="!companyAlert.company.isGarage" :color="(companyAlert.maxAlertLevel >= 2 ? 'error' : companyAlert.maxAlertLevel >= 1 ? 'primary' : 'success')" variant="tonal">
         <div class="d-flex flex-row align-center justify-start flex-wrap">
           <h2>{{ companyAlert.company.icon }} {{ companyAlert.company.name }} :</h2>
           <h3 class="pl-3">{{ companyAlert.totalItemCount }} item(s) ({{ Math.round(companyAlert.totalWeight*100)/100 }} kg)</h3>

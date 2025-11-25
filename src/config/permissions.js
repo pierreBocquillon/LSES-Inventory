@@ -1,13 +1,18 @@
 let permissions = [
   { 
     icon: '📦',
-    name: 'Pole stocks',
+    name: 'Gestion des stocks',
     value: 'stock'
   },
   { 
     icon: '🔐',
     name: 'Stocks sensibles',
     value: 'security'
+  },
+  { 
+    icon: '🚑',
+    name: 'Gestion des vehicules',
+    value: 'vehicles'
   },
   { 
     icon: '😊',

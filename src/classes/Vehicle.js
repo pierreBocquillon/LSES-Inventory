@@ -1,27 +1,30 @@
 import { getFirestore, doc, collection, query, where, addDoc, getDoc, getDocs, updateDoc, setDoc, onSnapshot, deleteDoc, documentId } from "firebase/firestore"
 let db = getFirestore()
 
-let collectionName = "companies"
+let collectionName = "vehicles"
 
 function docToInstance(document) {
   let data = document.data()
-  return data ? new Company(document.id, data.icon, data.name, data.canDestroy, data.canExpenseNote, data.isGarage) : null
+  return data ? new Vehicle(document.id, data.icon, data.name, data.imat, data.where, data.underGuard, data.recupDate, data.lastRepairDate, data.hideAlert) : null
 }
 
-class Company {
-  constructor(id, icon, name, canDestroy=false, canExpenseNote=false, isGarage=false) {
+class Vehicle {
+  constructor(id, icon, name, imat, where, underGuard, recupDate, lastRepairDate, hideAlert) {
     this.id = id
     this.icon = icon
     this.name = name
-    this.canDestroy = canDestroy
-    this.canExpenseNote = canExpenseNote
-    this.isGarage = isGarage
+    this.imat = imat
+    this.where = where
+    this.underGuard = underGuard
+    this.recupDate = recupDate
+    this.lastRepairDate = lastRepairDate
+    this.hideAlert = hideAlert
   }
 
-  static initOne(name="", icon="", canDestroy=false, canExpenseNote=false, isGarage=false) {
-    let id = Company.createId(name)
-    const newCompany = new Company(id, icon, name, canDestroy, canExpenseNote, isGarage)
-    return newCompany
+  static initOne(name="") {
+    let id = Vehicle.createId(name)
+    const newVehicle = new Vehicle(id, "", "", "", "garage", false, null, 0, false)
+    return newVehicle
   }
   
   static createId(name) {
@@ -76,15 +79,18 @@ class Company {
     const new_doc = {
       icon: this.icon,
       name: this.name,
-      canDestroy: this.canDestroy,
-      canExpenseNote: this.canExpenseNote,
-      isGarage: this.isGarage
+      imat: this.imat,
+      where: this.where,
+      underGuard: this.underGuard,
+      recupDate: this.recupDate,
+      lastRepairDate: this.lastRepairDate,
+      hideAlert: this.hideAlert,
     }
 
     if (this.id) {
       await setDoc(doc(db, collectionName, this.id), new_doc)
     } else {
-      this.id = Company.createId(this.name)
+      this.id = Vehicle.createId(this.name)
       await setDoc(doc(db, collectionName, this.id), new_doc)
     }
   }
@@ -96,4 +102,4 @@ class Company {
   }
 }
 
-export default Company
+export default Vehicle

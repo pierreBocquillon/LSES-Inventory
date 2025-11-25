@@ -1,6 +1,6 @@
 <template>
   <div>
-    <v-card class="mt-10 rounded-xl" style="max-width: 600px; margin: auto;">
+    <v-card class="mt-10 rounded-xl" :style="'max-width: '+ (filteredNavItems.length > 1 ? '720px' : '380px') + '; margin: auto;'">
       <v-card-text class="pa-5 d-flex flex-column align-center">
         <div>
           <h2 class="text-center mb-2">Nom : <span class=" text-h5 font-weight-regular">{{ userStore.profile.name }}</span></h2>
@@ -20,14 +20,16 @@
         </div>
         
         <h2>Accés rapide :</h2>
-        <div class="d-flex flex-wrap justify-center mt-4" v-for="group in filteredNavItems">
-          <v-btn v-for="item in group" :key="item.link" style="width: 150px; height: 150px;" class="rounded-lg ma-2" @click="$router.push(item.link)">
-            <div class="d-flex flex-column align-center justify-center mb-4">
-              <v-icon size="64">{{ item.icon }}</v-icon>
-              <v-badge color="primary" v-if="item.notif > 0" :content="item.notif" floating offset-x="-30" offset-y="-50"></v-badge>
-              <h3 class="font-weight-regular w-100 text-center mt-3" style="height: 16px;white-space: normal;">{{ item.title }}</h3>
-            </div>
-          </v-btn>
+        <div class="d-flex align-center justify-center flex-wrap">
+          <div v-for="group in filteredNavItems" class="d-flex align-center justify-center flex-wrap">
+            <v-btn v-for="item in group" :key="item.link" style="width: 150px; height: 150px;" class="rounded-lg ma-2" @click="$router.push(item.link)">
+              <div class="d-flex flex-column align-center justify-center mb-4">
+                <v-icon size="64">{{ item.icon }}</v-icon>
+                <v-badge color="primary" v-if="item.notif > 0" :content="item.notif" floating offset-x="-30" offset-y="-50"></v-badge>
+                <h3 class="font-weight-regular w-100 text-center mt-3" style="height: 16px;white-space: normal;">{{ item.title }}</h3>
+              </div>
+            </v-btn>
+          </div>
         </div>
       </v-card-text>
     </v-card>
@@ -47,7 +49,7 @@ import Order from '@/classes/Order.js'
 import Storage from '@/classes/Storage.js'
 import SaveDate from '@/classes/SaveDate.js'
 import ExpenseNote from '@/classes/ExpenseNote.js'
-import { el } from 'vuetify/locale'
+import Vehicle from '@/classes/Vehicle.js'
 
 export default {
   props : [],
@@ -64,6 +66,8 @@ export default {
       orders: [],
       storages: [],
       saveDates: [],
+      vehicles: [],
+      lastVehicleSaveDate: null,
     }
   },
   created() {
@@ -78,6 +82,19 @@ export default {
       dates.forEach(date => {
         this.saveDates[date.id] = date
       })
+    }))
+    this.unsub.push(SaveDate.listenById('repa_flotte', saveDate => {
+      this.lastVehicleSaveDate = saveDate
+      if(!this.lastVehicleSaveDate) {
+        let newDate = SaveDate.initOne()
+        newDate.id = 'repa_flotte'
+        newDate.date = new Date().getTime()
+        newDate.save()
+      }
+    }))
+    this.unsub.push(Vehicle.listenAll(vehicles => {
+      this.vehicles = vehicles
+      this.vehicles.sort((a, b) => a.name.localeCompare(b.name))
     }))
     this.unsub.push(Storage.listenAll(storages => {
       this.storages = storages
@@ -117,6 +134,30 @@ export default {
       }
       return amount
     },
+    garageNotif(){
+      let deltaTime = 0
+      if (!this.lastVehicleSaveDate) return Infinity
+      const now = new Date().getTime()
+      const last = this.lastVehicleSaveDate.date
+      const diff = now - last
+      deltaTime = Math.floor(diff / (1000 * 60 * 60))
+
+      let count = 0
+      
+      if (deltaTime >= 24) {
+        count += 1
+      }
+      this.vehicles.forEach(vehicle => {
+        if (vehicle.underGuard && parseInt(vehicle.recupDate) < new Date().getTime() ) {
+          count += 1
+        }
+        if (!vehicle.underGuard && !vehicle.hideAlert && (parseInt(vehicle.lastRepairDate) < new Date().getTime() - (24 * 60 * 60 * 1000))) {
+          count += 1
+        }
+      })
+
+      return count
+    },
     filteredNavItems() {
       let filteredItems = []
       let currentGroup = []
@@ -147,6 +188,9 @@ export default {
             }
             if(tmp_item.link == '/inventory') {
               tmp_item.notif = this.StoragesOutdated
+            }
+            if(tmp_item.link == '/garage') {
+              tmp_item.notif = this.garageNotif
             }
             currentGroup.push(tmp_item)
           }
