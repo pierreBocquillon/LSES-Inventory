@@ -6,11 +6,12 @@ let collectionName = "vehicles"
 function docToInstance(document) {
   let data = document.data()
   if(data && data.needRepair === undefined) data.needRepair = false
-  return data ? new Vehicle(document.id, data.icon, data.name, data.imat, data.where, data.underGuard, data.recupDate, data.lastRepairDate, data.hideAlert, data.needRepair) : null
+  if(data && data.insurance === undefined) data.insurance = false
+  return data ? new Vehicle(document.id, data.icon, data.name, data.imat, data.where, data.underGuard, data.recupDate, data.lastRepairDate, data.hideAlert, data.needRepair, data.insurance) : null
 }
 
 class Vehicle {
-  constructor(id, icon, name, imat, where, underGuard, recupDate, lastRepairDate, hideAlert, needRepair) {
+  constructor(id, icon, name, imat, where, underGuard, recupDate, lastRepairDate, hideAlert, needRepair, insurance) {
     this.id = id
     this.icon = icon
     this.name = name
@@ -21,6 +22,7 @@ class Vehicle {
     this.lastRepairDate = lastRepairDate
     this.hideAlert = hideAlert
     this.needRepair = needRepair
+    this.insurance = insurance
   }
 
   static initOne(name="") {
@@ -88,6 +90,7 @@ class Vehicle {
       lastRepairDate: this.lastRepairDate,
       hideAlert: this.hideAlert,
       needRepair: this.needRepair,
+      insurance: this.insurance
     }
 
     if (this.id) {

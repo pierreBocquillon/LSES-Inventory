@@ -51,7 +51,7 @@ const routes = [
     meta: {
       needAccount: true,
       showNav: true,
-      permissions:['dev']
+      permissions:[]
     }
   },
   {
@@ -91,7 +91,7 @@ const routes = [
     meta: {
       needAccount: true,
       showNav: true,
-      permissions:['dev']
+      permissions:['vehicles']
     }
   },
   {

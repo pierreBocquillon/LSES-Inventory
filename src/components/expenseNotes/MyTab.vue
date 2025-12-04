@@ -159,7 +159,7 @@ export default {
       this.items = items
     }))
     this.unsub.push(Vehicle.listenAll(vehicles => {
-      this.vehicles = vehicles
+      this.vehicles = vehicles.filter(vehicle => vehicle.where !== "dead")
     }))
     this.unsub.push(VehicleHistory.listenAll(vehicleHistories => {
       this.vehicleHistories = vehicleHistories.filter(h => (h.date > new Date().getTime() - 7*24*60*60*1000 && h.price > 0))

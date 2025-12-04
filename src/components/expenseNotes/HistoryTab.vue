@@ -129,7 +129,7 @@ export default {
       this.items = items
     }))
     this.unsub.push(Vehicle.listenAll(vehicles => {
-      this.vehicles = vehicles
+      this.vehicles = vehicles.filter(vehicle => vehicle.where !== "dead")
     }))
     this.unsub.push(VehicleHistory.listenAll(vehicleHistories => {
       this.vehicleHistories = vehicleHistories

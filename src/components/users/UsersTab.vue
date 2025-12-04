@@ -17,7 +17,7 @@
       </template>
       
       <template v-slot:item.actions="{ item }">
-        <v-btn icon color="primary" variant="text" @click="resetPassword(item)" v-if="this.userStore.profile.permissions.some(p => ['dev', 'admin', 'user'].includes(p))">
+        <v-btn icon color="primary" variant="text" @click="resetPassword(item)" v-if="this.userStore.profile.permissions.some(p => ['dev', 'admin'].includes(p))">
           <v-icon>mdi-lock-reset</v-icon>
         </v-btn>
         <v-btn icon color="accent" variant="text" @click="editItem(item)">

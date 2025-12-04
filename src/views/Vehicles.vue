@@ -19,6 +19,7 @@
 
         <template v-slot:item.actions="{ item }">
           <v-btn color="primary" variant="text" icon @click="openEditVehicleDialog(item)"><v-icon>mdi-pencil</v-icon></v-btn>
+          <v-btn color="secondary" variant="text" icon @click="isDestroy(item)"><v-icon>mdi-grave-stone</v-icon></v-btn>
           <v-btn color="error" variant="text" icon @click="deleteVehicle(item)"><v-icon>mdi-delete</v-icon></v-btn>
         </template>
 
@@ -59,6 +60,7 @@ import Swal from 'sweetalert2/dist/sweetalert2.js'
 
 import Company from '../classes/Company'
 import Vehicle from '../classes/Vehicle'
+import VehicleHistory from '../classes/VehicleHistory'
 
 import vehiclesLocations from '@/config/vehiclesLocations.js'
 
@@ -90,7 +92,7 @@ export default {
       this.companies.sort((a, b) => a.name.localeCompare(b.name))
     }))
     this.unsub.push(Vehicle.listenAll(vehicles => {
-      this.vehicles = vehicles
+      this.vehicles = vehicles.filter(vehicle => vehicle.where !== "dead")
       this.vehicles.sort((a, b) => {        
         if(a.hideAlert && !b.hideAlert) return 1
         if(!a.hideAlert && b.hideAlert) return -1
@@ -152,6 +154,38 @@ export default {
 
       await this.currentVehicle.save()
       this.closeVehicleDialog()
+    },
+    async isDestroy(vehicle) {
+      const result = await Swal.fire({
+        title: 'Êtes-vous sûr ?',
+        text: `Voulez-vous marquer le véhicule "${vehicle.name}" comme détruit ? Cela le retirera de la liste des véhicules disponibles.`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Oui',
+        cancelButtonText: 'Annuler',
+      })
+
+      if (result.isConfirmed) {
+        logger.log(this.userStore.profile.id, 'VEHICULES', `Marquage du véhicule ${vehicle.icon}${vehicle.name} comme détruit`)
+        vehicle.where = "dead"
+
+        const history = VehicleHistory.initOne()
+        history.date = new Date().getTime()
+        history.vehicle = vehicle.id
+        history.message = `Destruction du véhicule : ${vehicle.icon}${vehicle.name} (${vehicle.imat})`
+        history.price = 0
+        await history.save()
+
+        await vehicle.save()
+
+        fetch('https://script.google.com/macros/s/AKfycbwf0AveLsdLMQMMzR-0flSwVP-VE9Hd8OCF5pmfDBMiCkiDKN0wJhMwXxvnUmAgGx8Z/exec', {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        })
+      }
     },
     async deleteVehicle(vehicle) {
       const result = await Swal.fire({

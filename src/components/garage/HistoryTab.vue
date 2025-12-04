@@ -24,8 +24,8 @@
                       <span v-else-if="history.message.includes('Récupération de')">🔙</span>
                       <span v-else-if="history.message.includes('a etait envoyé')">🛠️</span>
                       Le {{ new Date(history.date).toLocaleDateString() }} à {{ new Date(history.date).toLocaleTimeString().slice(0, 5) }}
-                      <span v-if="history.vehicle == 'all'">(Repa flotte)</span>
-                      <span v-if="this.vehicles.find(vehicle => vehicle.id === history.vehicle)">({{ this.vehicles.find(vehicle => vehicle.id === history.vehicle).icon }}{{ this.vehicles.find(vehicle => vehicle.id === history.vehicle).name }})</span>
+                      <span v-if="history.vehicle == 'all'">( Repa flotte - {{ history.message.split(' - ')[1].split('(')[0] }})</span>
+                      <span v-if="this.vehicles.find(vehicle => vehicle.id === history.vehicle)">( {{ this.vehicles.find(vehicle => vehicle.id === history.vehicle).icon }}{{ this.vehicles.find(vehicle => vehicle.id === history.vehicle).name }} )</span>
                     </h2>
                     <v-spacer></v-spacer>
                     <h2 class="font-weight-regular" v-if="parseInt(history.price) > 0">( {{ formatMoney(parseInt(history.price)) }} )</h2>

@@ -93,7 +93,7 @@ export default {
       }
     }))
     this.unsub.push(Vehicle.listenAll(vehicles => {
-      this.vehicles = vehicles
+      this.vehicles = vehicles.filter(vehicle => vehicle.where !== "dead")
       this.vehicles.sort((a, b) => a.name.localeCompare(b.name))
     }))
     this.unsub.push(Storage.listenAll(storages => {
@@ -148,10 +148,14 @@ export default {
         count += 1
       }
       this.vehicles.forEach(vehicle => {
-        if ((vehicle.underGuard && parseInt(vehicle.recupDate) < new Date().getTime()) || vehicle.needRepair ) {
+        if(vehicle.where == "dead") return;
+        if (vehicle.insurance) {
           count += 1
         }
-        if (!vehicle.underGuard && !vehicle.hideAlert && (parseInt(vehicle.lastRepairDate) < new Date().getTime() - (24 * 60 * 60 * 1000))) {
+        if (!vehicle.insurance && ((vehicle.underGuard && parseInt(vehicle.recupDate) < new Date().getTime()) || vehicle.needRepair) ) {
+          count += 1
+        }
+        if (!vehicle.insurance && !vehicle.underGuard && !vehicle.hideAlert && (parseInt(vehicle.lastRepairDate) < new Date().getTime() - (24 * 60 * 60 * 1000))) {
           count += 1
         }
       })

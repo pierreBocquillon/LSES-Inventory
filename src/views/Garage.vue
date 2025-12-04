@@ -7,7 +7,7 @@
           Garage
           <v-badge color="primary" v-if="notifAmount > 0" :content="notifAmount" offset-x="-5" floating></v-badge>
         </v-tab>
-        <v-tab value="history" v-if="this.userStore.profile.permissions.some(p => ['dev', 'admin', 'vehicles'].includes(p))">
+        <v-tab value="history" v-if="this.userStore.profile.permissions.some(p => ['dev', 'admin', 'cash'].includes(p))">
           Historique
         </v-tab>
       </v-tabs>
@@ -18,7 +18,7 @@
           <GarageTab />
         </v-tabs-window-item>
 
-        <v-tabs-window-item value="history" v-if="this.userStore.profile.permissions.some(p => ['dev', 'admin', 'vehicles'].includes(p))">
+        <v-tabs-window-item value="history" v-if="this.userStore.profile.permissions.some(p => ['dev', 'admin', 'cash'].includes(p))">
           <HistoryTab />
         </v-tabs-window-item>
 
@@ -39,8 +39,8 @@ import logger from '../functions/logger'
 import Vehicle from '../classes/Vehicle'
 import SaveDate from '../classes/SaveDate'
 
-import GarageTab from '@/components/vehicles/GarageTab.vue'
-import HistoryTab from '@/components/vehicles/HistoryTab.vue'
+import GarageTab from '@/components/garage/GarageTab.vue'
+import HistoryTab from '@/components/garage/HistoryTab.vue'
 
 export default {
   props : [],
@@ -69,7 +69,7 @@ export default {
       }
     }))
     this.unsub.push(Vehicle.listenAll(vehicles => {
-      this.vehicles = vehicles
+      this.vehicles = vehicles.filter(vehicle => vehicle.where !== "dead")
       this.vehicles.sort((a, b) => a.name.localeCompare(b.name))
     }))
   },
@@ -90,10 +90,14 @@ export default {
       }
 
       this.vehicles.forEach(vehicle => {
-        if ((vehicle.underGuard && parseInt(vehicle.recupDate) < new Date().getTime()) || vehicle.needRepair ) {
+        if(vehicle.where == "dead") return;
+        if (vehicle.insurance) {
           count += 1
         }
-        if (!vehicle.underGuard && !vehicle.hideAlert && (parseInt(vehicle.lastRepairDate) < new Date().getTime() - (24 * 60 * 60 * 1000))) {
+        if (!vehicle.insurance && ((vehicle.underGuard && parseInt(vehicle.recupDate) < new Date().getTime()) || vehicle.needRepair) ) {
+          count += 1
+        }
+        if (!vehicle.insurance && !vehicle.underGuard && !vehicle.hideAlert && (parseInt(vehicle.lastRepairDate) < new Date().getTime() - (24 * 60 * 60 * 1000))) {
           count += 1
         }
       })
