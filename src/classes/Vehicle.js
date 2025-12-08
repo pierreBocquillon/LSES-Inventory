@@ -27,7 +27,7 @@ class Vehicle {
 
   static initOne(name="") {
     let id = Vehicle.createId(name)
-    const newVehicle = new Vehicle(id, "", "", "", "garage", false, null, 0, false, false)
+    const newVehicle = new Vehicle(id, "", "", "", "garage", false, null, 0, false, false, false)
     return newVehicle
   }
   

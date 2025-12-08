@@ -16,7 +16,7 @@
             </h4>
           </v-expansion-panel-title>
           <v-expansion-panel-text>
-            <v-select color="primary" base-color="primary" variant="outlined" hide-details="boolean" :items="profiles" v-model="filter.profile" item-value="id" label="Utilisateur" clearable>
+            <v-select class="my-2" color="primary" base-color="primary" variant="outlined" hide-details :items="profiles" v-model="filter.profile" item-value="id" label="Utilisateur" clearable>
               <template #item="{ props, item }">
                 <v-list-item v-bind="props" :title="null">
                   <template #default>
@@ -28,6 +28,9 @@
                 {{ item.raw.name }}
               </template>
             </v-select>
+
+            <v-text-field class="my-2" color="primary" base-color="primary" variant="outlined" hide-details v-model="filter.search" label="Recherche" clearable> </v-text-field>
+
           </v-expansion-panel-text>
         </v-expansion-panel>
     </v-expansion-panels>
@@ -80,33 +83,74 @@ export default {
       profiles: [],
       filter: {
         profile: null,
+        search: "",
       },
+      filteredLogs: [],
+      timeout: null,
     }
   },
-  computed: {
-    filteredLogs() {
+  watch: {
+    filter: {
+      handler() {
+        if (this.timeout) clearTimeout(this.timeout)
+        this.timeout = setTimeout(() => {
+          this.updateFilteredLogs()
+        }, 500)
+      },
+      deep: true,
+      immediate: true,
+    }
+  },
+  async mounted() {
+    this.profiles = await Profile.getAll()
+    this.profiles.sort((a, b) => a.name.localeCompare(b.name))
+    this.getLogs()
+    this.updateFilteredLogs()
+  },
+  methods: {
+    async getLogs() {
+      this.logs = await Log.getAll()
+      this.logs.sort((a, b) => parseInt(b.id) - parseInt(a.id))
+
+      let toRemove = []
+      let previousLog = null
+      for (let log of this.logs) {
+        if(previousLog == null) {
+          previousLog = log
+          continue
+        }else{
+          if(log.type == previousLog.type
+            && log.user == previousLog.user 
+            && log.description.split('(')[0] == previousLog.description.split('(')[0]
+            && (parseInt(previousLog.id) - parseInt(log.id)) < (60*1000)) {
+            toRemove.push(log.id)
+          }
+        }
+        previousLog = log
+      }
+      this.logs = this.logs.filter(log => !toRemove.includes(log.id))
+    },
+    updateFilteredLogs() {
       let filtered = this.logs
 
       if (this.filter.profile) {
         filtered = filtered.filter(log => log.user == this.filter.profile)
       }
 
-      return filtered
-    },
-  },
-  async mounted() {
-    this.profiles = await Profile.getAll()
-    this.profiles.sort((a, b) => a.name.localeCompare(b.name))
-    this.getLogs()
-  },
-  methods: {
-    async getLogs() {
-      this.logs = await Log.getAll()
-      this.logs.sort((a, b) => parseInt(b.id) - parseInt(a.id))
-      
-      if (this.logs.length > 500) {
-        this.logs = this.logs.slice(0, 500)
+      if (this.filter.search && this.filter.search.trim() != "") {
+        const search = this.filter.search.trim().toLowerCase()
+        filtered = filtered.filter(log => 
+          log.type.toLowerCase().includes(search) ||
+          log.description.toLowerCase().includes(search) ||
+          (this.profiles.find(profile => profile.id === log.user)?.name.toLowerCase().includes(search))
+        )
       }
+      
+      if (filtered.length > 500) {
+        filtered = filtered.slice(0, 1000)
+      }
+
+      this.filteredLogs = filtered
     },
     async deleteLog(log) {
       await log.delete()
