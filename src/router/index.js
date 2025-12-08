@@ -61,7 +61,7 @@ const routes = [
     meta: {
       needAccount: true,
       showNav: true,
-      roles:['Admin']
+      permissions:['legist']
     }
   },
   {

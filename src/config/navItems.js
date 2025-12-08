@@ -15,6 +15,9 @@ let navItems = [
     { title: 'Vehicules', icon: 'mdi-helicopter', link: '/vehicles'},
   ],
   [
+    { title: 'Autopsie', icon: 'mdi-coffin', link: '/autopsie'},
+  ],
+  [
     { title: 'Utilisateurs', icon: 'mdi-account-group', link: '/users'},
     { title: 'Logs', icon: 'mdi-account-group', link: '/logs'},
   ],
