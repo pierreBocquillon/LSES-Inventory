@@ -35,8 +35,7 @@
         </v-expansion-panel>
     </v-expansion-panels>
 
-      <v-data-table :headers="[{ title: 'Date', key: 'id' }, { title: 'Utilisateur', key: 'user' }, { title: 'Type', key: 'type' }, { title: 'Description', key: 'description' }, { title: '', key: 'action', sortable: false }]" :items="filteredLogs" items-per-page="-1" no-data-text="Aucun log">
-        <template v-slot:bottom />
+      <v-data-table :headers="[{ title: 'Date', key: 'id' }, { title: 'Utilisateur', key: 'user' }, { title: 'Type', key: 'type' }, { title: 'Description', key: 'description' }, { title: '', key: 'action', sortable: false }]" :items="logs" items-per-page="50" no-data-text="Aucun log" :search="filter.search">
 
         <template v-slot:item.id="{ item }">
           <span class="font-weight-regular">{{ new Date(parseInt(item.id)).toLocaleString() }}</span>
@@ -85,27 +84,13 @@ export default {
         profile: null,
         search: "",
       },
-      filteredLogs: [],
       timeout: null,
-    }
-  },
-  watch: {
-    filter: {
-      handler() {
-        if (this.timeout) clearTimeout(this.timeout)
-        this.timeout = setTimeout(() => {
-          this.updateFilteredLogs()
-        }, 500)
-      },
-      deep: true,
-      immediate: true,
     }
   },
   async mounted() {
     this.profiles = await Profile.getAll()
     this.profiles.sort((a, b) => a.name.localeCompare(b.name))
     this.getLogs()
-    this.updateFilteredLogs()
   },
   methods: {
     async getLogs() {
@@ -129,8 +114,7 @@ export default {
         previousLog = log
       }
       this.logs = this.logs.filter(log => !toRemove.includes(log.id))
-    },
-    updateFilteredLogs() {
+      
       let filtered = this.logs
 
       if (this.filter.profile) {
@@ -145,12 +129,8 @@ export default {
           (this.profiles.find(profile => profile.id === log.user)?.name.toLowerCase().includes(search))
         )
       }
-      
-      if (filtered.length > 500) {
-        filtered = filtered.slice(0, 1000)
-      }
 
-      this.filteredLogs = filtered
+      this.logs = filtered
     },
     async deleteLog(log) {
       await log.delete()
