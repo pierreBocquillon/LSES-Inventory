@@ -168,6 +168,11 @@ export default {
       if (result.isConfirmed) {
         logger.log(this.userStore.profile.id, 'VEHICULES', `Marquage du véhicule ${vehicle.icon}${vehicle.name} comme détruit`)
         vehicle.where = "dead"
+        vehicle.hideAlert = true
+        vehicle.underGuard = false
+        vehicle.recupDate = null
+        vehicle.needRepair = false
+        vehicle.insurance = false
 
         const history = VehicleHistory.initOne()
         history.date = new Date().getTime()
