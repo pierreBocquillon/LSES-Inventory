@@ -118,7 +118,7 @@
 
     <v-dialog v-model="dialog" max-width="500px">
       <v-card>
-        <v-card-title>
+        <v-card-title class="bg-primary text-white">
           <span class="text-h5">{{ formTitle }}</span>
         </v-card-title>
 
@@ -297,7 +297,7 @@
 
     <v-dialog v-model="specialtiesDialog" max-width="600px">
       <v-card>
-        <v-card-title>
+        <v-card-title class="bg-secondary text-white">
           <span class="text-h5">Gérer les spécialités</span>
         </v-card-title>
         <v-card-text>
