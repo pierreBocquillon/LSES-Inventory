@@ -8,6 +8,7 @@
         </v-tab>
         <v-tab value="waiting" v-if="this.userStore.profile.permissions.some(p => ['dev', 'admin', 'cash'].includes(p))">
           En attente
+          <v-badge color="primary" v-if="waitingExpenseNotes.length > 0" :content="waitingExpenseNotes.length" floating offset-x="-5"></v-badge>
         </v-tab>
         <v-tab value="history" v-if="this.userStore.profile.permissions.some(p => ['dev', 'admin', 'cash'].includes(p))">
           Historique
@@ -40,6 +41,8 @@ import MyTab from '@/components/expenseNotes/MyTab.vue'
 import WaitingTab from '@/components/expenseNotes/WaitingTab.vue'
 import HistoryTab from '@/components/expenseNotes/HistoryTab.vue'
 
+import { initNotifManager, stopNotifManager, notifState } from '@/functions/nofifManager.js'
+
 export default {
   props : [],
   components: {
@@ -49,7 +52,6 @@ export default {
   },
   data() {
     return {
-      unsub: [],
       userStore: useUserStore(),
       
       tab: "my",
@@ -57,21 +59,20 @@ export default {
   },
 
   mounted() {
-    
+    initNotifManager()
   },
 
   computed:{
+    waitingExpenseNotes() {
+      return notifState.waitingExpenseNotes
+    }
   },
 
   methods: {
   },
 
   beforeUnmount() {
-    this.unsub.forEach(unsub => {
-      if (typeof unsub == 'function') {
-        unsub();
-      }
-    });
+    stopNotifManager()
   }
 }
 </script>

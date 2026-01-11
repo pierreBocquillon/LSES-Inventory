@@ -42,14 +42,7 @@ import { useUserStore } from '@/store/user.js'
 import navItems from '@/config/navItems.js'
 import permissions from '@/config/permissions'
 
-import Profile from '@/classes/Profile.js'
-import Company from '@/classes/Company.js'
-import Item from '@/classes/Item.js'
-import Order from '@/classes/Order.js'
-import Storage from '@/classes/Storage.js'
-import SaveDate from '@/classes/SaveDate.js'
-import ExpenseNote from '@/classes/ExpenseNote.js'
-import Vehicle from '@/classes/Vehicle.js'
+import { initNotifManager, stopNotifManager, notifState, storagesOutdated, garageNotif, alerts } from '@/functions/nofifManager.js'
 
 export default {
   props : [],
@@ -58,109 +51,29 @@ export default {
       userStore: useUserStore(),
       permissions,
       navItems,
-      unsub: [],
-      waitingUsers: [],
-      waitingExpenseNotes: [],
-      companies: [],
-      items: [],
-      orders: [],
-      storages: [],
-      saveDates: [],
-      vehicles: [],
-      lastVehicleSaveDate: null,
     }
   },
   created() {
-    this.unsub.push(Profile.listenByActivated(false, users => {
-      this.waitingUsers = users.filter(user => !user.rejected)
-    }))
-    this.unsub.push(ExpenseNote.listenAll(notes => {
-      this.waitingExpenseNotes = notes.filter(note => !note.isPaid && !note.isRefused)
-    }))
-    this.unsub.push(SaveDate.listenAll(dates => {
-      this.saveDates = {}
-      dates.forEach(date => {
-        this.saveDates[date.id] = date
-      })
-    }))
-    this.unsub.push(SaveDate.listenById('repa_flotte', saveDate => {
-      this.lastVehicleSaveDate = saveDate
-      if(!this.lastVehicleSaveDate) {
-        let newDate = SaveDate.initOne()
-        newDate.id = 'repa_flotte'
-        newDate.date = new Date().getTime()
-        newDate.save()
-      }
-    }))
-    this.unsub.push(Vehicle.listenAll(vehicles => {
-      this.vehicles = vehicles.filter(vehicle => vehicle.where !== "dead")
-      this.vehicles.sort((a, b) => a.name.localeCompare(b.name))
-    }))
-    this.unsub.push(Storage.listenAll(storages => {
-      this.storages = storages
-      this.storages.sort((a, b) => a.name.localeCompare(b.name))
-    }))
-    this.unsub.push(Company.listenAll(companies => {
-      this.companies = companies
-      this.companies.sort((a, b) => a.name.localeCompare(b.name))
-    }))
-    this.unsub.push(Item.listenAll(items => {
-      this.items = items
-      this.items.sort((a, b) => a.id.localeCompare(b.id))
-    }))
-    this.unsub.push(Order.listenAll(orders => {
-      this.orders = orders
-    }))
+    initNotifManager()
   },
   computed: {
-    storageDeltaTime(){
-      let deltaTime = {}
-      for(let storage of this.storages){
-        if(this.saveDates[storage.id] == undefined){
-          deltaTime[storage.id] = 9999
-        }
-        if(this.saveDates[storage.id]){
-          deltaTime[storage.id] = (new Date().getTime() - new Date(this.saveDates[storage.id].date).getTime()) / (1000 * 60 * 60)
-        }
-      }
-      return deltaTime
+    storagesOutdated() {
+      return storagesOutdated.value
     },
-    StoragesOutdated(){
-      let amount = 0
-      for(let storage of this.storages){
-        if(this.storageDeltaTime[storage.id] >= 12){
-          amount += 1
-        }
-      }
-      return amount
+    garageNotif() {
+      return garageNotif.value
     },
-    garageNotif(){
-      let deltaTime = 0
-      if (!this.lastVehicleSaveDate) return Infinity
-      const now = new Date().getTime()
-      const last = this.lastVehicleSaveDate.date
-      const diff = now - last
-      deltaTime = Math.floor(diff / (1000 * 60 * 60))
-
-      let count = 0
-      
-      if (deltaTime >= 24) {
-        count += 1
-      }
-      this.vehicles.forEach(vehicle => {
-        if(vehicle.where == "dead") return;
-        if (vehicle.insurance) {
-          count += 1
-        }
-        if (!vehicle.insurance && ((vehicle.underGuard && parseInt(vehicle.recupDate) < new Date().getTime()) || vehicle.needRepair) ) {
-          count += 1
-        }
-        if (!vehicle.insurance && !vehicle.underGuard && !vehicle.hideAlert && (parseInt(vehicle.lastRepairDate) < new Date().getTime() - (24 * 60 * 60 * 1000))) {
-          count += 1
-        }
-      })
-
-      return count
+    alerts() {
+      return alerts.value
+    },
+    waitingUsers() {
+      return notifState.waitingUsers
+    },
+    waitingExpenseNotes() {
+      return notifState.waitingExpenseNotes
+    },
+    orders() {
+      return notifState.orders
     },
     filteredNavItems() {
       let filteredItems = []
@@ -187,11 +100,14 @@ export default {
             if(tmp_item.link == '/users') {
               tmp_item.notif = this.waitingUsers.length
             }
+            if(tmp_item.link == '/expenseNotes') {
+              tmp_item.notif = this.waitingExpenseNotes.length
+            }
             if(tmp_item.link == '/orders') {
               tmp_item.notif = this.orders.length + this.alerts.length
             }
             if(tmp_item.link == '/inventory') {
-              tmp_item.notif = this.StoragesOutdated
+              tmp_item.notif = this.storagesOutdated
             }
             if(tmp_item.link == '/garage') {
               tmp_item.notif = this.garageNotif
@@ -206,97 +122,12 @@ export default {
       }
       return filteredItems
     },
-    alerts() {
-      let alerts = {}
-      this.companies.forEach(comp => {
-        alerts[comp.id] = {
-          company: comp,
-          items: [],
-          maxAlertLevel: 0,
-          totalAlertLevel: 0,
-          totalItemCount: 0,
-          totalWeight: 0,
-        }
-      })
-      this.items.forEach(item => {
-        let tmp_alert = {
-          item: item,
-          info: this.getItemInfo(item),
-          orderNeeded: 0,  
-          alertLevel: 0,          
-        }
-
-        let threshold = 10
-        if(parseInt(item.wanted) <= 10) threshold = 1
-        if(parseInt(item.amount) <= 50) threshold = 5
-
-        if(parseInt(item.wanted) > 0 && parseInt(item.amount) < parseInt(item.wanted) && (!item.isSecure || this.userStore.profile.permissions.some(p => ['dev', 'admin', 'security'].includes(p)))) {
-          if(parseInt(item.amount) <= parseInt(item.wanted) * 0.25){
-            tmp_alert.alertLevel = 2
-          }else if(parseInt(item.amount) <= parseInt(item.wanted) * 0.5){
-            tmp_alert.alertLevel = 1
-          }else{
-            tmp_alert.alertLevel = 0
-          }
-
-          tmp_alert.orderNeeded = Math.ceil((parseInt(item.wanted) - parseInt(item.amount)) / threshold) * threshold
-          if(tmp_alert.orderNeeded > 0){
-            alerts[tmp_alert.info.seller].items.push(tmp_alert)
-            
-            alerts[tmp_alert.info.seller].maxAlertLevel = Math.max(alerts[tmp_alert.info.seller].maxAlertLevel, tmp_alert.alertLevel)
-            alerts[tmp_alert.info.seller].totalAlertLevel += tmp_alert.alertLevel
-            alerts[tmp_alert.info.seller].totalItemCount += tmp_alert.orderNeeded
-            alerts[tmp_alert.info.seller].totalWeight += tmp_alert.orderNeeded * tmp_alert.info.weight
-          }
-        }
-      })
-      alerts = Object.values(alerts)//.filter(comp => comp.totalAlertLevel > 0)
-      alerts.sort((a, b) => {
-        if (b.maxAlertLevel == a.maxAlertLevel) {
-          return b.totalWeight - a.totalWeight
-        }else{
-          return b.maxAlertLevel - a.maxAlertLevel
-        }
-      })
-      alerts = alerts.filter(comp => comp.maxAlertLevel > 0)
-      return alerts
-    },
   },
 
   methods: {
-    getItemInfo(item) {
-      if(item.id.includes('#')) {
-        let id = item.id.split('#')[0]
-        let info = this.items.find(i => i.id === id) || {}
-        if(info) {
-          info = JSON.parse(JSON.stringify(info))
-          info.alert = false
-
-          info.trueName = info.name.replace(/[^a-zA-Z0-9\s]/g, '').trim()
-          info.name = info.name + ' ' + item.id.split('#')[1]
-
-          info.old = false
-          if(new Date(item.id.split('#')[1]) < new Date().setDate(new Date().getDate())) {
-            info.old = true
-          }
-
-          info.sellerName = this.companies.find(c => c.id === info.seller)?.name || 'Inconnu'
-          return info
-        }
-      }else{
-        let info = this.items.find(i => i.id === item.id) || {}
-        info.alert = false
-        info.old = false
-        info.trueName = info.name.replace(/[^a-zA-Z0-9\s]/g, '').trim()
-        info.sellerName = this.companies.find(c => c.id === info.seller)?.name || 'Inconnu'
-        return info
-      }
-    },
   },
   beforeUnmount() {
-    this.unsub.forEach(unsub => {
-      if (typeof unsub === 'function') unsub()
-    })
+    stopNotifManager()
   },
 }
 </script>
