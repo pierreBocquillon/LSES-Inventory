@@ -15,11 +15,6 @@ let permissions = [
     value: 'vehicles'
   },
   { 
-    icon: '⚰️',
-    name: 'Médecine légale',
-    value: 'legist'
-  },
-  { 
     icon: '😊',
     name: 'Gestion des utilisateurs',
     value: 'user'
