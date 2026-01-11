@@ -23,11 +23,11 @@ export const notifState = reactive({
   unsubscribers: []
 })
 
-let initialized = false
+let initCount = 0
 
 export function initNotifManager() {
-  if (initialized) return
-  initialized = true
+  initCount++
+  if (initCount > 1) return
 
   notifState.unsubscribers.push(Profile.listenByActivated(false, users => {
     notifState.waitingUsers = users.filter(user => !user.rejected)
@@ -72,11 +72,14 @@ export function initNotifManager() {
 }
 
 export function stopNotifManager() {
+  initCount--
+  if (initCount > 0) return
+
   notifState.unsubscribers.forEach(unsub => {
     if (typeof unsub === 'function') unsub()
   })
   notifState.unsubscribers = []
-  initialized = false
+  initCount = 0
 }
 
 export const storageDeltaTime = computed(() => {
