@@ -9,6 +9,9 @@
       <v-btn color="secondary" class="ml-2" prepend-icon="mdi-cog" @click="openSpecialtiesDialog">
         Spécialités
       </v-btn>
+      <v-btn color="info" class="ml-2" prepend-icon="mdi-clipboard-list" @click="openChecklistsDialog">
+        Procédures
+      </v-btn>
     </div>
 
     <v-card class="flex-grow-1">
@@ -340,13 +343,89 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+
+    <v-dialog v-model="checklistDialog" max-width="600px">
+      <v-card>
+        <v-card-title class="bg-info text-white">
+          <span class="text-h5">Procédures RH</span>
+        </v-card-title>
+        <v-card-text class="pt-4">
+          <v-select
+            v-model="selectedChecklistId"
+            :items="rhChecklists"
+            item-title="title"
+            item-value="id"
+            label="Choisir une procédure"
+            variant="outlined"
+            @update:model-value="resetChecklist"
+          >
+             <template v-slot:item="{ props, item }">
+                <v-list-item v-bind="props" :prepend-icon="item.raw.icon"></v-list-item>
+             </template>
+              <template v-slot:selection="{ item }">
+                <v-icon start>{{ item.raw.icon }}</v-icon>
+                {{ item.title }}
+              </template>
+          </v-select>
+
+          <div v-if="currentChecklist">
+            <div class="d-flex align-center mb-2">
+                <v-progress-linear
+                    v-model="checklistProgress"
+                    color="success"
+                    height="20"
+                    striped
+                >
+                    <template v-slot:default="{ value }">
+                        <strong>{{ Math.ceil(value) }}%</strong>
+                    </template>
+                </v-progress-linear>
+            </div>
+            <v-divider class="mb-3"></v-divider>
+            <v-list density="compact">
+                <template v-for="(step, index) in currentChecklist.steps" :key="index">
+                    <!-- Header -->
+                    <v-list-subheader v-if="typeof step === 'object' && step.header" class="font-weight-bold text-uppercase mt-2">
+                        {{ step.header }}
+                    </v-list-subheader>
+
+                    <!-- Checklist Item -->
+                    <v-list-item v-else>
+                        <template v-slot:prepend>
+                            <v-checkbox-btn v-model="checkedSteps[index]" color="success"></v-checkbox-btn>
+                        </template>
+                        <v-list-item-title class="text-wrap" :class="{'text-decoration-line-through text-grey': checkedSteps[index]}">
+                            <span v-if="typeof step === 'string'">{{ step }}</span>
+                            <span v-else>
+                                {{ step.text }}
+                                <a v-if="step.link" :href="step.link.url" target="_blank" class="ml-1 text-decoration-none" @click.stop>
+                                    <v-icon size="small" color="primary">mdi-open-in-new</v-icon> {{ step.link.text }}
+                                </a>
+                            </span>
+                        </v-list-item-title>
+                    </v-list-item>
+                </template>
+            </v-list>
+          </div>
+          <div v-else class="text-center text-grey my-4">
+            Sélectionnez une procédure pour voir les étapes.
+          </div>
+        </v-card-text>
+        <v-card-actions>
+          <v-btn color="error" variant="text" @click="resetChecklist" v-if="currentChecklist">Tout décocher</v-btn>
+          <v-spacer></v-spacer>
+          <v-btn color="primary" variant="text" @click="checklistDialog = false">Fermer</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </v-container>
 </template>
 
 <script>
-import Employee from '@/classes/Employee.js'
-import Specialty from '@/classes/Specialty.js'
+import Employee from '@/classes/Employee'
+import Specialty from '@/classes/Specialty'
 import Swal from 'sweetalert2/dist/sweetalert2.js'
+import { rhChecklists } from '@/config/rh_checklists'
 
 export default {
   name: 'RH',
@@ -359,6 +438,12 @@ export default {
       name: '',
       icon: ''
     },
+    
+    // Checklists
+    checklistDialog: false,
+    rhChecklists: rhChecklists,
+    selectedChecklistId: null,
+    checkedSteps: [],
     headers: [
       { title: 'Nom', key: 'name' },
       { title: 'Email', key: 'email' },
@@ -412,6 +497,28 @@ export default {
     formTitle() {
       return this.editedItem.id ? 'Modifier l\'employé' : 'Nouvel employé'
     },
+    currentChecklist() {
+        return this.rhChecklists.find(c => c.id === this.selectedChecklistId)
+    },
+    checklistProgress() {
+        if (!this.checkedSteps.length) return 0
+        
+        // Count actual actionable items (not headers)
+        let totalItems = 0
+        let completedItems = 0
+        
+        this.currentChecklist.steps.forEach((step, index) => {
+            if (typeof step === 'object' && step.header) {
+                // It's a header, ignore
+            } else {
+                totalItems++
+                if (this.checkedSteps[index]) completedItems++
+            }
+        })
+        
+        if (totalItems === 0) return 0
+        return (completedItems / totalItems) * 100
+    }
   },
 
   mounted() {
@@ -691,6 +798,18 @@ export default {
              Swal.fire({ icon: 'error', title: 'Erreur', text: "Erreur lors de la suppression" })
         }
     },
+
+    openChecklistsDialog() {
+        this.checklistDialog = true
+    },
+    
+    resetChecklist() {
+        if (this.currentChecklist) {
+            this.checkedSteps = new Array(this.currentChecklist.steps.length).fill(false)
+        } else {
+            this.checkedSteps = []
+        }
+    }
   },
 }
 </script>
