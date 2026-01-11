@@ -5,11 +5,11 @@ let collectionName = "employees"
 
 function docToInstance(document) {
     let data = document.data()
-    return data ? new Employee(document.id, data.name, data.email, data.role, data.sex, data.phone, data.specialties, data.chiefSpecialty, data.birthDate, data.arrivalDate, data.cdiDate, data.lastPromotionDate, data.medicalDegreeDate) : null
+    return data ? new Employee(document.id, data.name, data.email, data.role, data.sex, data.phone, data.specialties, data.chiefSpecialty, data.birthDate, data.arrivalDate, data.cdiDate, data.lastPromotionDate, data.medicalDegreeDate, data.helicopterTrainingDate, data.helicopterTrainingReimbursed) : null
 }
 
 class Employee {
-    constructor(id, name, email, role, sex, phone, specialties, chiefSpecialty, birthDate, arrivalDate, cdiDate, lastPromotionDate, medicalDegreeDate) {
+    constructor(id, name, email, role, sex, phone, specialties, chiefSpecialty, birthDate, arrivalDate, cdiDate, lastPromotionDate, medicalDegreeDate, helicopterTrainingDate, helicopterTrainingReimbursed) {
         this.id = id
         this.name = name
         this.email = email
@@ -23,6 +23,8 @@ class Employee {
         this.cdiDate = cdiDate || null
         this.lastPromotionDate = lastPromotionDate || null
         this.medicalDegreeDate = medicalDegreeDate || null
+        this.helicopterTrainingDate = helicopterTrainingDate || null
+        this.helicopterTrainingReimbursed = helicopterTrainingReimbursed || false
     }
 
     static listenAll(callback) {
@@ -48,7 +50,9 @@ class Employee {
             arrivalDate: this.arrivalDate || null,
             cdiDate: this.cdiDate || null,
             lastPromotionDate: this.lastPromotionDate || null,
-            medicalDegreeDate: this.medicalDegreeDate || null
+            medicalDegreeDate: this.medicalDegreeDate || null,
+            helicopterTrainingDate: this.helicopterTrainingDate || null,
+            helicopterTrainingReimbursed: this.helicopterTrainingReimbursed || false
         }
 
         if (this.id) {

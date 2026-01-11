@@ -24,6 +24,21 @@
             <v-icon color="pink" v-else-if="item.sex === 'Femme'" class="mr-2">mdi-gender-female</v-icon>
             <v-icon v-else class="mr-2">mdi-account</v-icon>
             {{ item.name }}
+            <v-tooltip location="top" v-if="isBirthday(item.birthDate)">
+              <template v-slot:activator="{ props }">
+                 <v-icon color="amber" class="ml-2" v-bind="props" size="small">mdi-cake-variant</v-icon>
+              </template>
+              <span>C'est son anniversaire !</span>
+            </v-tooltip>
+
+            <v-tooltip location="top" v-if="needsHeliReimbursement(item)">
+                <template v-slot:activator="{ props }">
+                    <v-btn icon variant="text" density="compact" color="red" class="ml-2" v-bind="props" @click="confirmReimbursement(item)">
+                        <v-icon>mdi-helicopter</v-icon>
+                    </v-btn>
+                </template>
+                <span>Remboursement formation hélico dû ! Cliquer pour valider.</span>
+            </v-tooltip>
           </div>
         </template>
         <template v-slot:top>
@@ -202,6 +217,12 @@
                  <v-col cols="12" md="6">
                     <v-text-field v-model="editedItem.medicalDegreeDate" label="Diplôme Médecine" type="date" variant="outlined"></v-text-field>
                 </v-col>
+                <v-col cols="12" md="6">
+                    <v-text-field v-model="editedItem.helicopterTrainingDate" label="Formation Hélico" type="date" variant="outlined"></v-text-field>
+                </v-col>
+                 <v-col cols="12" md="6">
+                    <v-checkbox v-model="editedItem.helicopterTrainingReimbursed" label="Hélico Remboursé" density="compact" hide-details></v-checkbox>
+                </v-col>
              </v-row>
            </v-container>
           </v-card-text>
@@ -359,7 +380,10 @@ export default {
       arrivalDate: null,
       cdiDate: null,
       lastPromotionDate: null,
+      lastPromotionDate: null,
       medicalDegreeDate: null,
+      helicopterTrainingDate: null,
+      helicopterTrainingReimbursed: false,
     },
     defaultItem: {
       name: '',
@@ -374,6 +398,8 @@ export default {
       cdiDate: null,
       lastPromotionDate: null,
       medicalDegreeDate: null,
+      helicopterTrainingDate: null,
+      helicopterTrainingReimbursed: false,
     },
     detailsDialog: false,
     selectedEmployee: null,
@@ -419,6 +445,56 @@ export default {
     getSpecialtyName(value) {
       const spec = this.specialties.find(s => s.value === value)
       return spec ? spec.name : value
+    },
+
+    isBirthday(dateString) {
+      if (!dateString) return false
+      const date = new Date(dateString)
+      const today = new Date()
+      return date.getDate() === today.getDate() && date.getMonth() === today.getMonth()
+    },
+
+    needsHeliReimbursement(item) {
+        if (!item.helicopterTrainingDate || item.helicopterTrainingReimbursed) return false
+        const trainingDate = new Date(item.helicopterTrainingDate)
+        const oneMonthLater = new Date(trainingDate)
+        oneMonthLater.setMonth(oneMonthLater.getMonth() + 1)
+        
+        const today = new Date()
+        return today >= oneMonthLater
+    },
+
+    confirmReimbursement(item) {
+        Swal.fire({
+            title: 'Confirmer le remboursement',
+            text: `Avez-vous remboursé la formation hélico pour ${item.name} ?`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Oui, validé',
+            cancelButtonText: 'Annuler'
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                try {
+                     item.helicopterTrainingReimbursed = true
+                     await item.save()
+                     
+                     Swal.fire({
+                        icon: 'success',
+                        title: 'Remboursement validé',
+                        text: 'Le statut a été mis à jour',
+                        timer: 1500,
+                        showConfirmButton: false
+                     })
+                } catch(e) {
+                    console.error(e)
+                     Swal.fire({
+                        icon: 'error',
+                        title: 'Erreur',
+                        text: 'Impossible de mettre à jour le statut'
+                     })
+                }
+            }
+        })
     },
 
     getAvailableChiefSpecialties() {
@@ -473,7 +549,9 @@ export default {
              this.editedItem.arrivalDate,
              this.editedItem.cdiDate,
              this.editedItem.lastPromotionDate,
-             this.editedItem.medicalDegreeDate
+             this.editedItem.medicalDegreeDate,
+             this.editedItem.helicopterTrainingDate,
+             this.editedItem.helicopterTrainingReimbursed
            )
         } else {
           // Creating new
@@ -490,7 +568,9 @@ export default {
             this.editedItem.arrivalDate,
             this.editedItem.cdiDate,
             this.editedItem.lastPromotionDate,
-            this.editedItem.medicalDegreeDate
+            this.editedItem.medicalDegreeDate,
+            this.editedItem.helicopterTrainingDate,
+            this.editedItem.helicopterTrainingReimbursed
           )
         }
 
