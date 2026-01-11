@@ -6,6 +6,9 @@
       <v-btn color="primary" prepend-icon="mdi-plus" @click="openAddDialog">
         Ajouter un employé
       </v-btn>
+      <v-btn color="secondary" class="ml-2" prepend-icon="mdi-cog" @click="openSpecialtiesDialog">
+        Spécialités
+      </v-btn>
     </div>
 
     <v-card class="flex-grow-1">
@@ -27,6 +30,16 @@
           <v-toolbar flat>
             <v-toolbar-title>Liste des employés</v-toolbar-title>
             <v-spacer></v-spacer>
+            <v-btn
+              icon
+              variant="text"
+              color="grey-darken-1"
+              @click="showAllEmails = !showAllEmails"
+              class="mr-2"
+              :title="showAllEmails ? 'Cacher les emails' : 'Afficher les emails'"
+            >
+              <v-icon>{{ showAllEmails ? 'mdi-eye-off' : 'mdi-eye' }}</v-icon>
+            </v-btn>
             <v-text-field
               v-model="search"
               prepend-inner-icon="mdi-magnify"
@@ -38,6 +51,12 @@
               style="max-width: 300px"
             ></v-text-field>
           </v-toolbar>
+        </template>
+
+        <template v-slot:item.email="{ item }">
+          <span :class="{ 'blurred-email': !showAllEmails }">
+            {{ item.email }}
+          </span>
         </template>
 
         <template v-slot:item.role="{ item }">
@@ -71,6 +90,9 @@
           </v-btn>
           <v-btn icon variant="text" size="small" color="error" @click="deleteEmployee(item)">
             <v-icon>mdi-delete</v-icon>
+          </v-btn>
+          <v-btn icon variant="text" size="small" color="info" @click="openDetails(item)">
+            <v-icon>mdi-calendar</v-icon>
           </v-btn>
         </template>
       </v-data-table>
@@ -120,6 +142,7 @@
                   :items="['Interne', 'Résident', 'Titulaire', 'Spécialiste', 'Responsable de Service', 'Assistant RH', 'Directeur Adjoint', 'Directeur']"
                   label="Rôle"
                   variant="outlined"
+                  @update:model-value="onRoleChange"
                 ></v-select>
               </v-col>
               <v-col cols="12">
@@ -162,7 +185,26 @@
               </v-col>
             </v-row>
           </v-container>
-        </v-card-text>
+           <v-container>
+             <v-row>
+                <v-col cols="12" md="6">
+                    <v-text-field v-model="editedItem.birthDate" label="Date de naissance" type="date" variant="outlined"></v-text-field>
+                </v-col>
+                <v-col cols="12" md="6">
+                    <v-text-field v-model="editedItem.arrivalDate" label="Date d'arrivée" type="date" variant="outlined"></v-text-field>
+                </v-col>
+                <v-col cols="12" md="6">
+                    <v-text-field v-model="editedItem.cdiDate" label="Date CDI" type="date" variant="outlined"></v-text-field>
+                </v-col>
+                 <v-col cols="12" md="6">
+                    <v-text-field v-model="editedItem.lastPromotionDate" label="Dernière promotion" type="date" variant="outlined"></v-text-field>
+                </v-col>
+                 <v-col cols="12" md="6">
+                    <v-text-field v-model="editedItem.medicalDegreeDate" label="Diplôme Médecine" type="date" variant="outlined"></v-text-field>
+                </v-col>
+             </v-row>
+           </v-container>
+          </v-card-text>
 
         <v-card-actions>
           <v-spacer></v-spacer>
@@ -175,20 +217,127 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+
+    <v-dialog v-model="detailsDialog" max-width="500px">
+      <v-card v-if="selectedEmployee">
+        <v-card-title class="bg-primary text-white">
+          <span class="text-h5">Dossier de {{ selectedEmployee.name }}</span>
+        </v-card-title>
+        <v-card-text class="pt-4">
+            <v-list density="compact">
+                <v-list-item>
+                    <template v-slot:prepend><v-icon icon="mdi-cake" color="pink"></v-icon></template>
+                    <v-list-item-title>Date de naissance</v-list-item-title>
+                    <v-list-item-subtitle>{{ formatDate(selectedEmployee.birthDate) }} ({{ calculateAge(selectedEmployee.birthDate) }} ans)</v-list-item-subtitle>
+                </v-list-item>
+                <v-list-item>
+                    <template v-slot:prepend><v-icon icon="mdi-school" color="teal"></v-icon></template>
+                    <v-list-item-title>Obtention Diplôme Médecine</v-list-item-title>
+                    <v-list-item-subtitle>{{ formatDate(selectedEmployee.medicalDegreeDate) }}</v-list-item-subtitle>
+                </v-list-item>
+                <v-divider class="my-2"></v-divider>
+                <v-list-item>
+                    <template v-slot:prepend><v-icon icon="mdi-clock-outline" color="blue"></v-icon></template>
+                    <v-list-item-title>Ancienneté Service</v-list-item-title>
+                     <v-list-item-subtitle>{{ calculateSeniority(selectedEmployee.arrivalDate) }}</v-list-item-subtitle>
+                </v-list-item>
+                 <v-list-item>
+                    <template v-slot:prepend><v-icon icon="mdi-calendar-check" color="green"></v-icon></template>
+                    <v-list-item-title>Jours depuis l'arrivée</v-list-item-title>
+                    <v-list-item-subtitle>{{ calculateDays(selectedEmployee.arrivalDate) }} jours</v-list-item-subtitle>
+                </v-list-item>
+                <v-divider class="my-2"></v-divider>
+                 <v-list-item>
+                    <template v-slot:prepend><v-icon icon="mdi-file-document-edit-outline" color="orange"></v-icon></template>
+                    <v-list-item-title>Signature CDI</v-list-item-title>
+                    <v-list-item-subtitle>{{ formatDate(selectedEmployee.cdiDate) }}</v-list-item-subtitle>
+                </v-list-item>
+                 <v-list-item>
+                    <template v-slot:prepend><v-icon icon="mdi-trending-up" color="purple"></v-icon></template>
+                    <v-list-item-title>Dernière promotion</v-list-item-title>
+                    <v-list-item-subtitle>{{ formatDate(selectedEmployee.lastPromotionDate) }}</v-list-item-subtitle>
+                </v-list-item>
+                 <v-list-item>
+                    <template v-slot:prepend><v-icon icon="mdi-medal" color="amber"></v-icon></template>
+                    <v-list-item-title>Jours au grade</v-list-item-title>
+                    <v-list-item-subtitle>{{ calculateDays(selectedEmployee.lastPromotionDate) }} jours</v-list-item-subtitle>
+                </v-list-item>
+            </v-list>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn color="primary" variant="text" @click="detailsDialog = false">Fermer</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <v-dialog v-model="specialtiesDialog" max-width="600px">
+      <v-card>
+        <v-card-title>
+          <span class="text-h5">Gérer les spécialités</span>
+        </v-card-title>
+        <v-card-text>
+          <v-container>
+            <v-row class="align-center">
+              <v-col cols="3">
+                <v-text-field
+                  v-model="newSpecialty.icon"
+                  label="Emoji"
+                  variant="outlined"
+                  hide-details
+                ></v-text-field>
+              </v-col>
+              <v-col cols="7">
+                <v-text-field
+                  v-model="newSpecialty.name"
+                  label="Nom de la spécialité"
+                  variant="outlined"
+                  hide-details
+                ></v-text-field>
+              </v-col>
+              <v-col cols="2">
+                <v-btn color="primary" icon="mdi-plus" @click="addSpecialty"></v-btn>
+              </v-col>
+            </v-row>
+            <v-divider class="my-4"></v-divider>
+             <v-list density="compact">
+                <v-list-item v-for="spec in specialties" :key="spec.id">
+                    <template v-slot:prepend>
+                        <span class="text-h6 mr-4">{{ spec.icon }}</span>
+                    </template>
+                    <v-list-item-title>{{ spec.name }}</v-list-item-title>
+                    <template v-slot:append>
+                        <v-btn icon="mdi-delete" size="small" variant="text" color="error" @click="removeSpecialty(spec)"></v-btn>
+                    </template>
+                </v-list-item>
+             </v-list>
+          </v-container>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn color="primary" variant="text" @click="specialtiesDialog = false">Fermer</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </v-container>
 </template>
 
 <script>
 import Employee from '@/classes/Employee.js'
+import Specialty from '@/classes/Specialty.js'
 import Swal from 'sweetalert2/dist/sweetalert2.js'
-import specialties from '@/config/specialties.js'
 
 export default {
   name: 'RH',
   data: () => ({
     dialog: false,
+    specialtiesDialog: false,
     search: '',
-    specialties: specialties,
+    specialties: [],
+    newSpecialty: {
+      name: '',
+      icon: ''
+    },
     headers: [
       { title: 'Nom', key: 'name' },
       { title: 'Email', key: 'email' },
@@ -206,17 +355,31 @@ export default {
       sex: 'Homme',
       specialties: [],
       chiefSpecialty: null,
+      birthDate: null,
+      arrivalDate: null,
+      cdiDate: null,
+      lastPromotionDate: null,
+      medicalDegreeDate: null,
     },
     defaultItem: {
       name: '',
       email: '',
-      phone: '',
+      phone: '555-',
       role: 'Interne',
       sex: 'Homme',
       specialties: [],
       chiefSpecialty: null,
+      birthDate: null,
+      arrivalDate: null,
+      cdiDate: null,
+      lastPromotionDate: null,
+      medicalDegreeDate: null,
     },
+    detailsDialog: false,
+    selectedEmployee: null,
+
     unsub: [],
+    showAllEmails: false,
   }),
 
   computed: {
@@ -228,6 +391,9 @@ export default {
   mounted() {
     this.unsub.push(Employee.listenAll((employees) => {
       this.employees = employees
+    }))
+    this.unsub.push(Specialty.listenAll((list) => {
+      this.specialties = list
     }))
   },
 
@@ -262,6 +428,9 @@ export default {
 
     openAddDialog() {
       this.editedItem = Object.assign({}, this.defaultItem)
+      const today = new Date().toISOString().substr(0, 10)
+      this.editedItem.arrivalDate = today
+      this.editedItem.lastPromotionDate = today
       this.dialog = true
     },
 
@@ -299,7 +468,12 @@ export default {
              this.editedItem.sex,
              this.editedItem.phone,
              this.editedItem.specialties,
-             this.editedItem.chiefSpecialty
+             this.editedItem.chiefSpecialty,
+             this.editedItem.birthDate,
+             this.editedItem.arrivalDate,
+             this.editedItem.cdiDate,
+             this.editedItem.lastPromotionDate,
+             this.editedItem.medicalDegreeDate
            )
         } else {
           // Creating new
@@ -311,7 +485,12 @@ export default {
             this.editedItem.sex,
             this.editedItem.phone,
             this.editedItem.specialties,
-            this.editedItem.chiefSpecialty
+            this.editedItem.chiefSpecialty,
+            this.editedItem.birthDate,
+            this.editedItem.arrivalDate,
+            this.editedItem.cdiDate,
+            this.editedItem.lastPromotionDate,
+            this.editedItem.medicalDegreeDate
           )
         }
 
@@ -362,6 +541,91 @@ export default {
         }
       })
     },
+
+    openDetails(item) {
+      this.selectedEmployee = item
+      this.detailsDialog = true
+    },
+
+    formatDate(dateString) {
+      if (!dateString) return 'Non renseigné'
+      return new Date(dateString).toLocaleDateString('fr-FR')
+    },
+
+    calculateAge(dateString) {
+      if (!dateString) return '?'
+      const birthDate = new Date(dateString)
+      const ageDifMs = Date.now() - birthDate.getTime()
+      const ageDate = new Date(ageDifMs)
+      return Math.abs(ageDate.getUTCFullYear() - 1970)
+    },
+
+    calculateSeniority(dateString) {
+        if (!dateString) return 'Non renseigné'
+        const date = new Date(dateString)
+        const now = new Date()
+        let years = now.getFullYear() - date.getFullYear()
+        let months = now.getMonth() - date.getMonth()
+        if (months < 0 || (months === 0 && now.getDate() < date.getDate())) {
+            years--
+            months += 12
+        }
+        return `${years} ans, ${months} mois`
+    },
+
+    calculateDays(dateString) {
+       if (!dateString) return '?'
+       const oneDay = 24 * 60 * 60 * 1000
+       const firstDate = new Date(dateString)
+       const secondDate = new Date()
+       return Math.round(Math.abs((firstDate - secondDate) / oneDay))
+    },
+
+    onRoleChange() {
+        this.editedItem.lastPromotionDate = new Date().toISOString().substr(0, 10)
+    },
+
+    openSpecialtiesDialog() {
+        this.specialtiesDialog = true
+    },
+
+    async addSpecialty() {
+        if (!this.newSpecialty.name || !this.newSpecialty.icon) return
+        try {
+            const spec = new Specialty(null, this.newSpecialty.name, this.newSpecialty.icon)
+            await spec.save()
+            this.newSpecialty = { name: '', icon: '' }
+        } catch (e) {
+            console.error(e)
+            Swal.fire({ icon: 'error', title: 'Erreur', text: "Erreur lors de l'ajout" })
+        }
+    },
+
+    async removeSpecialty(item) {
+        try {
+             // Reconstruct instance to delete
+             const spec = new Specialty(item.id, item.name, item.icon, item.value)
+             await spec.delete()
+        } catch (e) {
+             console.error(e)
+             Swal.fire({ icon: 'error', title: 'Erreur', text: "Erreur lors de la suppression" })
+        }
+    },
   },
 }
 </script>
+
+<style scoped>
+.blurred-email {
+  filter: blur(4px);
+  transition: filter 0.3s ease;
+  user-select: none;
+  cursor: default;
+}
+
+.blurred-email:hover {
+  filter: blur(0);
+  user-select: text;
+  cursor: text;
+}
+</style>
