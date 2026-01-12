@@ -418,6 +418,28 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+    <v-dialog v-model="deleteDialog" max-width="500px">
+      <v-card>
+        <v-card-title class="bg-primary text-white">
+          <span class="text-h5">Confirmer la suppression</span>
+        </v-card-title>
+        <v-card-text class="pt-4">
+          <p class="mb-4">Êtes-vous sûr de vouloir supprimer l'employé "{{ itemToDelete?.name }}" ?</p>
+          <v-select
+            v-model="deleteReason"
+            :items="['Abandon de poste', 'Licenciement', 'Démission', 'Autre']"
+            label="Raison de la suppression"
+            variant="outlined"
+            hide-details="auto"
+          ></v-select>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn color="blue-darken-1" variant="text" @click="closeDeleteDialog">Annuler</v-btn>
+          <v-btn color="error" variant="text" @click="confirmDelete">Supprimer</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </v-container>
 </template>
 
@@ -426,11 +448,18 @@ import Employee from '@/classes/Employee'
 import Specialty from '@/classes/Specialty'
 import Swal from 'sweetalert2/dist/sweetalert2.js'
 import { rhChecklists } from '@/config/rh_checklists'
+import { useUserStore } from '@/store/user.js'
+import logger from '@/functions/logger.js'
 
 export default {
   name: 'RH',
   data: () => ({
+
+    userStore: useUserStore(),
     dialog: false,
+    deleteDialog: false,
+    itemToDelete: null,
+    deleteReason: null,
     specialtiesDialog: false,
     search: '',
     specialties: [],
@@ -642,7 +671,12 @@ export default {
 
       try {
         let profile
+        let isNew = false
+        let oldRole = null
+
         if (this.editedItem.id) {
+           const original = this.employees.find(e => e.id === this.editedItem.id)
+           if (original) oldRole = original.role
            profile = new Employee(
              this.editedItem.id,
              this.editedItem.name,
@@ -662,6 +696,7 @@ export default {
            )
         } else {
           // Creating new
+          isNew = true
           profile = new Employee(
             null,
             this.editedItem.name,
@@ -683,6 +718,12 @@ export default {
 
         await profile.save()
         
+        if (isNew) {
+            logger.log(this.userStore.profile.name, "Ajout employés", `Ajout de l'employé ${this.editedItem.name} en tant que ${this.editedItem.role}`)
+        } else if (oldRole && oldRole !== this.editedItem.role) {
+            logger.log(this.userStore.profile.name, "Changement de grade", `Passage de ${this.editedItem.name} de ${oldRole} à ${this.editedItem.role}`)
+        }
+
         Swal.fire({
             icon: 'success',
             title: 'Succès',
@@ -701,32 +742,46 @@ export default {
     },
 
     deleteEmployee(item) {
-      Swal.fire({
-        title: 'Confirmer la suppression',
-        text: `Êtes-vous sûr de vouloir supprimer l'employé "${item.name}" ?`,
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonText: 'Oui, supprimer',
-        cancelButtonText: 'Annuler',
-      }).then(async (result) => {
-        if (result.isConfirmed) {
-          try {
-            await item.delete()
-            Swal.fire({
-              icon: 'success',
-              title: 'Succès',
-              text: 'Employé supprimé',
-              timer: 2000
-            })
-          } catch (e) {
-            Swal.fire({
-              icon: 'error',
-              title: 'Erreur',
-              text: "Erreur lors de la suppression",
-            })
-          }
-        }
-      })
+      this.itemToDelete = item
+      this.deleteReason = null
+      this.deleteDialog = true
+    },
+
+    closeDeleteDialog() {
+      this.deleteDialog = false
+      this.itemToDelete = null
+      this.deleteReason = null
+    },
+
+    async confirmDelete() {
+      if (!this.deleteReason) {
+         Swal.fire({
+            icon: 'error',
+            title: 'Erreur',
+            text: 'Vous devez sélectionner une raison',
+            timer: 2000
+        })
+        return
+      }
+
+      try {
+        await this.itemToDelete.delete()
+        logger.log(this.userStore.profile.name, "Suppression employé", `Suppression de ${this.itemToDelete.name} pour ${this.deleteReason}`)
+        Swal.fire({
+            icon: 'success',
+            title: 'Succès',
+            text: 'Employé supprimé',
+            timer: 2000
+        })
+        this.closeDeleteDialog()
+      } catch (e) {
+        console.error(e)
+        Swal.fire({
+            icon: 'error',
+            title: 'Erreur',
+            text: "Erreur lors de la suppression",
+        })
+      }
     },
 
     openDetails(item) {
