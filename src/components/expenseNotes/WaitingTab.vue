@@ -9,7 +9,7 @@
             <v-btn variant="tonal" color="error" class="ml-3 rounded-xl" @click="refuseNote(note)">❌ Refuser</v-btn>
             <v-btn variant="tonal" color="success" class="ml-3 rounded-xl" @click="payNote(note)">💵 Payer</v-btn>
           </div>
-          <h2 class="pl-3 text-white">
+          <h2 class="pl-3 text-white" v-if="getProfileInfo(note.user)">
             <span>{{ getProfileInfo(note.user).name }} - </span>
             <span v-if="note.reason == 'buy'">{{ getCompagnyInfo(getHystoryInfo(note.data))?.icon }} {{ getCompagnyInfo(getHystoryInfo(note.data))?.name }} : ({{formatMoney(note.price)}})</span>
             <span v-else-if="note.reason == 'vehicle'">🚗 Fourière : ({{formatMoney(note.price)}})</span>

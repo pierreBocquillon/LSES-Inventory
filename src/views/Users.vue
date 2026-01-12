@@ -31,7 +31,7 @@ import { useUserStore } from '@/store/user.js'
 import UsersTab from '@/components/users/UsersTab.vue'
 import AskTab from '@/components/users/AskTab.vue'
 
-import Profile from '@/classes/Profile.js'
+import { initNotifManager, stopNotifManager, notifState } from '@/functions/nofifManager.js'
 
 export default {
   props : [],
@@ -43,19 +43,18 @@ export default {
     return {
       userStore: useUserStore(),
       tab: 'users',
-      unsub: [],
-      waitingUsers: [],
     }
   },
   created() {
-    this.unsub.push(Profile.listenByActivated(false, users => {
-      this.waitingUsers = users.filter(user => !user.rejected)
-    }))
+    initNotifManager()
+  },
+  computed: {
+    waitingUsers() {
+      return notifState.waitingUsers
+    }
   },
   beforeUnmount() {
-    this.unsub.forEach(unsub => {
-      if (typeof unsub === 'function') unsub()
-    })
+    stopNotifManager()
   },
 }
 </script>

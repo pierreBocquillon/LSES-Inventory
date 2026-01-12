@@ -204,11 +204,12 @@ import Instance from '@/classes/Instance.js'
 
 import logger from '@/functions/logger.js'
 
+import { initNotifManager, stopNotifManager, notifState, storageDeltaTime } from '@/functions/nofifManager.js'
+
 export default {
   props : [],
   data() {
     return {
-      unsub: [],
       nestedUnsub: [],
       userStore: useUserStore(),
 
@@ -227,11 +228,6 @@ export default {
         name: '',
         seller: null,
       },
-      
-      storages: [],
-      companies: [],
-      items: [],
-      saveDates: [],
 
       dialogInstance: false,
       currentItem: null,
@@ -250,30 +246,37 @@ export default {
   },
 
   mounted() {
-    this.unsub.push(SaveDate.listenAll(dates => {
-      this.saveDates = {}
-      dates.forEach(date => {
-        this.saveDates[date.id] = date
-      })
-    }))
-    this.unsub.push(Storage.listenAll(storages => {
-      this.storages = storages
-      this.storages.sort((a, b) => a.name.localeCompare(b.name))
-      if (this.storages.length > 0 && !this.tab) {
-        this.tab = this.storages[0].id
-      }
-    }))
-    this.unsub.push(Company.listenAll(companies => {
-      this.companies = companies
-      this.companies.sort((a, b) => a.name.localeCompare(b.name))
-    }))
-    this.unsub.push(Item.listenAll(items => {
-      this.items = items
-      this.items.sort((a, b) => a.id.localeCompare(b.id))
-    }))
+    initNotifManager()
+  },
+
+  watch: {
+    storages: {
+      handler(val) {
+        if (val.length > 0 && !this.tab) {
+          this.tab = val[0].id
+        }
+      },
+      deep: true,
+      immediate: true
+    }
   },
 
   computed: {
+    storages() {
+      return notifState.storages
+    },
+    companies() {
+      return notifState.companies
+    },
+    items() {
+      return notifState.items
+    },
+    saveDates() {
+      return notifState.saveDates
+    },
+    deltaTime() {
+      return storageDeltaTime.value
+    },
     currentStorageItems(){
       let currentStorageItems = this.items.filter(item => item.storage == this.tab)
       return currentStorageItems
@@ -289,18 +292,6 @@ export default {
       }
 
       return filteredItems
-    },
-    deltaTime(){
-      let deltaTime = {}
-      for(let storage of this.storages){
-        if(this.saveDates[storage.id] == undefined){
-          deltaTime[storage.id] = 9999
-        }
-        if(this.saveDates[storage.id]){
-          deltaTime[storage.id] = (new Date().getTime() - new Date(this.saveDates[storage.id].date).getTime()) / (1000 * 60 * 60)
-        }
-      }
-      return deltaTime
     },
   },
 
@@ -436,11 +427,7 @@ export default {
   },
 
   beforeUnmount() {
-    this.unsub.forEach(unsub => {
-      if (typeof unsub == 'function') {
-        unsub()
-      }
-    })
+    stopNotifManager()
     this.nestedUnsub.forEach(unsub => {
       if (typeof unsub == 'function') {
         unsub()

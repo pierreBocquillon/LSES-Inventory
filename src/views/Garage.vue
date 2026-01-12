@@ -36,11 +36,10 @@ import Swal from 'sweetalert2/dist/sweetalert2.js'
 
 import logger from '../functions/logger'
 
-import Vehicle from '../classes/Vehicle'
-import SaveDate from '../classes/SaveDate'
-
 import GarageTab from '@/components/garage/GarageTab.vue'
 import HistoryTab from '@/components/garage/HistoryTab.vue'
+
+import { initNotifManager, stopNotifManager, garageNotif } from '@/functions/nofifManager.js'
 
 export default {
   props : [],
@@ -50,68 +49,23 @@ export default {
   },
   data() {
     return {
-      unsub: [],
       userStore: useUserStore(),
       tab: 'garage',
-      vehicles: [],
-      lastSaveDate: null,
     }
   },
 
   mounted() {
-    this.unsub.push(SaveDate.listenById('repa_flotte', saveDate => {
-      this.lastSaveDate = saveDate
-      if(!this.lastSaveDate) {
-        let newDate = SaveDate.initOne()
-        newDate.id = 'repa_flotte'
-        newDate.date = new Date().getTime()
-        newDate.save()
-      }
-    }))
-    this.unsub.push(Vehicle.listenAll(vehicles => {
-      this.vehicles = vehicles.filter(vehicle => vehicle.where !== "dead")
-      this.vehicles.sort((a, b) => a.name.localeCompare(b.name))
-    }))
+    initNotifManager()
   },
 
   computed: {
-    deltaTime() {
-      if (!this.lastSaveDate) return Infinity
-      const now = new Date().getTime()
-      const last = this.lastSaveDate.date
-      const diff = now - last
-      return Math.floor(diff / (1000 * 60 * 60))
-    },
     notifAmount() {
-      let count = 0
-      
-      if (this.deltaTime >= 24) {
-        count += 1
-      }
-
-      this.vehicles.forEach(vehicle => {
-        if(vehicle.where == "dead") return;
-        if (vehicle.insurance) {
-          count += 1
-        }
-        if (!vehicle.insurance && ((vehicle.underGuard && parseInt(vehicle.recupDate) < new Date().getTime()) || vehicle.needRepair) ) {
-          count += 1
-        }
-        if (!vehicle.insurance && !vehicle.underGuard && !vehicle.hideAlert && (parseInt(vehicle.lastRepairDate) < new Date().getTime() - (24 * 60 * 60 * 1000))) {
-          count += 1
-        }
-      })
-
-      return count
+      return garageNotif.value
     }
   },
 
   beforeUnmount() {
-    this.unsub.forEach(unsub => {
-      if (typeof unsub == 'function') {
-        unsub()
-      }
-    })
+    stopNotifManager()
   },
 }
 </script>
