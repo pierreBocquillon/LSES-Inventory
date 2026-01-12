@@ -7,121 +7,131 @@ const routes = [
   {
     name: 'Accueil',
     path: '/',
-    component:  () => import("@/views/Home.vue"),
+    component: () => import("@/views/Home.vue"),
     meta: {
       needAccount: true,
       showNav: true,
-      permissions:[]
+      permissions: []
     }
   },
   {
     name: 'Inventaire',
     path: '/inventory',
-    component:  () => import("@/views/Inventory.vue"),
+    component: () => import("@/views/Inventory.vue"),
     meta: {
       needAccount: true,
       showNav: true,
-      permissions:[]
+      permissions: []
     }
   },
   {
     name: 'Commandes',
     path: '/orders',
-    component:  () => import("@/views/Orders.vue"),
+    component: () => import("@/views/Orders.vue"),
     meta: {
       needAccount: true,
       showNav: true,
-      permissions:[]
+      permissions: []
     }
   },
   {
     name: 'Notes de frais',
     path: '/expenseNotes',
-    component:  () => import("@/views/ExpenseNotes.vue"),
+    component: () => import("@/views/ExpenseNotes.vue"),
     meta: {
       needAccount: true,
       showNav: true,
-      permissions:[]
+      permissions: []
     }
   },
   {
     name: 'Garage',
     path: '/garage',
-    component:  () => import("@/views/Garage.vue"),
+    component: () => import("@/views/Garage.vue"),
     meta: {
       needAccount: true,
       showNav: true,
-      permissions:[]
+      permissions: []
     }
   },
   {
     name: 'Autopsie',
     path: '/autopsie',
-    component:  () => import("@/views/Autopsie.vue"),
+    component: () => import("@/views/Autopsie.vue"),
     meta: {
       needAccount: true,
       showNav: true,
-      permissions:['legist']
+      permissions: ['legist']
     }
   },
   {
     name: 'Entreprises',
     path: '/companies',
-    component:  () => import("@/views/Companies.vue"),
+    component: () => import("@/views/Companies.vue"),
     meta: {
       needAccount: true,
       showNav: true,
-      permissions:['stock']
+      permissions: ['stock']
     }
   },
   {
     name: 'Stockage',
     path: '/storage',
-    component:  () => import("@/views/Storage.vue"),
+    component: () => import("@/views/Storage.vue"),
     meta: {
       needAccount: true,
       showNav: true,
-      permissions:['stock']
+      permissions: ['stock']
     }
   },
   {
     name: 'Items',
     path: '/items',
-    component:  () => import("@/views/Items.vue"),
+    component: () => import("@/views/Items.vue"),
     meta: {
       needAccount: true,
       showNav: true,
-      permissions:['stock']
+      permissions: ['stock']
     }
   },
   {
     name: 'Vehicules',
     path: '/vehicles',
-    component:  () => import("@/views/Vehicles.vue"),
+    component: () => import("@/views/Vehicles.vue"),
     meta: {
       needAccount: true,
       showNav: true,
-      permissions:['vehicles']
+      permissions: ['vehicles']
     }
   },
   {
     name: 'Utilisateurs',
     path: '/users',
-    component:  () => import("@/views/Users.vue"),
+    component: () => import("@/views/Users.vue"),
     meta: {
       needAccount: true,
       showNav: true,
-      permissions:['user']
+      permissions: ['user']
+    }
+  },
+  {
+    name: 'Ressources Humaines',
+    path: '/rh',
+    component: () => import("@/views/RH.vue"),
+    meta: {
+      needAccount: true,
+      showNav: true,
+      permissions: ['rh']
     }
   },
   {
     name: 'Logs',
     path: '/logs',
-    component:  () => import("@/views/Logs.vue"),
+    component: () => import("@/views/Logs.vue"),
     meta: {
       needAccount: true,
       showNav: true,
-      permissions:['logs']
+      permissions: ['logs']
     }
   },
   {
@@ -131,7 +141,7 @@ const routes = [
     meta: {
       needAccount: false,
       showNav: false,
-      permissions:[]
+      permissions: []
     }
   },
   {
@@ -141,7 +151,7 @@ const routes = [
     meta: {
       needAccount: false,
       showNav: false,
-      permissions:[]
+      permissions: []
     }
   },
   {
@@ -151,7 +161,7 @@ const routes = [
     meta: {
       needAccount: false,
       showNav: false,
-      permissions:[]
+      permissions: []
     }
   },
 ]
@@ -170,9 +180,9 @@ router.beforeEach((to, from, next) => {
 })
 
 router.afterEach((to, from) => {
-	nextTick(() => {
-		document.title = 'LSES inventory - ' + to.name
-	})
+  nextTick(() => {
+    document.title = 'LSES inventory - ' + to.name
+  })
 })
 
 export default router
