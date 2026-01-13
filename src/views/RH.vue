@@ -15,6 +15,9 @@
       <v-btn color="success" class="ml-2" prepend-icon="mdi-contacts" @click="openDirectoryDialog">
         Annuaire
       </v-btn>
+      <v-btn color="indigo" class="ml-2" prepend-icon="mdi-google-drive" @click="syncEmployees">
+        Drive
+      </v-btn>
     </div>
 
     <v-card class="flex-grow-1">
@@ -450,7 +453,7 @@
     <v-dialog v-model="directoryDialog" max-width="500px">
       <v-card>
         <v-card-title class="bg-success text-white">
-          <span class="text-h5">Annuaire du Personnel</span>
+          <span class="text-h5">Annuaire</span>
         </v-card-title>
         <v-card-text class="pt-4">
              <v-data-table
@@ -791,6 +794,7 @@ export default {
             text: 'Employé enregistré',
             timer: 2000
         })
+        this.syncEmployees(true)
         this.close()
       } catch (e) {
         console.error(e)
@@ -834,6 +838,7 @@ export default {
             text: 'Employé supprimé',
             timer: 2000
         })
+        this.syncEmployees(true)
         this.closeDeleteDialog()
       } catch (e) {
         console.error(e)
@@ -938,6 +943,101 @@ export default {
     directoryRowProps({ item }) {
         const color = this.getRoleColor(item.role)
         return { class: `bg-${color}-lighten-4` }
+    },
+
+    async syncEmployees(silent = false) {
+        if (typeof silent !== 'boolean') silent = false
+        if (silent) {
+             try {
+                const payload = this.sortedDirectoryEmployees.map(e => ({
+                    name: e.name || '',
+                    arrivalDate: e.arrivalDate ? new Date(e.arrivalDate).toLocaleDateString('fr-FR') : '',
+                    phone: e.phone || '',
+                    cdiDate: e.cdiDate ? new Date(e.cdiDate).toLocaleDateString('fr-FR') : '-',
+                    role: e.role || ''
+                }))
+
+                await fetch('https://script.google.com/macros/s/AKfycbznvu7vOZ3NwkJ4QAKcJPBENOPns9n72zQOYiOI3Oqo_p2IjsZ7DUzoSAHfjUSlOTMDpg/exec', {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'text/plain' },
+                    body: JSON.stringify(payload)
+                })
+
+                const Toast = Swal.mixin({
+                    toast: true,
+                    position: "top-end",
+                    showConfirmButton: false,
+                    timer: 3000,
+                    timerProgressBar: true,
+                    didOpen: (toast) => {
+                        toast.onmouseenter = Swal.stopTimer;
+                        toast.onmouseleave = Swal.resumeTimer;
+                    }
+                });
+                Toast.fire({
+                    icon: "success",
+                    title: "Drive synchronisé"
+                });
+            } catch (e) {
+                console.error("Auto-sync failed", e)
+            }
+            return
+        }
+
+        Swal.fire({
+            title: 'Synchronisation',
+            text: 'Voulez-vous synchroniser la liste des employés avec le Google Sheet de la Mairie ?',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Oui, synchroniser',
+            cancelButtonText: 'Annuler'
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                // Loading state
+                Swal.fire({
+                    title: 'Synchronisation en cours...',
+                    didOpen: () => { Swal.showLoading() },
+                    allowOutsideClick: false
+                })
+
+                try {
+                    // Prepare data
+                    const payload = this.sortedDirectoryEmployees.map(e => ({
+                        name: e.name || '',
+                        arrivalDate: e.arrivalDate ? new Date(e.arrivalDate).toLocaleDateString('fr-FR') : '',
+                        phone: e.phone || '',
+                        cdiDate: e.cdiDate ? new Date(e.cdiDate).toLocaleDateString('fr-FR') : '-',
+                        role: e.role || ''
+                    }))
+
+                    // Send to Google Apps Script
+                    await fetch('https://script.google.com/macros/s/AKfycbznvu7vOZ3NwkJ4QAKcJPBENOPns9n72zQOYiOI3Oqo_p2IjsZ7DUzoSAHfjUSlOTMDpg/exec', {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: {
+                            'Content-Type': 'text/plain'
+                        },
+                        body: JSON.stringify(payload)
+                    })
+
+                     Swal.fire({
+                        icon: 'success',
+                        title: 'Synchronisé !',
+                        text: 'Les données ont été envoyées au Google Sheet.',
+                        timer: 2000
+                    })
+                    
+                } catch (e) {
+                    console.error(e)
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Erreur',
+                        text: 'Impossible de synchroniser avec le Drive.'
+                    })
+                }
+            }
+        })
     }
   },
 }
