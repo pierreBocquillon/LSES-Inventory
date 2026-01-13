@@ -795,9 +795,9 @@ export default {
         await profile.save()
         
         if (isNew) {
-            logger.log(this.userStore.profile.name, "Ajout employés", `Ajout de l'employé ${this.editedItem.name} en tant que ${this.editedItem.role}`)
+            logger.log(this.userStore.profile.id, "Ajout employés", `Ajout de l'employé ${this.editedItem.name} en tant que ${this.editedItem.role}`)
         } else if (oldRole && oldRole !== this.editedItem.role) {
-            logger.log(this.userStore.profile.name, "Changement de grade", `Passage de ${this.editedItem.name} de ${oldRole} à ${this.editedItem.role}`)
+            logger.log(this.userStore.profile.id, "Changement de grade", `Passage de ${this.editedItem.name} de ${oldRole} à ${this.editedItem.role}`)
         }
 
         Swal.fire({
@@ -843,7 +843,7 @@ export default {
 
       try {
         await this.itemToDelete.delete()
-        logger.log(this.userStore.profile.name, "Suppression employé", `Suppression de ${this.itemToDelete.name} pour ${this.deleteReason}`)
+        logger.log(this.userStore.profile.id, "Suppression employé", `Suppression de ${this.itemToDelete.name} pour ${this.deleteReason}`)
         Swal.fire({
             icon: 'success',
             title: 'Succès',
