@@ -110,15 +110,27 @@
         </template>
 
         <template v-slot:item.actions="{ item }">
-          <v-btn icon variant="text" size="small" color="primary" @click="editEmployee(item)">
-            <v-icon>mdi-pencil</v-icon>
-          </v-btn>
-          <v-btn icon variant="text" size="small" color="error" @click="deleteEmployee(item)">
-            <v-icon>mdi-delete</v-icon>
-          </v-btn>
-          <v-btn icon variant="text" size="small" color="info" @click="openDetails(item)">
-            <v-icon>mdi-calendar</v-icon>
-          </v-btn>
+          <v-tooltip text="Modifier l'employé" location="top">
+            <template v-slot:activator="{ props }">
+              <v-btn icon variant="text" size="small" color="primary" v-bind="props" @click="editEmployee(item)">
+                <v-icon>mdi-pencil</v-icon>
+              </v-btn>
+            </template>
+          </v-tooltip>
+          <v-tooltip text="Supprimer l'employé" location="top">
+            <template v-slot:activator="{ props }">
+              <v-btn icon variant="text" size="small" color="error" v-bind="props" @click="deleteEmployee(item)">
+                <v-icon>mdi-delete</v-icon>
+              </v-btn>
+            </template>
+          </v-tooltip>
+          <v-tooltip text="Voir le dossier" location="top">
+            <template v-slot:activator="{ props }">
+              <v-btn icon variant="text" size="small" color="info" v-bind="props" @click="openDetails(item)">
+                <v-icon>mdi-calendar</v-icon>
+              </v-btn>
+            </template>
+          </v-tooltip>
         </template>
       </v-data-table>
     </v-card>
