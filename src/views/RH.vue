@@ -20,6 +20,7 @@
         :items="employees"
         :search="search"
         class="h-100"
+        :sort-by="[{ key: 'role', order: 'asc' }]"
       >
         <template v-slot:item.name="{ item }">
           <div class="d-flex align-center">
@@ -93,10 +94,10 @@
               :key="spec"
               size="x-small"
               class="mr-1 mb-1"
-              :color="item.chiefSpecialty === spec ? 'amber-darken-3' : undefined"
-              :variant="item.chiefSpecialty === spec ? 'flat' : 'tonal'"
+              :color="item.chiefSpecialties && item.chiefSpecialties.includes(spec) ? 'amber-darken-3' : undefined"
+              :variant="item.chiefSpecialties && item.chiefSpecialties.includes(spec) ? 'flat' : 'tonal'"
             >
-              <v-icon v-if="item.chiefSpecialty === spec" start size="x-small">mdi-crown</v-icon>
+              <v-icon v-if="item.chiefSpecialties && item.chiefSpecialties.includes(spec)" start size="x-small">mdi-crown</v-icon>
               {{ getSpecialtyIcon(spec) }} {{ getSpecialtyName(spec) }}
             </v-chip>
           </div>
@@ -143,7 +144,7 @@
               <v-col cols="12">
                 <v-text-field
                   v-model="editedItem.email"
-                  label="Email"
+                  label="Email (Gmail)"
                   variant="outlined"
                 ></v-text-field>
               </v-col>
@@ -192,13 +193,16 @@
               </v-col>
               <v-col cols="12" v-if="editedItem.specialties && editedItem.specialties.length > 0">
                 <v-select
-                  v-model="editedItem.chiefSpecialty"
+                  v-model="editedItem.chiefSpecialties"
                   :items="getAvailableChiefSpecialties()"
                   item-title="name"
                   item-value="value"
                   label="Spécialité Admin"
                   variant="outlined"
                   clearable
+                  multiple
+                  chips
+                  closable-chips
                 ></v-select>
               </v-col>
             </v-row>
@@ -477,7 +481,14 @@ export default {
       { title: 'Nom', key: 'name' },
       { title: 'Email', key: 'email' },
       { title: 'Téléphone', key: 'phone' },
-      { title: 'Rôle', key: 'role' },
+      { 
+        title: 'Rôle', 
+        key: 'role',
+        sort: (a, b) => {
+          const roleOrder = ['Directeur', 'Directeur Adjoint', 'Assistant RH', 'Responsable de Service', 'Spécialiste', 'Titulaire', 'Résident', 'Interne']
+          return roleOrder.indexOf(a) - roleOrder.indexOf(b)
+        }
+      },
       { title: 'Spécialités', key: 'specialties' },
       { title: 'Actions', key: 'actions', sortable: false, align: 'end' },
     ],
@@ -489,7 +500,7 @@ export default {
       role: 'Interne',
       sex: 'Homme',
       specialties: [],
-      chiefSpecialty: null,
+      chiefSpecialties: [],
       birthDate: null,
       arrivalDate: null,
       cdiDate: null,
@@ -506,7 +517,7 @@ export default {
       role: 'Interne',
       sex: 'Homme',
       specialties: [],
-      chiefSpecialty: null,
+      chiefSpecialties: [],
       birthDate: null,
       arrivalDate: null,
       cdiDate: null,
@@ -685,7 +696,7 @@ export default {
              this.editedItem.sex,
              this.editedItem.phone,
              this.editedItem.specialties,
-             this.editedItem.chiefSpecialty,
+             this.editedItem.chiefSpecialties,
              this.editedItem.birthDate,
              this.editedItem.arrivalDate,
              this.editedItem.cdiDate,
@@ -705,7 +716,7 @@ export default {
             this.editedItem.sex,
             this.editedItem.phone,
             this.editedItem.specialties,
-            this.editedItem.chiefSpecialty,
+            this.editedItem.chiefSpecialties,
             this.editedItem.birthDate,
             this.editedItem.arrivalDate,
             this.editedItem.cdiDate,
@@ -804,8 +815,10 @@ export default {
 
     calculateSeniority(dateString) {
         if (!dateString) return 'Non renseigné'
-        const date = new Date(dateString)
+        const date = new Date(dateString + 'T00:00:00')
         const now = new Date()
+        now.setHours(0, 0, 0, 0)
+        
         let years = now.getFullYear() - date.getFullYear()
         let months = now.getMonth() - date.getMonth()
         if (months < 0 || (months === 0 && now.getDate() < date.getDate())) {
@@ -818,8 +831,10 @@ export default {
     calculateDays(dateString) {
        if (!dateString) return '?'
        const oneDay = 24 * 60 * 60 * 1000
-       const firstDate = new Date(dateString)
+       const firstDate = new Date(dateString + 'T00:00:00')
        const secondDate = new Date()
+       secondDate.setHours(0, 0, 0, 0)
+       
        return Math.round(Math.abs((firstDate - secondDate) / oneDay))
     },
 

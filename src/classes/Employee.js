@@ -5,11 +5,16 @@ let collectionName = "employees"
 
 function docToInstance(document) {
     let data = document.data()
-    return data ? new Employee(document.id, data.name, data.email, data.role, data.sex, data.phone, data.specialties, data.chiefSpecialty, data.birthDate, data.arrivalDate, data.cdiDate, data.lastPromotionDate, data.medicalDegreeDate, data.helicopterTrainingDate, data.helicopterTrainingReimbursed) : null
+    // If chiefSpecialty exists (old format)
+    let chiefSpecs = data.chiefSpecialties || []
+    if (data.chiefSpecialty && !chiefSpecs.length) {
+        chiefSpecs = [data.chiefSpecialty]
+    }
+    return data ? new Employee(document.id, data.name, data.email, data.role, data.sex, data.phone, data.specialties, chiefSpecs, data.birthDate, data.arrivalDate, data.cdiDate, data.lastPromotionDate, data.medicalDegreeDate, data.helicopterTrainingDate, data.helicopterTrainingReimbursed) : null
 }
 
 class Employee {
-    constructor(id, name, email, role, sex, phone, specialties, chiefSpecialty, birthDate, arrivalDate, cdiDate, lastPromotionDate, medicalDegreeDate, helicopterTrainingDate, helicopterTrainingReimbursed) {
+    constructor(id, name, email, role, sex, phone, specialties, chiefSpecialties, birthDate, arrivalDate, cdiDate, lastPromotionDate, medicalDegreeDate, helicopterTrainingDate, helicopterTrainingReimbursed) {
         this.id = id
         this.name = name
         this.email = email
@@ -17,7 +22,7 @@ class Employee {
         this.sex = sex
         this.phone = phone
         this.specialties = specialties || []
-        this.chiefSpecialty = chiefSpecialty || null
+        this.chiefSpecialties = chiefSpecialties || []
         this.birthDate = birthDate || null
         this.arrivalDate = arrivalDate || null
         this.cdiDate = cdiDate || null
@@ -45,7 +50,7 @@ class Employee {
             sex: this.sex,
             phone: this.phone,
             specialties: this.specialties,
-            chiefSpecialty: this.chiefSpecialty,
+            chiefSpecialties: this.chiefSpecialties,
             birthDate: this.birthDate || null,
             arrivalDate: this.arrivalDate || null,
             cdiDate: this.cdiDate || null,
