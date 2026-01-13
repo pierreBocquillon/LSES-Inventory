@@ -12,6 +12,9 @@
       <v-btn color="info" class="ml-2" prepend-icon="mdi-clipboard-list" @click="openChecklistsDialog">
         Procédures
       </v-btn>
+      <v-btn color="success" class="ml-2" prepend-icon="mdi-contacts" @click="openDirectoryDialog">
+        Annuaire
+      </v-btn>
     </div>
 
     <v-card class="flex-grow-1">
@@ -444,6 +447,29 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+    <v-dialog v-model="directoryDialog" max-width="500px">
+      <v-card>
+        <v-card-title class="bg-success text-white">
+          <span class="text-h5">Annuaire du Personnel</span>
+        </v-card-title>
+        <v-card-text class="pt-4">
+             <v-data-table
+                :headers="directoryHeaders"
+                :items="sortedDirectoryEmployees"
+                density="compact"
+                items-per-page="-1"
+                class="elevation-1"
+                :row-props="directoryRowProps"
+             >
+                <template v-slot:bottom></template>
+             </v-data-table>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn color="primary" variant="text" @click="directoryDialog = false">Fermer</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </v-container>
 </template>
 
@@ -474,6 +500,14 @@ export default {
     
     // Checklists
     checklistDialog: false,
+    
+    // Directory
+    directoryDialog: false,
+    directoryHeaders: [
+      { title: 'Nom', key: 'name', align: 'start' },
+      { title: 'Téléphone', key: 'phone', align: 'start' },
+    ],
+
     rhChecklists: rhChecklists,
     selectedChecklistId: null,
     checkedSteps: [],
@@ -558,6 +592,21 @@ export default {
         
         if (totalItems === 0) return 0
         return (completedItems / totalItems) * 100
+    },
+
+    sortedDirectoryEmployees() {
+        const roleOrder = ['Directeur', 'Directeur Adjoint', 'Assistant RH', 'Responsable de Service', 'Spécialiste', 'Titulaire', 'Résident', 'Interne']
+        
+        return [...this.employees].sort((a, b) => {
+            // 1. Sort by Role Priority
+            const roleDiff = roleOrder.indexOf(a.role) - roleOrder.indexOf(b.role)
+            if (roleDiff !== 0) return roleDiff
+            
+            // 2. Sort by Seniority (Arrival Date) - Ascending (Earliest date = Most senior)
+            if (!a.arrivalDate) return 1
+            if (!b.arrivalDate) return -1
+            return new Date(a.arrivalDate) - new Date(b.arrivalDate)
+        })
     }
   },
 
@@ -579,8 +628,9 @@ export default {
   methods: {
     getRoleColor(role) {
       if (['Directeur', 'Directeur Adjoint'].includes(role)) return 'red'
-      if (['Responsable de Service', 'Assistant RH'].includes(role)) return 'orange'
-      if (['Titulaire', 'Spécialiste'].includes(role)) return 'blue'
+      if (['Responsable de Service'].includes(role)) return 'purple'
+      if (['Assistant RH'].includes(role)) return 'orange'
+      if (['Résident', 'Titulaire', 'Spécialiste'].includes(role)) return 'blue'
       return 'green'
     },
 
@@ -879,6 +929,15 @@ export default {
         } else {
             this.checkedSteps = []
         }
+    },
+
+    openDirectoryDialog() {
+        this.directoryDialog = true
+    },
+
+    directoryRowProps({ item }) {
+        const color = this.getRoleColor(item.role)
+        return { class: `bg-${color}-lighten-4` }
     }
   },
 }
