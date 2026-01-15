@@ -15,6 +15,9 @@
       <v-btn color="success" class="ml-2" prepend-icon="mdi-contacts" @click="openDirectoryDialog">
         Annuaire
       </v-btn>
+      <v-btn color="deep-purple" class="ml-2" prepend-icon="mdi-file-document-edit" @click="openCandidatureDialog">
+        Candidatures
+      </v-btn>
 
     </div>
 
@@ -502,12 +505,162 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+
+    <v-dialog v-model="candidatureDialog" max-width="900px">
+        <v-card>
+            <v-card-title class="bg-deep-purple text-white d-flex align-center">
+                <span class="text-h5">Gestion des Candidatures</span>
+                <v-spacer></v-spacer>
+                <v-btn color="white" variant="text" prepend-icon="mdi-plus" @click="openCandidatureForm()">
+                    Ajouter
+                </v-btn>
+            </v-card-title>
+            <v-card-text class="pt-4">
+                <v-data-table
+                    :headers="candidatureHeaders"
+                    :items="candidatures"
+                    items-per-page="5"
+                >
+                    <template v-slot:item.status="{ item }">
+                        <v-chip :color="getCandidatureStatusColor(item.status)" size="small">
+                            {{ item.status }}
+                        </v-chip>
+                    </template>
+                    <template v-slot:item.actions="{ item }">
+                        <v-icon size="small" class="mr-2" color="primary" @click="openCandidatureForm(item)">mdi-pencil</v-icon>
+                        <v-icon size="small" color="error" @click="deleteCandidature(item)">mdi-delete</v-icon>
+                    </template>
+                </v-data-table>
+            </v-card-text>
+            <v-card-actions>
+                <v-spacer></v-spacer>
+                <v-btn color="primary" variant="text" @click="candidatureDialog = false">Fermer</v-btn>
+            </v-card-actions>
+        </v-card>
+    </v-dialog>
+
+    <v-dialog v-model="candidatureFormDialog" max-width="500px">
+        <v-card>
+            <v-card-title class="bg-deep-purple text-white">
+                <span class="text-h5">{{ editedCandidature.id ? 'Modifier' : 'Nouvelle' }} Candidature</span>
+            </v-card-title>
+            <v-card-text class="pt-4">
+                <v-container>
+                    <v-row>
+                        <v-col cols="12" md="6">
+                            <v-text-field v-model="editedCandidature.name" label="Nom complet" variant="outlined"></v-text-field>
+                        </v-col>
+                        <v-col cols="12" md="6">
+                            <v-text-field v-model="editedCandidature.phone" label="Téléphone" variant="outlined"></v-text-field>
+                        </v-col>
+                        <v-col cols="12">
+                            <v-text-field v-model="editedCandidature.email" label="Email (@discord.gg)" variant="outlined" hint="Doit finir par @discord.gg"></v-text-field>
+                        </v-col>
+                        <v-col cols="12">
+                            <div class="text-subtitle-2 mb-1">Statut</div>
+                            <v-select 
+                                v-model="editedCandidature.status" 
+                                :items="['Candidature reçue', 'Appel pour entretien', 'Entretien planifié', 'Entretien en cours d\'analyse', 'Recrutement planifié', 'Refusé']"
+                                variant="outlined"
+                                hide-details
+                            ></v-select>
+                        </v-col>
+                        <v-col cols="12">
+                            <v-textarea v-model="editedCandidature.availabilities" label="Disponibilités" variant="outlined" rows="3"></v-textarea>
+                        </v-col>
+                    </v-row>
+                    
+                    <v-expand-transition>
+                        <div v-if="editedCandidature.status === 'Entretien en cours d\'analyse'">
+                             <v-divider class="my-4"></v-divider>
+                             <div class="text-h6 mb-2 text-center">Avis des RH</div>
+                             <div class="d-flex justify-center mb-4">
+                                <v-btn 
+                                    :color="editedCandidature.votes && editedCandidature.votes[userStore.profile.id] === 'pour' ? 'success' : 'grey-lighten-2'" 
+                                    class="mr-4"
+                                    prepend-icon="mdi-thumb-up"
+                                    @click="vote('pour')"
+                                >
+                                    POUR ({{ Object.values(editedCandidature.votes || {}).filter(v => v === 'pour').length }})
+                                </v-btn>
+                                <v-btn 
+                                    :color="editedCandidature.votes && editedCandidature.votes[userStore.profile.id] === 'contre' ? 'error' : 'grey-lighten-2'" 
+                                    prepend-icon="mdi-thumb-down"
+                                    @click="vote('contre')"
+                                >
+                                    CONTRE ({{ Object.values(editedCandidature.votes || {}).filter(v => v === 'contre').length }})
+                                </v-btn>
+                             </div>
+                        </div>
+                    </v-expand-transition>
+                    <v-expand-transition>
+                        <div v-if="['Entretien planifié', 'Entretien en cours d\'analyse', 'Recrutement planifié', 'Refusé'].includes(editedCandidature.status)">
+                             <v-divider class="my-4"></v-divider>
+                             <div class="text-h6 mb-2">Questionnaire Entretien</div>
+                             <v-row>
+                                <v-col cols="12">
+                                    <div class="text-subtitle-2 mb-1">Motivations</div>
+                                    <v-textarea v-model="editedCandidature.answers.motivations" variant="outlined" rows="2" auto-grow hide-details :readonly="!['Entretien planifié'].includes(editedCandidature.status)" :class="{ 'text-medium-emphasis': !['Entretien planifié'].includes(editedCandidature.status) }"></v-textarea>
+                                </v-col>
+                                <v-col cols="12">
+                                    <div class="text-subtitle-2 mb-1">Que faisiez-vous avant d'arriver sur l'île ?</div>
+                                    <v-textarea v-model="editedCandidature.answers.background_before" variant="outlined" rows="2" auto-grow hide-details :readonly="!['Entretien planifié'].includes(editedCandidature.status)" :class="{ 'text-medium-emphasis': !['Entretien planifié'].includes(editedCandidature.status) }"></v-textarea>
+                                </v-col>
+                                <v-col cols="12">
+                                    <div class="text-subtitle-2 mb-1">Qu'avez-vous fait depuis ?</div>
+                                    <v-textarea v-model="editedCandidature.answers.background_since" variant="outlined" rows="2" auto-grow hide-details :readonly="!['Entretien planifié'].includes(editedCandidature.status)" :class="{ 'text-medium-emphasis': !['Entretien planifié'].includes(editedCandidature.status) }"></v-textarea>
+                                </v-col>
+                                <v-col cols="12">
+                                    <div class="text-subtitle-2 mb-1">Pourquoi pas le BCES ?</div>
+                                    <v-textarea v-model="editedCandidature.answers.why_not_bces" variant="outlined" rows="2" auto-grow hide-details :readonly="!['Entretien planifié'].includes(editedCandidature.status)" :class="{ 'text-medium-emphasis': !['Entretien planifié'].includes(editedCandidature.status) }"></v-textarea>
+                                </v-col>
+                                <v-col cols="12">
+                                    <div class="text-subtitle-2 mb-1">Êtes-vous stressé au naturel ? Quand vous l'êtes, comment le gérez vous ?</div>
+                                    <v-textarea v-model="editedCandidature.answers.stress_management" variant="outlined" rows="2" auto-grow hide-details :readonly="!['Entretien planifié'].includes(editedCandidature.status)" :class="{ 'text-medium-emphasis': !['Entretien planifié'].includes(editedCandidature.status) }"></v-textarea>
+                                </v-col>
+                                <v-col cols="12">
+                                    <div class="text-subtitle-2 mb-1">Quelles sont, pour vous, les sources de stress d'un médecin ?</div>
+                                    <v-textarea v-model="editedCandidature.answers.stress_sources" variant="outlined" rows="2" auto-grow hide-details :readonly="!['Entretien planifié'].includes(editedCandidature.status)" :class="{ 'text-medium-emphasis': !['Entretien planifié'].includes(editedCandidature.status) }"></v-textarea>
+                                </v-col>
+                                <v-col cols="12">
+                                    <div class="text-subtitle-2 mb-1">Avez-vous des soucis avec l'hélico, la conduite, la plongée ou les fusillades/armes ?</div>
+                                    <v-textarea v-model="editedCandidature.answers.specific_issues" variant="outlined" rows="2" auto-grow hide-details :readonly="!['Entretien planifié'].includes(editedCandidature.status)" :class="{ 'text-medium-emphasis': !['Entretien planifié'].includes(editedCandidature.status) }"></v-textarea>
+                                </v-col>
+                                <v-col cols="12" md="6">
+                                    <div class="text-subtitle-2 mb-1">3 qualités</div>
+                                    <v-textarea v-model="editedCandidature.answers.qualities" variant="outlined" rows="2" auto-grow hide-details :readonly="!['Entretien planifié'].includes(editedCandidature.status)" :class="{ 'text-medium-emphasis': !['Entretien planifié'].includes(editedCandidature.status) }"></v-textarea>
+                                </v-col>
+                                <v-col cols="12" md="6">
+                                    <div class="text-subtitle-2 mb-1">3 défauts</div>
+                                    <v-textarea v-model="editedCandidature.answers.flaws" variant="outlined" rows="2" auto-grow hide-details :readonly="!['Entretien planifié'].includes(editedCandidature.status)" :class="{ 'text-medium-emphasis': !['Entretien planifié'].includes(editedCandidature.status) }"></v-textarea>
+                                </v-col>
+                                <v-col cols="12">
+                                    <div class="text-subtitle-2 mb-1">Commentaires du RH</div>
+                                    <v-textarea v-model="editedCandidature.answers.rh_comments" variant="outlined" rows="3" auto-grow hide-details :readonly="!['Entretien planifié'].includes(editedCandidature.status)" :class="{ 'text-medium-emphasis': !['Entretien planifié'].includes(editedCandidature.status) }"></v-textarea>
+                                </v-col>
+                             </v-row>
+                        </div>
+                    </v-expand-transition>
+                </v-container>
+            </v-card-text>
+            <v-card-actions>
+                <template v-if="editedCandidature.status === 'Entretien en cours d\'analyse'">
+                     <v-btn color="error" variant="text" prepend-icon="mdi-close" @click="finalizeCandidature('reject')">Refuser</v-btn>
+                     <v-btn color="success" variant="text" prepend-icon="mdi-check" @click="finalizeCandidature('accept')">Valider</v-btn>
+                </template>
+                <v-spacer></v-spacer>
+                <v-btn color="grey" variant="text" @click="candidatureFormDialog = false">Annuler</v-btn>
+                <v-btn color="deep-purple" variant="text" @click="saveCandidature">Sauvegarder</v-btn>
+            </v-card-actions>
+        </v-card>
+    </v-dialog>
   </v-container>
 </template>
 
 <script>
 import Employee from '@/classes/Employee'
 import Specialty from '@/classes/Specialty'
+import Candidature from '@/classes/Candidature'
 import Swal from 'sweetalert2/dist/sweetalert2.js'
 import { rhChecklists } from '@/config/rh_checklists'
 import { useUserStore } from '@/store/user.js'
@@ -538,6 +691,31 @@ export default {
     directoryHeaders: [
       { title: 'Nom', key: 'name', align: 'start' },
       { title: 'Téléphone', key: 'phone', align: 'start' },
+    ],
+
+    // Candidatures
+    candidatures: [],
+    candidatureDialog: false,
+    candidatureFormDialog: false,
+    editedCandidature: {
+        id: null,
+        name: '',
+        phone: '',
+        email: '',
+        availabilities: '',
+        status: 'Appel pour entretien',
+        availabilities: '',
+        status: 'Candidature reçue',
+        votes: {},
+        answers: {}
+    },
+    candidatureHeaders: [
+        { title: 'Nom', key: 'name' },
+        { title: 'Statut', key: 'status' },
+        { title: 'Téléphone', key: 'phone' },
+        { title: 'Email', key: 'email' },
+        { title: 'Disponibilités', key: 'availabilities' },
+        { title: 'Actions', key: 'actions', sortable: false, align: 'end' },
     ],
 
     rhChecklists: rhChecklists,
@@ -609,21 +787,16 @@ export default {
     checklistProgress() {
         if (!this.checkedSteps.length) return 0
         
-        // Count actual actionable items (not headers)
-        let totalItems = 0
-        let completedItems = 0
+        const { total, completed } = this.currentChecklist.steps.reduce((acc, step, index) => {
+            if (step?.header) return acc
+
+            acc.total++
+            if (this.checkedSteps[index]) acc.completed++
+            return acc
+        }, { total: 0, completed: 0 })
         
-        this.currentChecklist.steps.forEach((step, index) => {
-            if (typeof step === 'object' && step.header) {
-                // It's a header, ignore
-            } else {
-                totalItems++
-                if (this.checkedSteps[index]) completedItems++
-            }
-        })
-        
-        if (totalItems === 0) return 0
-        return (completedItems / totalItems) * 100
+        if (total === 0) return 0
+        return (completed / total) * 100
     },
 
     sortedDirectoryEmployees() {
@@ -649,6 +822,9 @@ export default {
     this.unsub.push(Specialty.listenAll((list) => {
       this.specialties = list
     }))
+    this.unsub.push(Candidature.listenAll((list) => {
+      this.candidatures = list
+    }))
   },
 
   beforeUnmount() {
@@ -668,11 +844,13 @@ export default {
 
     getSpecialtyIcon(value) {
       const spec = this.specialties.find(s => s.value === value)
+
       return spec ? spec.icon : ''
     },
 
     getSpecialtyName(value) {
       const spec = this.specialties.find(s => s.value === value)
+
       return spec ? spec.name : value
     },
 
@@ -680,6 +858,7 @@ export default {
       if (!dateString) return false
       const date = new Date(dateString)
       const today = new Date()
+
       return date.getDate() === today.getDate() && date.getMonth() === today.getMonth()
     },
 
@@ -811,11 +990,10 @@ export default {
 
         await profile.save()
         
-        if (isNew) {
+        if (isNew)
             logger.log(this.userStore.profile.id, "Ajout employés", `Ajout de l'employé ${this.editedItem.name} en tant que ${this.editedItem.role}`)
-        } else if (oldRole && oldRole !== this.editedItem.role) {
+        else if (oldRole && oldRole !== this.editedItem.role)
             logger.log(this.userStore.profile.id, "Changement de grade", `Passage de ${this.editedItem.name} de ${oldRole} à ${this.editedItem.role}`)
-        }
 
         Swal.fire({
             icon: 'success',
@@ -1063,6 +1241,141 @@ export default {
                         icon: 'error',
                         title: 'Erreur',
                         text: 'Impossible de synchroniser avec le Drive.'
+                    })
+                }
+            }
+        })
+    },
+
+    openCandidatureDialog() {
+        this.candidatureDialog = true
+    },
+    
+    openCandidatureForm(item = null) {
+        if (item) {
+            this.editedCandidature = { 
+                ...item,
+                votes: item.votes || {},
+                answers: item.answers || {}
+            }
+        } else {
+            this.editedCandidature = {
+                id: null,
+                name: '',
+                phone: '555-',
+                email: '',
+                availabilities: '',
+                status: 'Candidature reçue',
+                votes: {},
+                answers: {}
+            }
+        }
+        this.candidatureFormDialog = true
+    },
+
+    vote(type) {
+        const userId = this.userStore.profile.id
+        if (this.editedCandidature.votes[userId] === type)
+            delete this.editedCandidature.votes[userId]
+        else
+            this.editedCandidature.votes[userId] = type
+        this.editedCandidature = { ...this.editedCandidature }
+    },
+
+    getCandidatureStatusColor(status) {
+        switch(status) {
+            case 'Candidature reçue': return 'grey-lighten-1'
+            case 'Appel pour entretien': return 'grey'
+            case 'Entretien planifié': return 'info'
+            case 'Entretien en cours d\'analyse': return 'warning'
+            case 'Recrutement planifié': return 'success'
+            case 'Refusé': return 'error'
+            default: return 'grey'
+        }
+    },
+
+    finalizeCandidature(decision) {
+        if (decision === 'accept') {
+            this.editedCandidature.status = 'Recrutement planifié'
+        } else {
+            this.editedCandidature.status = 'Refusé'
+        }
+        this.saveCandidature()
+    },
+
+    async saveCandidature() {
+        if (!this.editedCandidature.name || !this.editedCandidature.email || !this.editedCandidature.phone) {
+             Swal.fire({
+                icon: 'warning',
+                title: 'Attention',
+                text: 'Veuillez remplir les champs obligatoires'
+            })
+            return
+        }
+
+        if (!this.editedCandidature.email.endsWith('@discord.gg')) {
+             Swal.fire({
+                icon: 'error',
+                title: 'Erreur',
+                text: "L'email doit se terminer par @discord.gg"
+            })
+            return
+        }
+
+        try {
+            const cand = new Candidature(
+                this.editedCandidature.id,
+                this.editedCandidature.name,
+                this.editedCandidature.phone,
+                this.editedCandidature.email,
+                this.editedCandidature.availabilities,
+                this.editedCandidature.status,
+                this.editedCandidature.votes,
+                this.editedCandidature.answers
+            )
+            await cand.save()
+            this.candidatureFormDialog = false
+            Swal.fire({
+                icon: 'success',
+                title: 'Candidature enregistrée',
+                timer: 1500,
+                showConfirmButton: false
+            })
+        } catch (e) {
+            console.error(e)
+            Swal.fire({
+                icon: 'error',
+                title: 'Erreur',
+                text: "Erreur lors de l'enregistrement"
+            })
+        }
+    },
+
+    async deleteCandidature(item) {
+        Swal.fire({
+            title: 'Supprimer ?',
+            text: `Voulez-vous supprimer la candidature de ${item.name} ?`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Oui, supprimer',
+            cancelButtonText: 'Annuler',
+            confirmButtonColor: '#d33'
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                try {
+                    await item.delete()
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Supprimée',
+                        timer: 1500,
+                        showConfirmButton: false
+                    })
+                } catch (e) {
+                    console.error(e)
+                     Swal.fire({
+                        icon: 'error',
+                        title: 'Erreur',
+                        text: "Erreur lors de la suppression"
                     })
                 }
             }
