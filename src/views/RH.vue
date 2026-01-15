@@ -15,9 +15,7 @@
       <v-btn color="success" class="ml-2" prepend-icon="mdi-contacts" @click="openDirectoryDialog">
         Annuaire
       </v-btn>
-      <v-btn color="indigo" class="ml-2" prepend-icon="mdi-google-drive" @click="syncEmployees">
-        Drive
-      </v-btn>
+
     </div>
 
     <v-card class="flex-grow-1">
@@ -55,16 +53,35 @@
           <v-toolbar flat>
             <v-toolbar-title>Liste des employés</v-toolbar-title>
             <v-spacer></v-spacer>
-            <v-btn
-              icon
-              variant="text"
-              color="grey-darken-1"
-              @click="showAllEmails = !showAllEmails"
-              class="mr-2"
-              :title="showAllEmails ? 'Cacher les emails' : 'Afficher les emails'"
-            >
-              <v-icon>{{ showAllEmails ? 'mdi-eye-off' : 'mdi-eye' }}</v-icon>
-            </v-btn>
+            <v-tooltip text="Synchroniser avec le Drive" location="top">
+              <template v-slot:activator="{ props }">
+                <v-btn
+                  icon
+                  variant="text"
+                  color="grey-darken-1"
+                  class="mr-2"
+                  v-bind="props"
+                  @click="syncEmployees"
+                >
+                  <v-icon>mdi-sync</v-icon>
+                </v-btn>
+              </template>
+            </v-tooltip>
+            
+            <v-tooltip :text="showAllEmails ? 'Cacher les emails' : 'Afficher les emails'" location="top">
+              <template v-slot:activator="{ props }">
+                <v-btn
+                  icon
+                  variant="text"
+                  color="grey-darken-1"
+                  @click="showAllEmails = !showAllEmails"
+                  class="mr-2"
+                  v-bind="props"
+                >
+                  <v-icon>{{ showAllEmails ? 'mdi-eye-off' : 'mdi-eye' }}</v-icon>
+                </v-btn>
+              </template>
+            </v-tooltip>
             <v-text-field
               v-model="search"
               prepend-inner-icon="mdi-magnify"
