@@ -115,6 +115,16 @@ const routes = [
     }
   },
   {
+    name: 'Formation',
+    path: '/training',
+    component: () => import("@/views/Training.vue"),
+    meta: {
+      needAccount: true,
+      showNav: true,
+      permissions: ['trainer']
+    }
+  },
+  {
     name: 'Logs',
     path: '/logs',
     component: () => import("@/views/Logs.vue"),

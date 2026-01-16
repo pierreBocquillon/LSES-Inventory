@@ -21,6 +21,7 @@ let navItems = [
     { title: 'Utilisateurs', icon: 'mdi-account-group', link: '/users' },
     { title: 'Logs', icon: 'mdi-account-group', link: '/logs' },
     { title: 'Ressources Humaines', icon: 'mdi-account-tie', link: '/rh' },
+    { title: 'Formation', icon: 'mdi-school', link: '/training' },
   ],
 ]
 

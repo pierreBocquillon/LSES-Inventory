@@ -14,7 +14,7 @@ let permissions = [
     name: 'Gestion des vehicules',
     value: 'vehicles'
   },
-  { 
+  {
     icon: '😊',
     name: 'Gestion des utilisateurs',
     value: 'user'
@@ -43,6 +43,11 @@ let permissions = [
     icon: '👔',
     name: 'Ressources Humaines',
     value: 'rh'
+  },
+  {
+    icon: '🎓',
+    name: 'Formation',
+    value: 'trainer'
   },
 ]
 
