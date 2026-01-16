@@ -55,29 +55,19 @@ const routes = [
     }
   },
   {
-    name: 'Entreprises',
-    path: '/companies',
-    component: () => import("@/views/Companies.vue"),
+    name: 'Autopsie',
+    path: '/autopsie',
+    component:  () => import("@/views/Autopsie.vue"),
     meta: {
       needAccount: true,
       showNav: true,
-      permissions: ['stock']
+      permissions:['legist']
     }
   },
   {
-    name: 'Stockage',
-    path: '/storage',
-    component: () => import("@/views/Storage.vue"),
-    meta: {
-      needAccount: true,
-      showNav: true,
-      permissions: ['stock']
-    }
-  },
-  {
-    name: 'Items',
-    path: '/items',
-    component: () => import("@/views/Items.vue"),
+    name: 'Stocks',
+    path: '/stocks',
+    component: () => import("@/views/Stocks.vue"),
     meta: {
       needAccount: true,
       showNav: true,
