@@ -54,9 +54,9 @@ import { useUserStore } from '@/store/user.js'
 
 import Swal from 'sweetalert2/dist/sweetalert2.js'
 
-import Storage from '../classes/Storage'
+import Storage from '../../classes/Storage'
 
-import logger from '../functions/logger'
+import logger from '../../functions/logger'
 
 export default {
   props : [],
