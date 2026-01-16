@@ -11,7 +11,7 @@ let navItems = [
   [
     { title: 'Stocks', icon: 'mdi-package-variant', link: '/stocks' },
     { title: 'Vehicules', icon: 'mdi-helicopter', link: '/vehicles' },
-    { title: 'Autopsie', icon: 'mdi-coffin', link: '/autopsie'},
+    { title: 'Autopsie', icon: 'mdi-coffin', link: '/autopsie-reports'},
     { title: 'Ressources Humaines', icon: 'mdi-account-tie', link: '/rh' },
   ],
   [

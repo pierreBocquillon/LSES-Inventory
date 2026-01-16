@@ -55,8 +55,28 @@ const routes = [
     }
   },
   {
-    name: 'Autopsie',
+    name: 'Rapport d\'autopsie',
+    path: '/autopsie-reports',
+    component:  () => import("@/views/AutopsieReports.vue"),
+    meta: {
+      needAccount: true,
+      showNav: true,
+      permissions:['legist']
+    }
+  },
+  {
+    name: 'Nouvelle Autopsie',
     path: '/autopsie',
+    component:  () => import("@/views/Autopsie.vue"),
+    meta: {
+      needAccount: true,
+      showNav: true,
+      permissions:['legist']
+    }
+  },
+  {
+    name: 'Autopsie',
+    path: '/autopsie/:id',
     component:  () => import("@/views/Autopsie.vue"),
     meta: {
       needAccount: true,

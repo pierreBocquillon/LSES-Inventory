@@ -1,8 +1,17 @@
 <template>
   <div style="height: calc(100% - 42px);">
-    <v-card class="ma-5 pa-5 rounded-xl h-100">
+    <v-card class="ma-5 pa-5 rounded-xl h-100" style="overflow-y: auto;">
 
-      <h3 class="text-center">Autopsie :</h3>
+      <div class="d-flex align-center justify-center position-relative mb-3">
+        <v-btn
+          style="position: absolute; left: 0;"
+          color="secondary"
+          variant="tonal"
+          prepend-icon="mdi-arrow-left"
+          @click="$router.push({ name: 'Rapport d\'autopsie' })"
+        >Retour</v-btn>
+        <h3>Autopsie :</h3>
+      </div>
 
       <v-row class="mt-3" justify="center">
         <v-col cols="12">
@@ -91,7 +100,7 @@
             <v-textarea rows="5" no-resize label="Bilan de l'autopsie" class="my-1 w-100" color="cyan" base-color="cyan" variant="outlined" hide-details v-model="autopsySummary"></v-textarea>
           </v-card>
           <div class="mt-5 d-flex align-center justify-center">
-            <!-- <v-btn color="primary" class="mx-3" size="x-large" variant="tonal" @click="saveReport">Sauvegarder le rapport</v-btn> -->
+            <v-btn color="primary" class="mx-3" size="x-large" variant="tonal" @click="saveReport">Sauvegarder le rapport</v-btn>
             <v-btn color="cyan" class="mx-3" size="x-large" variant="tonal" @click="generateReport">Generer le rapport en PDF</v-btn>
           </div>
         </v-col>
@@ -108,8 +117,10 @@ import colors from 'vuetify/lib/util/colors'
 
 import Swal from 'sweetalert2/dist/sweetalert2.js'
 
+import Autopsie from '../classes/Autopsie.js'
+
 import logger from '../functions/logger'
-import { jsPDF } from 'jspdf'
+import { generateReport } from '../functions/autopsieManager'
 
 export default {
   props : [],
@@ -128,6 +139,7 @@ export default {
       cid: '',
       doctor: '',
       genderIsMale: false,
+      legist: '',
       injuries: [],
       selectedInjury: 0,
       draggingPoint: null,
@@ -136,33 +148,16 @@ export default {
       interventionReport: '',
       eventChronology: '',
       autopsySummary: '',
+      autopsyDate: 0,
     }
   },
 
   mounted() {
-    this.injuries = [{
-      externalAnalysis: '',
-      internalAnalysis: '',
-      points: []
-    }]
-    this.drawCanvas()
-
-    this.name = ''
-    this.cid = ''
-    this.doctor = ''
-    this.injuries = [
-      {
-        externalAnalysis: '',
-        internalAnalysis: '',
-        points: [
-        ]
-      },
-    ]
-    this.bloodBilan = ``
-    this.diagnostic = ``
-    this.interventionReport = ``
-    this.eventChronology = ``
-    this.autopsySummary = ``
+    if(this.$route.params.id){
+      this.loadReport(this.$route.params.id)
+    } else {
+      this.resetForm()
+    }
   },
 
   watch: {
@@ -379,365 +374,91 @@ export default {
         }
         this.drawCanvas()
       },
+      async loadReport(id){
+        const report = await Autopsie.getById(id)
+        this.name = report.name
+        this.cid = report.cid
+        this.genderIsMale = report.genderIsMale
+        this.doctor = report.doctor
+        this.legist = report.legist
+        this.injuries = report.injuries
+        this.bloodBilan = report.bloodBilan
+        this.diagnostic = report.diagnostic
+        this.interventionReport = report.interventionReport
+        this.eventChronology = report.eventChronology
+        this.autopsySummary = report.autopsySummary
+        this.autopsyDate = report.autopsyDate
+        this.drawCanvas()
+      },
+      resetForm(){
+        this.injuries = [{
+          externalAnalysis: '',
+          internalAnalysis: '',
+          points: []
+        }]
+        this.drawCanvas()
+
+        this.name = ''
+        this.cid = ''
+        this.genderIsMale = false
+        this.doctor = ''
+        this.legist = this.userStore.profile?.name || ''
+        this.injuries = [
+          {
+            externalAnalysis: '',
+            internalAnalysis: '',
+            points: [
+            ]
+          },
+        ]
+        this.bloodBilan = ``
+        this.diagnostic = ``
+        this.interventionReport = ``
+        this.eventChronology = ``
+        this.autopsySummary = ``
+        this.autopsyDate = new Date().getTime()
+      },
       async saveReport(){
-        let reportData = {
+        let report = Autopsie.initOne()
+
+        if(this.$route.params.id){
+          report.id = this.$route.params.id
+        }
+
+        report.name = this.name
+        report.cid = this.cid
+        report.genderIsMale = this.genderIsMale
+        report.doctor = this.doctor
+        report.legist = this.legist
+        report.injuries = this.injuries
+        report.bloodBilan = this.bloodBilan
+        report.diagnostic = this.diagnostic
+        report.interventionReport = this.interventionReport
+        report.eventChronology = this.eventChronology
+        report.autopsySummary = this.autopsySummary
+        report.autopsyDate = new Date().getTime()
+
+        await report.save()
+        this.$router.push('/autopsie-reports')
+      },
+      async generateReport() {
+        const data = {
           name: this.name,
           cid: this.cid,
-          doctor: this.doctor,
           genderIsMale: this.genderIsMale,
+          doctor: this.doctor,
+          legist: this.legist,
           injuries: this.injuries,
           bloodBilan: this.bloodBilan,
           diagnostic: this.diagnostic,
           interventionReport: this.interventionReport,
           eventChronology: this.eventChronology,
           autopsySummary: this.autopsySummary,
+          autopsyDate: this.autopsyDate,
+          colors: this.colors
         }
-        console.log('Saving report data:', reportData)
+        await generateReport(data, this.$refs.canvasElement)
       },
-      async generateReport() {
-        try {
-          const doc = new jsPDF()
-          const pageWidth = doc.internal.pageSize.getWidth()
-          const pageHeight = doc.internal.pageSize.getHeight()
-          const margin = 10
-          const lineHeight = 7
-          let yPosition = margin
-
-          // Dark background for entire document
-          const addDarkBackground = () => {
-            doc.setFillColor(3, 15, 20) // #030F14
-            doc.rect(0, 0, pageWidth, pageHeight, 'F')
-          }
-
-          // Header function
-          const addHeader = () => {
-            doc.setFillColor(0, 188, 212) // Cyan
-            doc.rect(0, 0, pageWidth, 28, 'F')
-            
-            // Logo à gauche
-            const logoImg = new Image()
-            logoImg.src = require('@/assets/images/logo.png')
-            doc.addImage(logoImg, 'PNG', margin, 3, 22, 22)
-            
-            // Texte à droite
-            doc.setTextColor(3, 15, 20)
-            doc.setFontSize(17)
-            doc.setFont('helvetica', 'bold')
-            doc.text('Los Santos Emergency Services', pageWidth - margin, 12, { align: 'right' })
-            doc.setFontSize(14)
-            doc.setFont('helvetica', 'normal')
-            doc.text('RAPPORT D\'AUTOPSIE', pageWidth - margin, 20, { align: 'right' })
-          }
-
-          // Helper function to add text with word wrap
-          const addText = (text, fontSize = 10, isBold = false) => {
-            doc.setFontSize(fontSize)
-            doc.setFont('helvetica', isBold ? 'bold' : 'normal')
-            const lines = doc.splitTextToSize(text, pageWidth - 2 * margin)
-            
-            lines.forEach(line => {
-              if (yPosition > pageHeight - margin) {
-                doc.addPage()
-                addDarkBackground()
-                addHeader()
-                yPosition = 38
-              }
-              doc.text(line, margin, yPosition)
-              yPosition += lineHeight
-            })
-          }
-
-          // First page dark background
-          addDarkBackground()
-
-          // Header
-          addHeader()
-          
-          doc.setTextColor(255, 255, 255) // White text for dark theme
-          yPosition = 38
-
-          // Identité
-          doc.setFontSize(12)
-          doc.setFont('helvetica', 'bold')
-          doc.text('Victime :', margin, yPosition)
-          doc.setFont('helvetica', 'normal')
-          doc.text(` ${this.name} (${this.cid})`, margin + 4 + doc.getTextWidth('Victime :'), yPosition)
-          yPosition += 8
-
-          // Médecin légiste
-          doc.setFont('helvetica', 'bold')
-          doc.text('Médecin légiste :', margin, yPosition)
-          doc.setFont('helvetica', 'normal')
-          doc.text(` Dr ${this.userStore.profile?.name}`, margin + 4 + doc.getTextWidth('Médecin légiste :'), yPosition)
-          yPosition += 8
-
-          // Médecin intervenant
-          doc.setFont('helvetica', 'bold')
-          doc.text('Médecin intervenant :', margin, yPosition)
-          doc.setFont('helvetica', 'normal')
-          doc.text(` ${this.doctor}`, margin + 4 + doc.getTextWidth('Médecin intervenant :'), yPosition)
-          yPosition += 15
-
-          // Schéma et Blessures côte à côte
-          const startY = yPosition
-          const leftColX = margin
-          const leftColWidth = (pageWidth - 2 * margin) / 3
-          const rightColX = margin + leftColWidth + 10
-          const rightColWidth = ((pageWidth - 2 * margin) * 2 / 3) - 10
-          
-          // Left column: Blessures
-          let leftYPosition = startY
-          doc.setTextColor(255, 255, 255)
-          doc.setFontSize(12)
-          doc.setFont('helvetica', 'bold')
-          doc.text('Blessures :', leftColX, leftYPosition)
-          leftYPosition += 10
-          
-          this.injuries.forEach((injury, index) => {
-            if (leftYPosition > pageHeight - margin - 30) {
-              doc.addPage()
-              addDarkBackground()
-              addHeader()
-              leftYPosition = 38
-            }
-            
-            const rgb = this.getColorRGB(this.colors[index])
-            doc.setTextColor(rgb[0], rgb[1], rgb[2])
-            doc.setFontSize(10)
-            doc.setFont('helvetica', 'bold')
-            doc.text(`Blessure #${index + 1}`, leftColX, leftYPosition)
-            leftYPosition += 6
-            
-            doc.setTextColor(255, 255, 255)
-            doc.setFontSize(8)
-            doc.setFont('helvetica', 'normal')
-            
-            if (injury.externalAnalysis) {
-              const extLines = doc.splitTextToSize(`Externe: ${injury.externalAnalysis}`, leftColWidth)
-              extLines.forEach(line => {
-                if (leftYPosition > pageHeight - margin) {
-                  doc.addPage()
-                  addDarkBackground()
-                  addHeader()
-                  leftYPosition = 54
-                }
-                doc.text(line, leftColX, leftYPosition)
-                leftYPosition += 5
-              })
-            }
-            
-            if (injury.internalAnalysis) {
-              const intLines = doc.splitTextToSize(`Interne: ${injury.internalAnalysis}`, leftColWidth)
-              intLines.forEach(line => {
-                if (leftYPosition > pageHeight - margin) {
-                  doc.addPage()
-                  addDarkBackground()
-                  addHeader()
-                  leftYPosition = 54
-                }
-                doc.text(line, leftColX, leftYPosition)
-                leftYPosition += 5
-              })
-            }
-            
-            leftYPosition += 5
-          })
-
-          // Right column: Schéma corporel
-          doc.setTextColor(255, 255, 255)
-          doc.setFontSize(12)
-          doc.setFont('helvetica', 'bold')
-          doc.text('Schéma corporel :', rightColX, startY)
-          
-          const canvas = this.$refs.canvasElement
-          const imgData = canvas.toDataURL('image/png')
-          const imgWidth = rightColWidth
-          const imgHeight = rightColWidth
-          
-          doc.addImage(imgData, 'PNG', rightColX, startY + 10, imgWidth, imgHeight)
-          
-          // Continue après les deux colonnes
-          yPosition = Math.max(leftYPosition, startY + 10 + imgHeight + 10)
-
-          // Bilan sanguin
-          if (yPosition > pageHeight - margin - 30) {
-            doc.addPage()
-            addDarkBackground()
-            addHeader()
-            yPosition = 38
-          }
-          doc.setTextColor(255, 255, 255)
-          yPosition += 3
-          addText('Bilan sanguin :', 12, true)
-          yPosition += 3
-          if (this.bloodBilan) {
-            addText(this.bloodBilan, 10)
-          }
-          yPosition += 5
-
-          // Diagnostic médical
-          if (yPosition > pageHeight - margin - 30) {
-            doc.addPage()
-            addDarkBackground()
-            addHeader()
-            yPosition = 38
-          }
-          doc.setTextColor(255, 255, 255)
-          
-          addText('Diagnostic médical :', 12, true)
-          yPosition += 3
-          if (this.diagnostic) {
-            addText(this.diagnostic, 10)
-          }
-          yPosition += 5
-
-          // Rapport d'intervention
-          if (yPosition > pageHeight - margin - 30) {
-            doc.addPage()
-            addDarkBackground()
-            addHeader()
-            yPosition = 38
-          }
-          doc.setTextColor(255, 255, 255)
-          
-          addText('Rapport d\'intervention :', 12, true)
-          yPosition += 3
-          if (this.interventionReport) {
-            addText(this.interventionReport, 10)
-          }
-          yPosition += 5
-
-          // Chronologie des événements
-          if (yPosition > pageHeight - margin - 30) {
-            doc.addPage()
-            addDarkBackground()
-            addHeader()
-            yPosition = 38
-          }
-          doc.setTextColor(255, 255, 255)
-          
-          addText('Chronologie probable des événements :', 12, true)
-          yPosition += 3
-          if (this.eventChronology) {
-            addText(this.eventChronology, 10)
-          }
-          yPosition += 5
-
-          // Bilan de l'autopsie
-          // Vérifier s'il y a assez d'espace pour le bilan, la signature et le stamp (environ 150px)
-          const bilanLines = this.autopsySummary ? doc.splitTextToSize(this.autopsySummary, pageWidth - 2 * margin) : []
-          const bilanHeight = 12 + 3 + (bilanLines.length * lineHeight) + 15 + 60 // titre + marge + contenu + marge + signature+stamp
-          
-          if (yPosition + bilanHeight > pageHeight - margin) {
-            doc.addPage()
-            addDarkBackground()
-            addHeader()
-            yPosition = 38
-          }
-          
-          doc.setTextColor(255, 255, 255)
-          addText('Bilan de l\'autopsie :', 12, true)
-          yPosition += 3
-          if (this.autopsySummary) {
-            addText(this.autopsySummary, 10)
-          }
-
-          // Signature
-          yPosition += 15
-          
-          doc.setTextColor(255, 255, 255)
-          doc.setFontSize(10)
-          doc.setFont('helvetica', 'normal')
-          doc.text('Signature :', margin, yPosition, { align: 'left' })
-          
-          // Signature manuscrite avec rotation
-          yPosition += 20
-          
-          // Charger la font Caveat
-          const caveatFont = require('@/assets/fonts/Caveat-Regular.ttf')
-          const caveatBase64 = await fetch(caveatFont).then(res => res.arrayBuffer()).then(buffer => {
-            const binary = Array.from(new Uint8Array(buffer))
-              .map(byte => String.fromCharCode(byte))
-              .join('')
-            return btoa(binary)
-          })
-          doc.addFileToVFS('Caveat-Regular.ttf', caveatBase64)
-          doc.addFont('Caveat-Regular.ttf', 'Caveat', 'normal')
-          
-          doc.setFontSize(32)
-          doc.setFont('Caveat', 'normal')
-          const signature = this.userStore.profile?.name || 'Médecin légiste'
-          
-          // Appliquer rotation de 5 degrés antihoraire
-          const angle = 5 * Math.PI / 180
-          const x = margin + 10
-          const y = yPosition
-          doc.saveGraphicsState()
-          doc.setTextColor(255, 255, 255)
-          
-          // Transformer: translate -> rotate -> translate back
-          const cos = Math.cos(angle)
-          const sin = Math.sin(angle)
-          doc.text(signature, x, y, { 
-            angle: 5,
-            align: 'left' 
-          })
-          doc.restoreGraphicsState()
-
-          // Stamp image à droite avec rotation de 20° sens horaire
-          const stampImg = new Image()
-          stampImg.src = require('@/assets/images/stamp_white.png')
-          const stampWidth = 50
-          const stampHeight = 50
-          const stampX = x + 70
-          const stampY = y - 40
-          
-          // Ajouter l'image avec rotation et opacité 80%
-          doc.saveGraphicsState()
-          doc.setGState(new doc.GState({ opacity: 0.8 }))
-          doc.addImage(stampImg, 'PNG', stampX, stampY, stampWidth, stampHeight, undefined, undefined, -20)
-          doc.restoreGraphicsState()
-
-          // Footer
-          const totalPages = doc.internal.pages.length - 1
-          for (let i = 1; i <= totalPages; i++) {
-            doc.setPage(i)
-            
-            // Ajouter l'en-tête sur toutes les pages sauf la première
-            if (i > 1) {
-              addHeader()
-            }
-            
-            doc.setFontSize(9)
-            doc.setTextColor(180, 180, 180)
-            const date = new Date().toLocaleDateString('fr-FR')
-            const time = new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
-            doc.text(`Fait le ${date} à ${time}`, margin, pageHeight - 10)
-            doc.text(`${this.name} (${this.cid})`, pageWidth / 2, pageHeight - 10, { align: 'center' })
-            doc.text(`Page ${i} / ${totalPages}`, pageWidth - margin, pageHeight - 10, { align: 'right' })
-          }
-
-          // Save PDF
-          const civility = this.genderIsMale ? 'Mr' : 'Mme'
-          const date = new Date().toLocaleDateString('fr-FR').replace(/\//g, '-')
-          const fileName = `LSES - Rapport d'autopsie ${civility} ${this.name} (${this.cid}) - ${date}.pdf`
-          doc.save(fileName)
-        } catch (error) {
-          console.error('Erreur lors de la génération du PDF:', error)
-          Swal.fire('Erreur', 'Une erreur est survenue lors de la génération du rapport.', 'error')
-        }
-      },
-      getColorRGB(colorName) {
-        const colorMap = {
-          'orange': [255, 152, 0],
-          'pink': [233, 30, 99],
-          'indigo': [63, 81, 181],
-          'green': [76, 175, 80],
-          'red': [244, 67, 54],
-          'cyan': [0, 188, 212],
-        }
-        return colorMap[colorName] || [0, 0, 0]
-      }
     },
 
     beforeUnmount() {
