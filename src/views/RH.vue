@@ -949,6 +949,11 @@ export default {
         if (this.editedItem.id) {
            const original = this.employees.find(e => e.id === this.editedItem.id)
            if (original) oldRole = original.role
+           
+           let promReq = this.editedItem.promotionRequest
+           if (oldRole && oldRole !== this.editedItem.role)
+               promReq = null
+
            profile = new Employee(
              this.editedItem.id,
              this.editedItem.name,
@@ -964,7 +969,9 @@ export default {
              this.editedItem.lastPromotionDate,
              this.editedItem.medicalDegreeDate,
              this.editedItem.helicopterTrainingDate,
-             this.editedItem.helicopterTrainingReimbursed
+             this.editedItem.helicopterTrainingReimbursed,
+             this.editedItem.trainingRequests,
+             promReq
            )
         } else {
           // Creating new
@@ -984,7 +991,9 @@ export default {
             this.editedItem.lastPromotionDate,
             this.editedItem.medicalDegreeDate,
             this.editedItem.helicopterTrainingDate,
-            this.editedItem.helicopterTrainingReimbursed
+            this.editedItem.helicopterTrainingReimbursed,
+            [], // new employee has no requests
+            null // new employee has no promotion request
           )
         }
 
