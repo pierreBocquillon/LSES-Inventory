@@ -97,7 +97,134 @@
        <v-btn color="primary" prepend-icon="mdi-plus" @click="openRequestDialog">
         Demande de formation
       </v-btn>
+       <v-btn color="orange-darken-2" prepend-icon="mdi-target" class="ml-2" @click="objectivesDialog = true">
+        Objectifs Semaine
+      </v-btn>
+       <v-btn color="teal" prepend-icon="mdi-format-list-bulleted" class="ml-2" @click="openScenarioDialog">
+        Voir les simulations
+      </v-btn>
     </div>
+
+     <v-dialog v-model="scenarioDialog" max-width="600px" scrollable>
+        <v-card>
+            <v-card-title class="bg-teal text-white">Générateur de simulation</v-card-title>
+            <v-card-text class="pa-4" style="max-height: 70vh;">
+                <v-autocomplete
+                    v-model="selectedScenarioTrainee"
+                    :items="trainees"
+                    item-title="name"
+                    return-object
+                    label="Choisir un interne ou résident"
+                    variant="outlined"
+                    class="mb-4"
+                    @update:model-value="resetScenarioSelection"
+                ></v-autocomplete>
+
+                <div v-if="selectedScenarioTrainee">
+                    <v-select
+                        v-model="selectedScenarioObjectives"
+                        :items="availableObjectives"
+                        item-title="title"
+                        return-object
+                        label="Objectifs à travailler"
+                        variant="outlined"
+                        class="mb-4"
+                        multiple
+                        chips
+                        @update:model-value="selectedScenarios = []"
+                    >
+                        <template v-slot:item="{ props, item }">
+                            <v-list-item v-bind="props" :subtitle="`Progression: ${Math.ceil(item.raw.current)}% / ${item.raw.target}%`">
+                                <template v-slot:append>
+                                    <v-icon :color="item.raw.current >= item.raw.target ? 'success' : 'warning'">
+                                        {{ item.raw.current >= item.raw.target ? 'mdi-check-circle' : 'mdi-alert-circle' }}
+                                    </v-icon>
+                                </template>
+                            </v-list-item>
+                        </template>
+                        <template v-slot:chip="{ props, item }">
+                            <v-chip v-bind="props" :color="item.raw.current >= item.raw.target ? 'success' : 'warning'" variant="outlined">
+                                {{ item.title }} ({{ Math.ceil(item.raw.current) }}%)
+                            </v-chip>
+                        </template>
+                    </v-select>
+
+                    <div class="d-flex justify-space-between align-center mb-4">
+                        <v-btn 
+                            color="purple-lighten-2" 
+                            variant="tonal" 
+                            prepend-icon="mdi-shuffle" 
+                            @click="pickRandomSimulation"
+                            :disabled="availableObjectives.filter(o => o.current < o.target).length === 0"
+                        >
+                            Aléatoire (Non acquis)
+                        </v-btn>
+                        <v-btn 
+                            color="grey" 
+                            variant="text" 
+                            prepend-icon="mdi-close" 
+                            @click="resetScenarioSelection"
+                            v-if="selectedScenarioObjectives.length > 0"
+                        >
+                            Tout désélectionner
+                        </v-btn>
+                    </div>
+
+                    <v-select
+                        if="selectedScenarioObjectives.length > 0"
+                        v-model="selectedScenarios"
+                        :items="availableScenarios"
+                        label="Simulations possibles"
+                        variant="outlined"
+                        multiple
+                        chips
+                        class="mb-4"
+                    ></v-select>
+
+                    <div class="d-flex justify-center mb-4" v-if="selectedScenarios.length > 0">
+                        <v-btn color="teal" prepend-icon="mdi-dice-multiple" @click="generateInjuries">
+                            Générer les blessures
+                        </v-btn>
+                    </div>
+
+                    <div v-if="generatedInjuries.length > 0">
+                        <v-divider class="mb-4"></v-divider>
+                        <h3 class="text-subtitle-1 font-weight-bold mb-3 text-teal">
+                            <v-icon start>mdi-medical-bag</v-icon> Simulation générée
+                        </h3>
+                        
+                        <v-card variant="tonal" color="teal" class="mb-3">
+                            <v-card-text>
+                                <div class="font-weight-bold mb-2">Contexte:</div>
+                                <div class="d-flex flex-wrap gap-2 mb-4">
+                                    <v-chip v-for="sc in selectedScenarios" :key="sc" size="small" :color="getSeverityColor()" variant="elevated" class="text-white">
+                                        {{ sc }}
+                                    </v-chip>
+                                </div>
+
+                                <div class="font-weight-bold mb-2">Blessures:</div>
+                                <v-list density="compact" bg-color="transparent">
+                                    <v-list-item v-for="(inj, i) in generatedInjuries" :key="i">
+                                        <template v-slot:prepend>
+                                            <v-icon :color="getSeverityColor(inj.severity)">mdi-alert-circle</v-icon>
+                                        </template>
+                                        <v-list-item-title class="font-weight-bold">{{ inj.bodyPart }}</v-list-item-title>
+                                        <v-list-item-subtitle>
+                                            <span :class="`text-${getSeverityColor(inj.severity)} font-weight-bold`">{{ inj.severity }}</span>
+                                        </v-list-item-subtitle>
+                                    </v-list-item>
+                                </v-list>
+                            </v-card-text>
+                        </v-card>
+                    </div>
+                </div>
+            </v-card-text>
+            <v-card-actions>
+                <v-spacer></v-spacer>
+                <v-btn color="primary" variant="text" @click="scenarioDialog = false">Fermer</v-btn>
+            </v-card-actions>
+        </v-card>
+     </v-dialog>
 
      <v-dialog v-model="promotionDialog" max-width="500px">
         <v-card>
@@ -346,6 +473,90 @@
         </v-card>
     </v-dialog>
 
+    <v-dialog v-model="objectivesDialog" fullscreen transition="dialog-bottom-transition">
+        <v-card>
+            <v-toolbar color="orange-darken-2">
+                <v-btn icon="mdi-close" @click="objectivesDialog = false"></v-btn>
+                <v-toolbar-title>Objectifs de la semaine</v-toolbar-title>
+                <v-spacer></v-spacer>
+            </v-toolbar>
+            <v-card-text>
+                <v-tabs v-model="objectivesTab" align-tabs="center" color="orange-darken-2">
+                    <v-tab value="interne">Internes</v-tab>
+                    <v-tab value="resident">Résidents</v-tab>
+                </v-tabs>
+
+                <v-window v-model="objectivesTab">
+                    <v-window-item value="interne">
+                        <v-table density="compact" fixed-header height="calc(100vh - 150px)">
+                            <thead>
+                                <tr>
+                                    <th class="text-left font-weight-bold">Interne</th>
+                                    <th v-for="obj in internObjectives" :key="obj.hash" class="text-center font-weight-bold" style="white-space: nowrap;">
+                                        {{ obj.title }}
+                                        <div class="text-caption text-grey">{{ obj.target }}%</div>
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="emp in interns" :key="emp.id">
+                                    <td class="font-weight-medium">{{ emp.name }}</td>
+                                    <td v-for="obj in internObjectives" :key="obj.hash" class="text-center">
+                                        <v-icon v-if="calculateProgress(emp, obj.id) >= obj.target" color="success">mdi-check-circle</v-icon>
+                                        <v-progress-linear
+                                            v-else
+                                            :model-value="calculateProgress(emp, obj.id)"
+                                            :color="getCompetencyColor(calculateProgress(emp, obj.id), obj.target)"
+                                            height="15"
+                                            rounded
+                                        >
+                                            <template v-slot:default="{ value }">
+                                                <span class="text-caption text-white">{{ Math.ceil(value) }}%</span>
+                                            </template>
+                                        </v-progress-linear>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </v-table>
+                    </v-window-item>
+
+                    <v-window-item value="resident">
+                        <v-table density="compact" fixed-header height="calc(100vh - 150px)">
+                            <thead>
+                                <tr>
+                                    <th class="text-left font-weight-bold">Résident</th>
+                                    <th v-for="obj in residentObjectives" :key="obj.hash" class="text-center font-weight-bold" style="white-space: nowrap;">
+                                        {{ obj.title }}
+                                        <div class="text-caption text-grey">{{ obj.target }}%</div>
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="emp in residentsList" :key="emp.id">
+                                    <td class="font-weight-medium">{{ emp.name }}</td>
+                                    <td v-for="obj in residentObjectives" :key="obj.hash" class="text-center">
+                                        <v-icon v-if="calculateProgress(emp, obj.id) >= obj.target" color="success">mdi-check-circle</v-icon>
+                                        <v-progress-linear
+                                            v-else
+                                            :model-value="calculateProgress(emp, obj.id)"
+                                            :color="getCompetencyColor(calculateProgress(emp, obj.id), obj.target)"
+                                            height="15"
+                                            rounded
+                                        >
+                                            <template v-slot:default="{ value }">
+                                                <span class="text-caption text-white">{{ Math.ceil(value) }}%</span>
+                                            </template>
+                                        </v-progress-linear>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </v-table>
+                    </v-window-item>
+                </v-window>
+            </v-card-text>
+        </v-card>
+    </v-dialog>
+
     <v-card class="flex-grow-1">
       <v-data-table
         :headers="headers"
@@ -423,6 +634,10 @@
 import Employee from '@/classes/Employee'
 import Guide from '@/classes/Guide'
 import { trainingCompetencies } from '@/config/training_competencies'
+
+import { OBJECTIFS } from '@/config/objectives'
+import { EVENTS, SCENARIOS } from '@/config/events'
+import { BODY_PARTS } from '@/config/body_parts'
 import { useUserStore } from '@/store/user'
 import Swal from 'sweetalert2/dist/sweetalert2.js'
 
@@ -446,6 +661,13 @@ export default {
     selectedTrainee: null,
     competencyTree: trainingCompetencies,
     requestDialog: false,
+    objectivesDialog: false,
+    objectivesTab: 'interne',
+    scenarioDialog: false,
+    selectedScenarioTrainee: null,
+    selectedScenarioObjectives: [],
+    selectedScenarios: [],
+    generatedInjuries: [],
     newRequest: {
         employee: null,
         training: 'Formation Grenouille'
@@ -524,7 +746,60 @@ export default {
         }
         groups.push(currentGroup)
         return groups
-    }
+    },
+    internObjectives() {
+        return OBJECTIFS.filter(o => o.rank === 'Interne').map(o => ({...o, hash: o.id + o.rank + o.title}))
+    },
+    residentObjectives() {
+        return OBJECTIFS.filter(o => o.rank === 'Résident').map(o => ({...o, hash: o.id + o.rank + o.title}))
+    },
+    interns() {
+        return this.employees.filter(e => e.role === 'Interne').sort((a,b) => a.name.localeCompare(b.name))
+    },
+    residentsList() {
+        return this.employees.filter(e => e.role === 'Résident').sort((a,b) => a.name.localeCompare(b.name))
+    },
+    availableObjectives() {
+        if (!this.selectedScenarioTrainee) return []
+        
+        const rawList = this.selectedScenarioTrainee.role === 'Interne' ? this.internObjectives : this.residentObjectives
+        
+        return rawList.map(obj => ({
+            ...obj,
+            current: this.calculateProgress(this.selectedScenarioTrainee, obj.id)
+        })).filter(obj => {
+             let hasScenarios = false
+             const event = EVENTS.find(e => e.name === obj.title)
+             if (event && event.context) {
+                 hasScenarios = event.context.some(ctx => SCENARIOS[ctx] && SCENARIOS[ctx].length > 0)
+             }
+             if (!hasScenarios && obj.scenarioCategory && SCENARIOS[obj.scenarioCategory]) {
+                 hasScenarios = SCENARIOS[obj.scenarioCategory].length > 0
+             }
+             return hasScenarios
+        })
+    },
+    availableScenarios() {
+        if (!this.selectedScenarioObjectives || this.selectedScenarioObjectives.length === 0) return []
+        
+        let scenarios = []
+        
+        this.selectedScenarioObjectives.forEach(obj => {
+            const event = EVENTS.find(e => e.name === obj.title)
+            if (event) {
+                event.context.forEach(ctx => {
+                    if (SCENARIOS[ctx]) {
+                        scenarios = [...scenarios, ...SCENARIOS[ctx]]
+                    }
+                })
+            }
+            else if (obj.scenarioCategory && SCENARIOS[obj.scenarioCategory]) {
+                scenarios = [...scenarios, ...SCENARIOS[obj.scenarioCategory]]
+            }
+        })
+        
+        return [...new Set(scenarios)]
+    },
   },
 
   mounted() {
@@ -603,6 +878,105 @@ export default {
        secondDate.setHours(0, 0, 0, 0)
        
        return Math.round(Math.abs((firstDate - secondDate) / oneDay))
+    },
+
+    openScenarioDialog() {
+        this.selectedScenarioTrainee = null
+        this.selectedScenarioObjectives = []
+        this.selectedScenarios = []
+        this.generatedInjuries = []
+        this.scenarioDialog = true
+    },
+
+    resetScenarioSelection() {
+        this.selectedScenarioObjectives = []
+        this.selectedScenarios = []
+        this.generatedInjuries = []
+    },
+
+    generateInjuries() {
+        if (this.selectedScenarios.length === 0) return
+
+        const severities = ['Légère', 'Moyenne', 'Lourde']
+        const numInjuries = Math.floor(Math.random() * 4) + 1
+        
+        const injuries = []
+        const usedParts = new Set()
+
+        for (let i = 0; i < numInjuries; i++) {
+            let part = BODY_PARTS[Math.floor(Math.random() * BODY_PARTS.length)]
+            let attempts = 0
+
+            while (usedParts.has(part) && attempts < 5) {
+                part = BODY_PARTS[Math.floor(Math.random() * BODY_PARTS.length)]
+                attempts++
+            }
+            usedParts.add(part)
+
+            const severity = severities[Math.floor(Math.random() * severities.length)]
+            injuries.push({ bodyPart: part, severity: severity })
+        }
+
+        this.generatedInjuries = injuries
+    },
+
+    pickRandomSimulation() {
+        const missingObjectives = this.availableObjectives.filter(o => o.current < o.target)
+        
+        if (missingObjectives.length === 0) {
+             Swal.fire({
+                icon: 'success',
+                title: 'Tout est validé !',
+                text: 'Cet interne a déjà atteint tous ses objectifs.'
+            })
+            return
+        }
+
+        const shuffled = [...missingObjectives].sort(() => 0.5 - Math.random())
+        const count = Math.floor(Math.random() * 3) + 1
+        const selectedObjs = shuffled.slice(0, count)
+        
+        this.selectedScenarioObjectives = selectedObjs
+        
+        let allSelectedScenarios = []
+
+        selectedObjs.forEach(obj => {
+            let possibleScenarios = []
+            const event = EVENTS.find(e => e.name === obj.title)
+            if (event) {
+                event.context.forEach(ctx => {
+                    if (SCENARIOS[ctx]) possibleScenarios = [...possibleScenarios, ...SCENARIOS[ctx]]
+                })
+            } else if (obj.scenarioCategory && SCENARIOS[obj.scenarioCategory]) {
+                 possibleScenarios = SCENARIOS[obj.scenarioCategory]
+            }
+
+            if (possibleScenarios.length > 0) {
+                const randomScenario = possibleScenarios[Math.floor(Math.random() * possibleScenarios.length)]
+                allSelectedScenarios.push(randomScenario)
+            }
+        })
+        
+        if (allSelectedScenarios.length > 0) {
+            this.selectedScenarios = [...new Set(allSelectedScenarios)]
+            this.generateInjuries()
+        } else {
+             Swal.fire({
+                icon: 'warning',
+                title: 'Oups',
+                text: 'Aucun scénario trouvé pour ces objectifs.'
+            })
+        }
+    },
+
+    getSeverityColor(severity) {
+        if (!severity) return 'teal'
+        switch(severity) {
+            case 'Légère': return 'success'
+            case 'Moyenne': return 'orange'
+            case 'Lourde': return 'red'
+            default: return 'grey'
+        }
     },
 
     openRequestDialog() {
@@ -871,9 +1245,9 @@ export default {
         return (validated / total) * 100
     },
 
-    getCompetencyColor(progress) {
-        if (progress === 100) return 'success'
-        if (progress > 50) return 'warning'
+    getCompetencyColor(progress, target = 100) {
+        if (progress >= target) return 'success'
+        if (progress >= target / 2) return 'warning'
         return 'error'
     },
 
@@ -899,6 +1273,29 @@ export default {
             })
         })
         return badges
+    },
+
+    findCompetencyById(id) {
+        for (const category of this.competencyTree) {
+            const comp = category.competencies.find(c => c.id === id)
+            if (comp) return comp
+        }
+        return null
+    },
+
+    calculateProgress(employee, compId) {
+        if (!employee) return 0
+        const comp = this.findCompetencyById(compId)
+        if (!comp) return 0
+
+        const total = comp.subCompetencies.length
+        if (total === 0) return 0
+        
+        const validated = comp.subCompetencies.filter(sub => 
+            employee.competencyProgress?.[sub.id] === 'validated'
+        ).length
+        
+        return (validated / total) * 100
     }
   }
 }
