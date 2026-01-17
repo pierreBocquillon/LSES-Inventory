@@ -249,6 +249,76 @@
         </v-card>
     </v-dialog>
 
+
+
+    <v-dialog v-model="competenciesDialog" max-width="900px" scrollable>
+        <v-card v-if="selectedTrainee">
+            <v-card-title class="bg-info text-white d-flex align-center">
+                Suivi de formation - {{ selectedTrainee.name }}
+                <v-spacer></v-spacer>
+                <v-btn icon="mdi-close" variant="text" @click="competenciesDialog = false"></v-btn>
+            </v-card-title>
+            <v-card-text class="pa-4" style="max-height: 80vh;">
+                <div v-for="category in competencyTree" :key="category.id" class="mb-6">
+                    <h3 class="text-h6 mb-3 d-flex align-center text-primary">
+                        <v-icon start>mdi-shape</v-icon>
+                        {{ category.title }}
+                    </h3>
+                    
+                    <v-row>
+                        <v-col cols="12" md="6" v-for="comp in category.competencies" :key="comp.id">
+                            <v-card variant="outlined" class="h-100">
+                                <v-card-title class="text-subtitle-2 font-weight-bold d-flex align-center">
+                                    {{ comp.title }}
+                                    <v-spacer></v-spacer>
+                                    <v-btn
+                                        icon
+                                        density="compact"
+                                        variant="text"
+                                        size="small"
+                                        class="mr-2"
+                                        @click.stop="toggleCompetencySeen(comp.id)"
+                                    >
+                                        <v-icon :color="isCompetencySeen(comp.id) ? 'amber' : 'grey-lighten-2'">
+                                            {{ isCompetencySeen(comp.id) ? 'mdi-eye' : 'mdi-eye-off' }}
+                                        </v-icon>
+                                        <v-tooltip activator="parent" location="top">
+                                            {{ isCompetencySeen(comp.id) ? 'Compétence vue' : 'Marquer comme vue' }}
+                                        </v-tooltip>
+                                    </v-btn>
+                                    <v-progress-circular
+                                        :model-value="getCompetencyProgress(comp)"
+                                        :color="getCompetencyColor(getCompetencyProgress(comp))"
+                                        size="24"
+                                        width="4"
+                                    ></v-progress-circular>
+                                </v-card-title>
+                                <v-divider></v-divider>
+                                <v-card-text class="pa-0">
+                                    <v-list density="compact">
+                                        <v-list-item v-for="sub in comp.subCompetencies" :key="sub.id" @click="toggleSubCompetency(sub.id)">
+                                            <template v-slot:prepend>
+                                                <v-checkbox-btn 
+                                                    :model-value="isSubCompetencyValidated(sub.id)"
+                                                    color="success"
+                                                    hide-details
+                                                    density="compact"
+                                                ></v-checkbox-btn>
+                                            </template>
+                                            <v-list-item-title class="text-body-2 text-wrap" style="white-space: normal;" :class="{'text-medium-emphasis': !isSubCompetencyValidated(sub.id)}">
+                                                {{ sub.title }}
+                                            </v-list-item-title>
+                                        </v-list-item>
+                                    </v-list>
+                                </v-card-text>
+                            </v-card>
+                        </v-col>
+                    </v-row>
+                </div>
+            </v-card-text>
+        </v-card>
+    </v-dialog>
+
     <v-dialog v-model="requestDialog" max-width="500px">
         <v-card>
             <v-card-title class="bg-primary text-white">Noter une demande de formation</v-card-title>
@@ -313,6 +383,35 @@
                 <v-chip v-else-if="calculateDays(item.lastPromotionDate) >= 21" color="orange" size="x-small" class="ml-2" variant="flat">Attention</v-chip>
                 <v-chip v-else-if="calculateDays(item.lastPromotionDate) >= 14" color="yellow-darken-3" size="x-small" class="ml-2" variant="flat">A surveiller</v-chip>
             </div>
+
+        </template>
+
+        <template v-slot:item.badges="{ item }">
+            <div class="d-flex align-center justify-end gap-1">
+                <span 
+                    v-for="(badge, i) in getEmployeeBadges(item)" 
+                    :key="i" 
+                    class="text-h6 cursor-help cursor-pointer"
+                >
+                    {{ badge.emoji }}
+                    <v-tooltip activator="parent" location="top">
+                        {{ badge.title }}
+                    </v-tooltip>
+                </span>
+            </div>
+        </template>
+
+        <template v-slot:item.actions="{ item }">
+            <v-btn
+                v-if="['Interne', 'Résident', 'Titulaire'].includes(item.role)"
+                color="info"
+                size="small"
+                variant="tonal"
+                prepend-icon="mdi-school"
+                @click="openCompetencyTracking(item)"
+            >
+                Suivi
+            </v-btn>
         </template>
 
       </v-data-table>
@@ -323,6 +422,7 @@
 <script>
 import Employee from '@/classes/Employee'
 import Guide from '@/classes/Guide'
+import { trainingCompetencies } from '@/config/training_competencies'
 import { useUserStore } from '@/store/user'
 import Swal from 'sweetalert2/dist/sweetalert2.js'
 
@@ -339,7 +439,12 @@ export default {
       { title: 'Grade', key: 'role' },
       { title: 'Date d\'arrivée', key: 'arrivalDate' },
       { title: 'Jours au grade', key: 'daysAtGrade', sortable: false },
+      { title: 'Compétences', key: 'badges', sortable: false, align: 'end' },
+      { title: 'Suivi', key: 'actions', sortable: false, align: 'end' },
     ],
+    competenciesDialog: false,
+    selectedTrainee: null,
+    competencyTree: trainingCompetencies,
     requestDialog: false,
     newRequest: {
         employee: null,
@@ -705,6 +810,95 @@ export default {
     getGuideTheme(id) {
         if (['introduction', 'qa'].includes(id)) return 'green'
         return 'blue'
+    },
+
+    openCompetencyTracking(employee) {
+        this.selectedTrainee = employee
+        this.competenciesDialog = true
+    },
+
+    isSubCompetencyValidated(subId) {
+        const status = this.selectedTrainee?.competencyProgress?.[subId]
+        return status === 'validated'
+    },
+
+    getCompetencyStatus(subId) {
+        return this.selectedTrainee?.competencyProgress?.[subId]
+    },
+
+    isCompetencySeen(compId) {
+        return this.selectedTrainee?.competencyProgress?.[compId] === 'seen'
+    },
+
+    async toggleCompetencySeen(compId) {
+        if (!this.selectedTrainee) return
+        if (!this.selectedTrainee.competencyProgress) this.selectedTrainee.competencyProgress = {}
+
+        if (this.isCompetencySeen(compId)) {
+            delete this.selectedTrainee.competencyProgress[compId]
+        } else {
+            this.selectedTrainee.competencyProgress[compId] = 'seen'
+        }
+        await this.selectedTrainee.save()
+    },
+
+    async toggleSubCompetency(subId) {
+        if (!this.selectedTrainee) return
+        
+        if (!this.selectedTrainee.competencyProgress) {
+             this.selectedTrainee.competencyProgress = {}
+        }
+
+        const isVal = this.isSubCompetencyValidated(subId)
+        if (isVal) {
+             delete this.selectedTrainee.competencyProgress[subId]
+        } else {
+             this.selectedTrainee.competencyProgress[subId] = 'validated'
+        }
+        
+        await this.selectedTrainee.save()
+    },
+
+    getCompetencyProgress(competency) {
+        if (!this.selectedTrainee) return 0
+        const total = competency.subCompetencies.length
+        if (total === 0) return 0
+        
+        const validated = competency.subCompetencies.filter(sub => 
+            this.selectedTrainee.competencyProgress?.[sub.id] === 'validated'
+        ).length
+        
+        return (validated / total) * 100
+    },
+
+    getCompetencyColor(progress) {
+        if (progress === 100) return 'success'
+        if (progress > 50) return 'warning'
+        return 'error'
+    },
+
+    getEmployeeBadges(employee) {
+        const badges = []
+        if (!employee || !employee.competencyProgress) return badges
+
+        this.competencyTree.forEach(category => {
+            category.competencies.forEach(comp => {
+                if (comp.emoji) {
+                    // Check if all sub-competencies are validated
+                    const total = comp.subCompetencies.length
+                    if (total > 0) {
+                        const validated = comp.subCompetencies.filter(sub => 
+                            employee.competencyProgress[sub.id] === 'validated'
+                        ).length
+                        
+                        if (validated === total) {
+                            badges.push({ emoji: comp.emoji, title: comp.title })
+                        }
+                    }
+                }
+            })
+        })
+        return badges
     }
   }
 }

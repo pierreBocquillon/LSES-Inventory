@@ -10,11 +10,11 @@ function docToInstance(document) {
     if (data.chiefSpecialty && !chiefSpecs.length) {
         chiefSpecs = [data.chiefSpecialty]
     }
-    return data ? new Employee(document.id, data.name, data.email, data.role, data.sex, data.phone, data.specialties, chiefSpecs, data.birthDate, data.arrivalDate, data.cdiDate, data.lastPromotionDate, data.medicalDegreeDate, data.helicopterTrainingDate, data.helicopterTrainingReimbursed, data.trainingRequests, data.promotionRequest) : null
+    return data ? new Employee(document.id, data.name, data.email, data.role, data.sex, data.phone, data.specialties, chiefSpecs, data.birthDate, data.arrivalDate, data.cdiDate, data.lastPromotionDate, data.medicalDegreeDate, data.helicopterTrainingDate, data.helicopterTrainingReimbursed, data.trainingRequests, data.promotionRequest, data.validatedSubCompetencies, data.competencyProgress) : null
 }
 
 class Employee {
-    constructor(id, name, email, role, sex, phone, specialties, chiefSpecialties, birthDate, arrivalDate, cdiDate, lastPromotionDate, medicalDegreeDate, helicopterTrainingDate, helicopterTrainingReimbursed, trainingRequests, promotionRequest) {
+    constructor(id, name, email, role, sex, phone, specialties, chiefSpecialties, birthDate, arrivalDate, cdiDate, lastPromotionDate, medicalDegreeDate, helicopterTrainingDate, helicopterTrainingReimbursed, trainingRequests, promotionRequest, validatedSubCompetencies, competencyProgress) {
         this.id = id
         this.name = name
         this.email = email
@@ -32,6 +32,13 @@ class Employee {
         this.helicopterTrainingReimbursed = helicopterTrainingReimbursed || false
         this.trainingRequests = trainingRequests || []
         this.promotionRequest = promotionRequest || null
+
+        this.competencyProgress = competencyProgress || {}
+        if (validatedSubCompetencies && Array.isArray(validatedSubCompetencies)) {
+            validatedSubCompetencies.forEach(id => {
+                this.competencyProgress[id] = 'validated'
+            })
+        }
     }
 
     static listenAll(callback) {
@@ -61,7 +68,8 @@ class Employee {
             helicopterTrainingDate: this.helicopterTrainingDate || null,
             helicopterTrainingReimbursed: this.helicopterTrainingReimbursed || false,
             trainingRequests: this.trainingRequests || [],
-            promotionRequest: this.promotionRequest || null
+            promotionRequest: this.promotionRequest || null,
+            competencyProgress: this.competencyProgress || {}
         }
 
         if (this.id) {
