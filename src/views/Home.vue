@@ -36,6 +36,9 @@
                <v-btn color="primary" prepend-icon="mdi-plus" @click="openRequestDialog">
                   Demande de formation
                </v-btn>
+               <v-btn color="deep-purple" class="ml-2" prepend-icon="mdi-account-plus" @click="openCandidatureForm">
+                  Candidature
+               </v-btn>
           </div>
         </v-card-text>
       </v-card>
@@ -62,12 +65,44 @@
               </v-card-actions>
           </v-card>
       </v-dialog>
+
+      <v-dialog v-model="candidatureFormDialog" max-width="500px">
+        <v-card>
+            <v-card-title class="bg-deep-purple text-white">
+                <span class="text-h5">Nouvelle Candidature</span>
+            </v-card-title>
+            <v-card-text class="pt-4">
+                <v-container>
+                    <v-row>
+                        <v-col cols="12" md="6">
+                            <v-text-field v-model="editedCandidature.name" label="Nom complet" variant="outlined"></v-text-field>
+                        </v-col>
+                        <v-col cols="12" md="6">
+                            <v-text-field v-model="editedCandidature.phone" label="Téléphone" variant="outlined"></v-text-field>
+                        </v-col>
+                        <v-col cols="12">
+                            <v-text-field v-model="editedCandidature.email" label="Email (@discord.gg)" variant="outlined" hint="Doit finir par @discord.gg"></v-text-field>
+                        </v-col>
+                        <v-col cols="12">
+                            <v-textarea v-model="editedCandidature.availabilities" label="Disponibilités" variant="outlined" rows="3"></v-textarea>
+                        </v-col>
+                    </v-row>
+                </v-container>
+            </v-card-text>
+            <v-card-actions>
+                <v-spacer></v-spacer>
+                <v-btn color="grey" variant="text" @click="candidatureFormDialog = false">Annuler</v-btn>
+                <v-btn color="deep-purple" variant="text" @click="saveCandidature">Sauvegarder</v-btn>
+            </v-card-actions>
+        </v-card>
+    </v-dialog>
     </div>
 </template>
 
 <script>
 import { useUserStore } from '@/store/user.js'
 import Employee from '@/classes/Employee'
+import Candidature from '@/classes/Candidature'
 import Swal from 'sweetalert2/dist/sweetalert2.js'
 
 import navItems from '@/config/navItems.js'
@@ -90,6 +125,17 @@ export default {
           training: TRAININGS_CONFIG[0]?.title || ''
       },
       unsub: null,
+      candidatureFormDialog: false,
+      editedCandidature: {
+          id: null,
+          name: '',
+          phone: '555-',
+          email: '',
+          availabilities: '',
+          status: 'Candidature reçue',
+          votes: {},
+          answers: {}
+      }
     }
   },
   created() {
@@ -118,6 +164,9 @@ export default {
     },
     orders() {
       return notifState.orders
+    },
+    waitingCandidatures() {
+        return notifState.waitingCandidatures
     },
     filteredNavItems() {
       let filteredItems = []
@@ -155,6 +204,9 @@ export default {
             }
             if(tmp_item.link == '/garage') {
               tmp_item.notif = this.garageNotif
+            }
+            if(tmp_item.link == '/rh') {
+              tmp_item.notif = this.waitingCandidatures.length
             }
             currentGroup.push(tmp_item)
           }
@@ -232,6 +284,68 @@ export default {
               })
           }
       },
+
+      openCandidatureForm() {
+          this.editedCandidature = {
+              id: null,
+              name: '',
+              phone: '555-',
+              email: '',
+              availabilities: '',
+              status: 'Candidature reçue',
+              votes: {},
+              answers: {}
+          }
+          this.candidatureFormDialog = true
+      },
+
+      async saveCandidature() {
+        if (!this.editedCandidature.name || !this.editedCandidature.email || !this.editedCandidature.phone) {
+              Swal.fire({
+                icon: 'warning',
+                title: 'Attention',
+                text: 'Veuillez remplir les champs obligatoires'
+            })
+            return
+        }
+
+        if (!this.editedCandidature.email.endsWith('@discord.gg')) {
+              Swal.fire({
+                icon: 'error',
+                title: 'Erreur',
+                text: "L'email doit se terminer par @discord.gg"
+            })
+            return
+        }
+
+        try {
+            const cand = new Candidature(
+                this.editedCandidature.id,
+                this.editedCandidature.name,
+                this.editedCandidature.phone,
+                this.editedCandidature.email,
+                this.editedCandidature.availabilities,
+                this.editedCandidature.status,
+                this.editedCandidature.votes,
+                this.editedCandidature.answers
+            )
+            await cand.save()
+            this.candidatureFormDialog = false
+            Swal.fire({
+                icon: 'success',
+                title: 'Candidature enregistrée',
+                timer: 1500,
+                showConfirmButton: false
+            })
+        } catch (e) {
+            console.error(e)
+            Swal.fire({
+                icon: 'error',
+                title: 'Erreur',
+                text: "Erreur lors de l'enregistrement"
+            })
+        }
+    },
     },
     beforeUnmount() {
       stopNotifManager()
