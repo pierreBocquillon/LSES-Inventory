@@ -50,9 +50,9 @@ import { useUserStore } from '@/store/user.js'
 
 import Swal from 'sweetalert2/dist/sweetalert2.js'
 
-import Company from '../classes/Company'
+import Company from '../../classes/Company'
 
-import logger from '../functions/logger'
+import logger from '../../functions/logger'
 
 export default {
   props : [],

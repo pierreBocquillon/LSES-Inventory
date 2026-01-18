@@ -55,29 +55,39 @@ const routes = [
     }
   },
   {
-    name: 'Entreprises',
-    path: '/companies',
-    component: () => import("@/views/Companies.vue"),
+    name: 'Rapport d\'autopsie',
+    path: '/autopsie-reports',
+    component:  () => import("@/views/AutopsieReports.vue"),
     meta: {
       needAccount: true,
       showNav: true,
-      permissions: ['stock']
+      permissions:['legist']
     }
   },
   {
-    name: 'Stockage',
-    path: '/storage',
-    component: () => import("@/views/Storage.vue"),
+    name: 'Nouvelle Autopsie',
+    path: '/autopsie',
+    component:  () => import("@/views/Autopsie.vue"),
     meta: {
       needAccount: true,
       showNav: true,
-      permissions: ['stock']
+      permissions:['legist']
     }
   },
   {
-    name: 'Items',
-    path: '/items',
-    component: () => import("@/views/Items.vue"),
+    name: 'Autopsie',
+    path: '/autopsie/:id',
+    component:  () => import("@/views/Autopsie.vue"),
+    meta: {
+      needAccount: true,
+      showNav: true,
+      permissions:['legist']
+    }
+  },
+  {
+    name: 'Stocks',
+    path: '/stocks',
+    component: () => import("@/views/Stocks.vue"),
     meta: {
       needAccount: true,
       showNav: true,

@@ -9,18 +9,14 @@ let navItems = [
     { title: 'Garage', icon: 'mdi-ambulance', link: '/garage' },
   ],
   [
-    { title: 'Entreprises', icon: 'mdi-store', link: '/companies' },
-    { title: 'Stockages', icon: 'mdi-treasure-chest-outline', link: '/storage' },
-    { title: 'Items', icon: 'mdi-hamburger', link: '/items' },
+    { title: 'Stocks', icon: 'mdi-package-variant', link: '/stocks' },
     { title: 'Vehicules', icon: 'mdi-helicopter', link: '/vehicles' },
+    { title: 'Autopsie', icon: 'mdi-coffin', link: '/autopsie-reports' },
+    { title: 'Ressources Humaines', icon: 'mdi-account-tie', link: '/rh' },
   ],
-  // [
-  //   { title: 'Autopsie', icon: 'mdi-coffin', link: '/autopsie'},
-  // ],
   [
     { title: 'Utilisateurs', icon: 'mdi-account-group', link: '/users' },
     { title: 'Logs', icon: 'mdi-account-group', link: '/logs' },
-    { title: 'Ressources Humaines', icon: 'mdi-account-tie', link: '/rh' },
     { title: 'Formation', icon: 'mdi-school', link: '/training' },
   ],
 ]
