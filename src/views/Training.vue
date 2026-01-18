@@ -247,6 +247,21 @@
         </v-card>
     </v-dialog>
 
+    <v-dialog v-model="followUpDialog" max-width="400px">
+        <v-card v-if="selectedFollowUpEmployee">
+            <v-card-title class="bg-primary text-white">Mise à jour suivi - {{ selectedFollowUpEmployee.name }}</v-card-title>
+            <v-card-text class="pt-4">
+                <v-text-field v-model="newFollowUpDate" label="Date de suivi" type="date" variant="outlined"></v-text-field>
+            </v-card-text>
+            <v-card-actions>
+                <v-btn color="error" variant="text" @click="deleteFollowUpDate">Supprimer</v-btn>
+                <v-spacer></v-spacer>
+                <v-btn color="grey" variant="text" @click="followUpDialog = false">Annuler</v-btn>
+                <v-btn color="primary" variant="text" @click="saveFollowUpDate">Enregistrer</v-btn>
+            </v-card-actions>
+        </v-card>
+    </v-dialog>
+
     <v-dialog v-model="guideDialog" max-width="800px" scrollable>
         <v-card v-if="currentGuide">
             <v-toolbar color="primary" :title="isEditingGuide ? 'Modifier ' + currentGuide.title : currentGuide.title">
@@ -599,7 +614,7 @@
         </template>
 
         <template v-slot:item.badges="{ item }">
-            <div class="d-flex align-center justify-end gap-1">
+            <div class="d-flex align-center justify-center gap-1">
                 <span 
                     v-for="(badge, i) in getEmployeeBadges(item)" 
                     :key="i" 
@@ -610,6 +625,18 @@
                         {{ badge.title }}
                     </v-tooltip>
                 </span>
+            </div>
+        </template>
+
+        <template v-slot:item.lastFollowUpDate="{ item }">
+            <div class="d-flex align-center justify-center">
+                <span v-if="item.lastFollowUpDate">{{ calculateDays(item.lastFollowUpDate) }} jours</span>
+                <span v-else class="text-grey font-italic">Jamais</span>
+                
+                <v-chip v-if="item.lastFollowUpDate && calculateDays(item.lastFollowUpDate) >= 28" color="red" size="x-small" class="ml-2" variant="flat">Critique</v-chip>
+                <v-chip v-else-if="item.lastFollowUpDate && calculateDays(item.lastFollowUpDate) >= 21" color="orange" size="x-small" class="ml-2" variant="flat">Attention</v-chip>
+
+                <v-btn icon="mdi-pencil" size="x-small" variant="text" color="primary" class="ml-2" @click="openFollowUpDialog(item)"></v-btn>
             </div>
         </template>
 
@@ -654,11 +681,12 @@ export default {
     unsub: [],
     headers: [
       { title: 'Nom', key: 'name' },
-      { title: 'Grade', key: 'role' },
-      { title: 'Date d\'arrivée', key: 'arrivalDate' },
-      { title: 'Jours au grade', key: 'daysAtGrade', sortable: false },
-      { title: 'Compétences', key: 'badges', sortable: false, align: 'end' },
-      { title: 'Suivi', key: 'actions', sortable: false, align: 'end' },
+      { title: 'Rôle', key: 'role' },
+      { title: 'Arrivée', key: 'arrivalDate' },
+      { title: 'Jours au grade', key: 'daysAtGrade' },
+      { title: 'Compétences', key: 'badges', sortable: false, align: 'center' },
+      { title: 'Suivi', key: 'lastFollowUpDate', align: 'center' },
+      { title: 'Actions', key: 'actions', sortable: false, align: 'end' },
     ],
     competenciesDialog: false,
     selectedTrainee: null,
@@ -681,6 +709,10 @@ export default {
 
     },
     
+    followUpDialog: false,
+    selectedFollowUpEmployee: null,
+    newFollowUpDate: null,
+
     // Guides logic
     guideDialog: false,
     currentGuide: null,
@@ -1065,31 +1097,92 @@ export default {
 
     async savePromotion() {
         if (!this.newPromotion.employee) return
-        
+
         try {
             const emp = this.newPromotion.employee
-            const target = emp.role === 'Interne' ? 'Résident' : 'Titulaire'
-            
-            emp.promotionRequest = {
-                requestedBy: this.userStore.profile.name || 'Inconnu',
+            const request = {
+                id: Date.now().toString(),
+                requestedBy: this.userStore.profile.name,
+                targetRole: this.getNextRole(emp.role),
                 date: new Date().toISOString(),
-
-                targetRole: target,
                 votes: {}
             }
+
+            emp.promotionRequest = request
             await emp.save()
+
             this.promotionDialog = false
             Swal.fire({
                 icon: 'success',
-                title: 'Promotion proposée',
+                title: 'Proposition envoyée',
+                timer: 1500,
+                showConfirmButton: false
+            })
+        } catch (e) {
+            console.error(e)
+            Swal.fire({
+                icon: 'error',
+                title: 'Erreur',
+                text: "Impossible d'enregistrer la proposition"
+            })
+        }
+    },
+
+    openFollowUpDialog(employee) {
+        this.selectedFollowUpEmployee = employee
+        this.newFollowUpDate = new Date().toISOString().substr(0, 10)
+        this.followUpDialog = true
+    },
+
+    async saveFollowUpDate() {
+        if (!this.selectedFollowUpEmployee || !this.newFollowUpDate) return
+
+        try {
+            this.selectedFollowUpEmployee.lastFollowUpDate = this.newFollowUpDate
+            await this.selectedFollowUpEmployee.save()
+            this.followUpDialog = false
+            
+            Swal.fire({
+                icon: 'success',
+                title: 'Date mise à jour',
                 toast: true,
                 position: 'top-end',
                 showConfirmButton: false,
-                timer: 3000
+                timer: 2000
             })
         } catch (e) {
-             console.error(e)
-             Swal.fire({ icon: 'error', title: 'Erreur' })
+            console.error(e)
+            Swal.fire({
+                icon: 'error',
+                title: 'Erreur',
+                text: "Erreur lors de la mise à jour"
+            })
+        }
+    },
+
+    async deleteFollowUpDate() {
+        if (!this.selectedFollowUpEmployee) return
+
+        try {
+            this.selectedFollowUpEmployee.lastFollowUpDate = null
+            await this.selectedFollowUpEmployee.save()
+            this.followUpDialog = false
+            
+            Swal.fire({
+                icon: 'success',
+                title: 'Date supprimée',
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 2000
+            })
+        } catch (e) {
+            console.error(e)
+            Swal.fire({
+                icon: 'error',
+                title: 'Erreur',
+                text: "Erreur lors de la suppression"
+            })
         }
     },
 
