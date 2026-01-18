@@ -20,29 +20,61 @@
         </div>
         
         <h2>Accés rapide :</h2>
-        <div class="d-flex align-center justify-center flex-wrap">
-          <div v-for="group in filteredNavItems" class="d-flex align-center justify-center flex-wrap">
-            <v-btn v-for="item in group" :key="item.link" style="width: 150px; height: 150px;" class="rounded-lg ma-2" @click="$router.push(item.link)">
-              <div class="d-flex flex-column align-center justify-center mb-4">
-                <v-icon size="64">{{ item.icon }}</v-icon>
-                <v-badge color="primary" v-if="item.notif > 0" :content="item.notif" floating offset-x="-30" offset-y="-50"></v-badge>
-                <h3 class="font-weight-regular w-100 text-center mt-3" style="height: 16px;white-space: normal;">{{ item.title }}</h3>
-              </div>
-            </v-btn>
+          <div class="d-flex align-center justify-center flex-wrap">
+            <div v-for="group in filteredNavItems" class="d-flex align-center justify-center flex-wrap">
+              <v-btn v-for="item in group" :key="item.link" style="width: 150px; height: 150px;" class="rounded-lg ma-2" @click="$router.push(item.link)">
+                <div class="d-flex flex-column align-center justify-center mb-4">
+                  <v-icon size="64">{{ item.icon }}</v-icon>
+                  <v-badge color="primary" v-if="item.notif > 0" :content="item.notif" floating offset-x="-30" offset-y="-50"></v-badge>
+                  <h3 class="font-weight-regular w-100 text-center mt-3" style="height: 16px;white-space: normal;">{{ item.title }}</h3>
+                </div>
+              </v-btn>
+            </div>
           </div>
-        </div>
-      </v-card-text>
-    </v-card>
-  </div>
+  
+          <div class="mt-4">
+               <v-btn color="primary" prepend-icon="mdi-plus" @click="openRequestDialog">
+                  Demande de formation
+               </v-btn>
+          </div>
+        </v-card-text>
+      </v-card>
+  
+      <v-dialog v-model="requestDialog" max-width="500px">
+          <v-card>
+              <v-card-title class="bg-primary text-white">Faire une demande de formation</v-card-title>
+              <v-card-text class="pt-4">
+                  <div class="text-subtitle-1 mb-2">
+                      Demandeur : <strong>{{ userStore.profile.name }}</strong>
+                  </div>
+                  <v-select
+                      v-model="newRequest.training"
+                      :items="availableTrainings"
+                      label="Formation demandée"
+                      variant="outlined"
+                      :disabled="!newRequest.employee"
+                  ></v-select>
+              </v-card-text>
+              <v-card-actions>
+                  <v-spacer></v-spacer>
+                  <v-btn color="grey" variant="text" @click="requestDialog = false">Annuler</v-btn>
+                  <v-btn color="primary" variant="text" @click="saveRequest">Enregistrer</v-btn>
+              </v-card-actions>
+          </v-card>
+      </v-dialog>
+    </div>
 </template>
 
 <script>
 import { useUserStore } from '@/store/user.js'
+import Employee from '@/classes/Employee'
+import Swal from 'sweetalert2/dist/sweetalert2.js'
 
 import navItems from '@/config/navItems.js'
 import permissions from '@/config/permissions'
 
 import { initNotifManager, stopNotifManager, notifState, storagesOutdated, garageNotif, alerts } from '@/functions/nofifManager.js'
+import { TRAININGS_CONFIG } from '@/config/trainings'
 
 export default {
   props : [],
@@ -51,11 +83,23 @@ export default {
       userStore: useUserStore(),
       permissions,
       navItems,
+      employees: [],
+      requestDialog: false,
+      newRequest: {
+          employee: null,
+          training: TRAININGS_CONFIG[0]?.title || ''
+      },
+      unsub: null,
     }
   },
   created() {
-    initNotifManager()
-  },
+      initNotifManager()
+    },
+    mounted() {
+      this.unsub = Employee.listenAll((employees) => {
+        this.employees = [...employees].sort((a, b) => a.name.localeCompare(b.name))
+      })
+    },
   computed: {
     storagesOutdated() {
       return storagesOutdated.value
@@ -122,12 +166,76 @@ export default {
       }
       return filteredItems
     },
+    availableTrainings() {
+        if (!this.newRequest.employee) return []
+        const emp = this.newRequest.employee
+        const allTrainings = TRAININGS_CONFIG.map(t => t.title)
+        if (!emp.trainingRequests) return allTrainings
+        return allTrainings.filter(t => !emp.trainingRequests.includes(t))
+    },
   },
 
   methods: {
-  },
-  beforeUnmount() {
-    stopNotifManager()
-  },
+      openRequestDialog() {
+          const currentEmployee = this.employees.find(e => e.name === this.userStore.profile.name)
+          
+          if (!currentEmployee) {
+              Swal.fire({
+                  icon: 'error',
+                  title: 'Erreur',
+                  text: "Impossible de trouver votre dossier employé."
+              })
+              return
+          }
+
+          this.newRequest = { employee: currentEmployee, training: TRAININGS_CONFIG[0]?.title || '' }
+          this.requestDialog = true
+      },
+  
+      async saveRequest() {
+          if (!this.newRequest.employee || !this.newRequest.training) return
+  
+          try {
+              const emp = this.newRequest.employee
+              if (!emp.trainingRequests) emp.trainingRequests = []
+              
+              // Avoid duplicates
+              if (!emp.trainingRequests.includes(this.newRequest.training)) {
+                  emp.trainingRequests.push(this.newRequest.training)
+                  await emp.save()
+                  
+                  Swal.fire({
+                      icon: 'success',
+                      title: 'Demande enregistrée',
+                      toast: true,
+                      position: 'top-end',
+                      showConfirmButton: false,
+                      timer: 3000
+                  })
+              } else {
+                    Swal.fire({
+                      icon: 'info',
+                      title: 'Demande déjà existante',
+                      toast: true,
+                      position: 'top-end',
+                      showConfirmButton: false,
+                      timer: 3000
+                  })
+              }
+              this.requestDialog = false
+          } catch (e) {
+              console.error(e)
+              Swal.fire({
+                  icon: 'error',
+                  title: 'Erreur',
+                  text: "Impossible d'enregistrer la demande"
+              })
+          }
+      },
+    },
+    beforeUnmount() {
+      stopNotifManager()
+      if (this.unsub) this.unsub()
+    },
 }
 </script>

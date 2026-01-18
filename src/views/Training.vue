@@ -460,9 +460,10 @@
                 ></v-autocomplete>
                 <v-select
                     v-model="newRequest.training"
-                    :items="['Formation Grenouille', 'Formation Off Road', 'Formation Médicoptère']"
+                    :items="availableTrainings"
                     label="Formation demandée"
                     variant="outlined"
+                    :disabled="!newRequest.employee"
                 ></v-select>
             </v-card-text>
             <v-card-actions>
@@ -637,6 +638,8 @@ import { trainingCompetencies } from '@/config/training_competencies'
 
 import { OBJECTIFS } from '@/config/objectives'
 import { EVENTS, SCENARIOS } from '@/config/events'
+import { TRAININGS_CONFIG } from '@/config/trainings'
+
 import { BODY_PARTS } from '@/config/body_parts'
 import { useUserStore } from '@/store/user'
 import Swal from 'sweetalert2/dist/sweetalert2.js'
@@ -693,7 +696,7 @@ export default {
 
   computed: {
     trainees() {
-      return this.employees.filter(e => ['Interne', 'Résident'].includes(e.role))
+      return this.employees.filter(e => ['Interne', 'Résident'].includes(e.role)).sort((a, b) => a.name.localeCompare(b.name))
     },
     trainingRequests() {
         let reqs = []
@@ -800,11 +803,18 @@ export default {
         
         return [...new Set(scenarios)]
     },
+    availableTrainings() {
+        if (!this.newRequest.employee) return []
+        const emp = this.newRequest.employee
+        const allTrainings = TRAININGS_CONFIG.map(t => t.title)
+        if (!emp.trainingRequests) return allTrainings
+        return allTrainings.filter(t => !emp.trainingRequests.includes(t))
+    },
   },
 
   mounted() {
     this.unsub.push(Employee.listenAll((employees) => {
-      this.employees = employees
+      this.employees = [...employees].sort((a, b) => a.name.localeCompare(b.name))
     }))
     
     this.unsub.push(Guide.listenAll(async (guides) => {
@@ -1044,12 +1054,8 @@ export default {
     },
 
     getTrainingColor(training) {
-        switch(training) {
-            case 'Formation Grenouille': return 'teal'
-            case 'Formation Off Road': return 'brown'
-            case 'Formation Médicoptère': return 'indigo'
-            default: return 'primary'
-        }
+        const config = TRAININGS_CONFIG.find(t => t.title === training)
+        return config ? config.color : 'primary'
     },
 
     openPromotionDialog() {
