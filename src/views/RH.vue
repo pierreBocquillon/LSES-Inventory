@@ -15,9 +15,11 @@
       <v-btn color="success" class="ml-2" prepend-icon="mdi-contacts" @click="openDirectoryDialog">
         Annuaire
       </v-btn>
-      <v-btn color="deep-purple" class="ml-2" prepend-icon="mdi-file-document-edit" @click="openCandidatureDialog">
-        Candidatures
-      </v-btn>
+      <v-badge color="error" :content="waitingCandidaturesCount" :model-value="waitingCandidaturesCount > 0" class="ml-2">
+        <v-btn color="deep-purple" prepend-icon="mdi-file-document-edit" @click="openCandidatureDialog">
+            Candidatures
+        </v-btn>
+      </v-badge>
 
     </div>
 
@@ -799,6 +801,9 @@ export default {
         return (completed / total) * 100
     },
 
+    waitingCandidaturesCount() {
+        return this.candidatures.filter(c => c.status === 'Candidature reçue').length
+    },
     sortedDirectoryEmployees() {
         const roleOrder = ['Directeur', 'Directeur Adjoint', 'Assistant RH', 'Responsable de Service', 'Spécialiste', 'Titulaire', 'Résident', 'Interne']
         
