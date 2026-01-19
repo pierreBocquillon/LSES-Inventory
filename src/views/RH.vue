@@ -20,6 +20,11 @@
             Candidatures
         </v-btn>
       </v-badge>
+      <v-badge color="amber" :content="promotionRequests.length" :model-value="promotionRequests.length > 0" class="ml-2">
+        <v-btn color="amber-darken-2" prepend-icon="mdi-medal" @click="openPromotionRequestsDialog">
+            Promotions
+        </v-btn>
+      </v-badge>
 
     </div>
 
@@ -656,6 +661,45 @@
             </v-card-actions>
         </v-card>
     </v-dialog>
+
+    <v-dialog v-model="promotionRequestsDialog" max-width="700px">
+        <v-card>
+            <v-card-title class="bg-amber-darken-2 text-white">
+                <span class="text-h5">Demandes de promotion</span>
+            </v-card-title>
+            <v-card-text class="pt-4">
+                 <v-list v-if="promotionRequests.length > 0">
+                    <v-list-item v-for="emp in promotionRequests" :key="emp.id">
+                        <template v-slot:prepend>
+                             <v-avatar color="primary" class="text-white">{{ emp.name.charAt(0) }}</v-avatar>
+                        </template>
+                        <v-list-item-title class="font-weight-bold">{{ emp.name }}</v-list-item-title>
+                        <v-list-item-subtitle>
+                            {{ (emp.promotionRequest.value || emp.promotionRequest) === 'Intégration RH' ? 'Demande :' : 'Candidature Responsable Pôle :' }}
+                            <v-chip size="small" class="ml-2">
+                                {{ getSpecialtyIcon(emp.promotionRequest.value || emp.promotionRequest) }} {{ getSpecialtyName(emp.promotionRequest.value || emp.promotionRequest) }}
+                            </v-chip>
+                        </v-list-item-subtitle>
+                        <v-list-item-subtitle v-if="emp.promotionRequest.motivation" class="mt-2 text-wrap">
+                            <v-icon size="small" class="mr-1">mdi-text-box-outline</v-icon> 
+                            <i>"{{ emp.promotionRequest.motivation }}"</i>
+                        </v-list-item-subtitle>
+                        <template v-slot:append>
+                            <v-btn color="success" icon="mdi-check" size="small" variant="text" @click="acceptPromotion(emp)" class="mr-2"></v-btn>
+                            <v-btn color="error" icon="mdi-close" size="small" variant="text" @click="rejectPromotion(emp)"></v-btn>
+                        </template>
+                    </v-list-item>
+                 </v-list>
+                 <div v-else class="text-center text-grey my-4">
+                     Aucune demande en attente.
+                 </div>
+            </v-card-text>
+            <v-card-actions>
+                <v-spacer></v-spacer>
+                <v-btn color="primary" variant="text" @click="promotionRequestsDialog = false">Fermer</v-btn>
+            </v-card-actions>
+        </v-card>
+    </v-dialog>
   </v-container>
 </template>
 
@@ -699,6 +743,7 @@ export default {
     candidatures: [],
     candidatureDialog: false,
     candidatureFormDialog: false,
+    promotionRequestsDialog: false,
     editedCandidature: {
         id: null,
         name: '',
@@ -817,6 +862,9 @@ export default {
             if (!b.arrivalDate) return -1
             return new Date(a.arrivalDate) - new Date(b.arrivalDate)
         })
+    },
+    promotionRequests() {
+        return this.employees.filter(e => e.promotionRequest)
     }
   },
 
@@ -1394,6 +1442,53 @@ export default {
                 }
             }
         })
+    },
+
+    openPromotionRequestsDialog() {
+        this.promotionRequestsDialog = true
+    },
+
+    async acceptPromotion(emp) {
+        try {
+            const requestValue = emp.promotionRequest.value || emp.promotionRequest
+            if (!emp.specialties) emp.specialties = []
+            if (!emp.specialties.includes(requestValue)) {
+                emp.specialties.push(requestValue)
+            }
+            emp.promotionRequest = null
+            await emp.save()
+            
+            Swal.fire({
+                icon: 'success',
+                title: 'Promotion validée',
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 3000
+            })
+        } catch (e) {
+            console.error(e)
+            Swal.fire({ icon: 'error', title: 'Erreur', text: "Erreur lors de la validation" })
+        }
+    },
+
+    async rejectPromotion(emp) {
+         try {
+            emp.promotionRequest = null
+            await emp.save()
+            
+            Swal.fire({
+                icon: 'info',
+                title: 'Promotion refusée',
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 3000
+            })
+        } catch (e) {
+            console.error(e)
+            Swal.fire({ icon: 'error', title: 'Erreur', text: "Erreur lors du refus" })
+        }
     }
   },
 }

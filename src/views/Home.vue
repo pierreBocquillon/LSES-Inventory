@@ -32,12 +32,15 @@
             </div>
           </div>
   
-          <div class="mt-4">
+          <div class="mt-4 d-flex justify-center flex-wrap" style="gap: 10px;">
                <v-btn color="primary" prepend-icon="mdi-plus" @click="openRequestDialog">
                   Demande de formation
                </v-btn>
-               <v-btn color="deep-purple" class="ml-2" prepend-icon="mdi-account-plus" @click="openCandidatureForm">
+               <v-btn color="deep-purple" prepend-icon="mdi-account-plus" @click="openCandidatureForm">
                   Candidature
+               </v-btn>
+               <v-btn color="amber" prepend-icon="mdi-medal" @click="openPromotionDialog">
+                  Demande de promotion
                </v-btn>
           </div>
         </v-card-text>
@@ -62,6 +65,58 @@
                   <v-spacer></v-spacer>
                   <v-btn color="grey" variant="text" @click="requestDialog = false">Annuler</v-btn>
                   <v-btn color="primary" variant="text" @click="saveRequest">Enregistrer</v-btn>
+              </v-card-actions>
+          </v-card>
+      </v-dialog>
+
+      <v-dialog v-model="promotionDialog" max-width="500px">
+          <v-card>
+              <v-card-title class="bg-amber text-white">Faire une demande de promotion</v-card-title>
+              <v-card-text class="pt-4">
+                  <div class="text-subtitle-1 mb-2">
+                      Demandeur : <strong>{{ userStore.profile.name }}</strong>
+                  </div>
+                  <v-radio-group v-model="newPromotion.type" inline>
+                     <v-radio label="Devenir Responsable de pôle" value="specialist"></v-radio>
+                     <v-radio label="Intégrer les RH" value="rh"></v-radio>
+                  </v-radio-group>
+                  
+                  <v-expand-transition>
+                    <v-select
+                        v-if="newPromotion.type === 'specialist'"
+                        v-model="newPromotion.specialty"
+                        :items="availableSpecialties"
+                        item-title="name"
+                        item-value="value"
+                        label="Spécialité visée"
+                        variant="outlined"
+                        :disabled="!newPromotion.employee"
+                    >
+                       <template v-slot:item="{ props, item }">
+                          <v-list-item v-bind="props" :prepend-icon="null">
+                            <template v-slot:prepend>
+                              <span class="mr-2">{{ item.raw.icon }}</span>
+                            </template>
+                          </v-list-item>
+                        </template>
+                        <template v-slot:selection="{ item }">
+                          <span class="mr-2">{{ item.raw.icon }}</span>
+                          {{ item.title }}
+                        </template>
+                    </v-select>
+                  </v-expand-transition>
+                  <v-textarea
+                      v-model="newPromotion.motivation"
+                      label="Motivations"
+                      variant="outlined"
+                      rows="3"
+                      auto-grow
+                  ></v-textarea>
+              </v-card-text>
+              <v-card-actions>
+                  <v-spacer></v-spacer>
+                  <v-btn color="grey" variant="text" @click="promotionDialog = false">Annuler</v-btn>
+                  <v-btn color="amber" variant="text" @click="savePromotionRequest">Envoyer</v-btn>
               </v-card-actions>
           </v-card>
       </v-dialog>
@@ -102,6 +157,7 @@
 <script>
 import { useUserStore } from '@/store/user.js'
 import Employee from '@/classes/Employee'
+import Specialty from '@/classes/Specialty'
 import Candidature from '@/classes/Candidature'
 import Swal from 'sweetalert2/dist/sweetalert2.js'
 
@@ -119,12 +175,22 @@ export default {
       permissions,
       navItems,
       employees: [],
+      specialties: [],
       requestDialog: false,
       newRequest: {
           employee: null,
           training: TRAININGS_CONFIG[0]?.title || ''
       },
+      promotionDialog: false,
+      promotionDialog: false,
+      newPromotion: {
+          employee: null,
+          type: 'specialist',
+          specialty: null,
+          motivation: ''
+      },
       unsub: null,
+      unsubSpecialties: null,
       candidatureFormDialog: false,
       editedCandidature: {
           id: null,
@@ -144,6 +210,9 @@ export default {
     mounted() {
       this.unsub = Employee.listenAll((employees) => {
         this.employees = [...employees].sort((a, b) => a.name.localeCompare(b.name))
+      })
+      this.unsubSpecialties = Specialty.listenAll((list) => {
+        this.specialties = list
       })
     },
   computed: {
@@ -206,7 +275,7 @@ export default {
               tmp_item.notif = this.garageNotif
             }
             if(tmp_item.link == '/rh') {
-              tmp_item.notif = this.waitingCandidatures.length
+              tmp_item.notif = this.waitingCandidatures.length + this.employees.filter(e => e.promotionRequest).length
             }
             currentGroup.push(tmp_item)
           }
@@ -224,6 +293,10 @@ export default {
         const allTrainings = TRAININGS_CONFIG.map(t => t.title)
         if (!emp.trainingRequests) return allTrainings
         return allTrainings.filter(t => !emp.trainingRequests.includes(t))
+    },
+    availableSpecialties() {
+        if (!this.newPromotion.employee) return []
+        return this.specialties
     },
   },
 
@@ -275,6 +348,64 @@ export default {
                   })
               }
               this.requestDialog = false
+          } catch (e) {
+              console.error(e)
+              Swal.fire({
+                  icon: 'error',
+                  title: 'Erreur',
+                  text: "Impossible d'enregistrer la demande"
+              })
+          }
+      },
+      
+      openPromotionDialog() {
+          const currentEmployee = this.employees.find(e => e.name === this.userStore.profile.name)
+          
+          if (!currentEmployee) {
+              Swal.fire({
+                  icon: 'error',
+                  title: 'Erreur',
+                  text: "Impossible de trouver votre dossier employé."
+              })
+              return
+          }
+
+          this.newPromotion = { employee: currentEmployee, type: 'specialist', specialty: null, motivation: '' }
+          this.promotionDialog = true
+      },
+
+      async savePromotionRequest() {
+          if (!this.newPromotion.employee) return
+          if (this.newPromotion.type === 'specialist' && !this.newPromotion.specialty) return
+
+          try {
+              const emp = this.newPromotion.employee
+              
+              if (emp.promotionRequest) {
+                   Swal.fire({
+                      icon: 'warning',
+                      title: 'Attention',
+                      text: "Vous avez déjà une demande en cours."
+                  })
+                  return
+              }
+
+              emp.promotionRequest = {
+                  value: this.newPromotion.type === 'rh' ? 'Intégration RH' : this.newPromotion.specialty,
+                  motivation: this.newPromotion.motivation
+              }
+              await emp.save()
+              
+              Swal.fire({
+                  icon: 'success',
+                  title: 'Demande envoyée',
+                  toast: true,
+                  position: 'top-end',
+                  showConfirmButton: false,
+                  timer: 3000
+              })
+              
+              this.promotionDialog = false
           } catch (e) {
               console.error(e)
               Swal.fire({
@@ -349,7 +480,9 @@ export default {
     },
     beforeUnmount() {
       stopNotifManager()
+      stopNotifManager()
       if (this.unsub) this.unsub()
+      if (this.unsubSpecialties) this.unsubSpecialties()
     },
 }
 </script>
