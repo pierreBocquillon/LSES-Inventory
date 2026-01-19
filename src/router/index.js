@@ -57,31 +57,31 @@ const routes = [
   {
     name: 'Rapport d\'autopsie',
     path: '/autopsie-reports',
-    component:  () => import("@/views/AutopsieReports.vue"),
+    component: () => import("@/views/AutopsieReports.vue"),
     meta: {
       needAccount: true,
       showNav: true,
-      permissions:['legist']
+      permissions: ['legist']
     }
   },
   {
     name: 'Nouvelle Autopsie',
     path: '/autopsie',
-    component:  () => import("@/views/Autopsie.vue"),
+    component: () => import("@/views/Autopsie.vue"),
     meta: {
       needAccount: true,
       showNav: true,
-      permissions:['legist']
+      permissions: ['legist']
     }
   },
   {
     name: 'Autopsie',
     path: '/autopsie/:id',
-    component:  () => import("@/views/Autopsie.vue"),
+    component: () => import("@/views/Autopsie.vue"),
     meta: {
       needAccount: true,
       showNav: true,
-      permissions:['legist']
+      permissions: ['legist']
     }
   },
   {
@@ -131,7 +131,7 @@ const routes = [
     meta: {
       needAccount: true,
       showNav: true,
-      permissions: ['trainer']
+      permissions: ['trainer', 'restricted_trainer']
     }
   },
   {

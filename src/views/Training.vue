@@ -65,7 +65,7 @@
         </v-card-text>
     </v-card>
 
-    <div class="mb-4">
+    <div class="mb-4" v-if="!isRestrictedTrainer">
         <h2 class="text-h5 mb-2">Procédures</h2>
         <v-row>
             <v-col cols="12" sm="6" md="3" v-for="guide in sortedGuides" :key="guide.id">
@@ -88,19 +88,21 @@
         </v-row>
     </div>
 
-    <div class="d-flex align-center mb-4">
-      <h1 class="text-h4">Suivi Formation</h1>
+    <div class="d-flex align-center mb-4" v-if="!isRestrictedTrainer || true">
+      <!-- Logic handled inside -->
+      <h1 class="text-h4" v-if="!isRestrictedTrainer">Suivi Formation</h1>
+      <h1 class="text-h4" v-else>Actions</h1>
       <v-spacer></v-spacer>
-       <v-btn color="purple" prepend-icon="mdi-account-star" class="mr-2" @click="openPromotionDialog">
+       <v-btn color="purple" prepend-icon="mdi-account-star" class="mr-2" @click="openPromotionDialog" v-if="!isRestrictedTrainer">
         Proposer une promotion
       </v-btn>
        <v-btn color="primary" prepend-icon="mdi-plus" @click="openRequestDialog">
         Demande de formation
       </v-btn>
-       <v-btn color="orange-darken-2" prepend-icon="mdi-target" class="ml-2" @click="objectivesDialog = true">
+       <v-btn color="orange-darken-2" prepend-icon="mdi-target" class="ml-2" @click="objectivesDialog = true" v-if="!isRestrictedTrainer">
         Objectifs Semaine
       </v-btn>
-       <v-btn color="teal" prepend-icon="mdi-format-list-bulleted" class="ml-2" @click="openScenarioDialog">
+       <v-btn color="teal" prepend-icon="mdi-format-list-bulleted" class="ml-2" @click="openScenarioDialog" v-if="!isRestrictedTrainer">
         Voir les simulations
       </v-btn>
     </div>
@@ -572,8 +574,8 @@
             </v-card-text>
         </v-card>
     </v-dialog>
-
-    <v-card class="flex-grow-1">
+    
+    <v-card class="flex-grow-1" v-if="!isRestrictedTrainer">
       <v-data-table
         :headers="headers"
         :items="trainees"
@@ -727,6 +729,13 @@ export default {
   }),
 
   computed: {
+    isRestrictedTrainer() {
+        const profile = this.userStore.profile
+        if (!profile) return true
+        if (profile.permissions && (profile.permissions.includes('admin') || profile.permissions.includes('trainer') || profile.permissions.includes('dev')))
+            return false
+        return true
+    },
     trainees() {
       return this.employees.filter(e => ['Interne', 'Résident'].includes(e.role)).sort((a, b) => a.name.localeCompare(b.name))
     },

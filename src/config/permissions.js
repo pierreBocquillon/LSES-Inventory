@@ -54,6 +54,11 @@ let permissions = [
     name: 'Formation',
     value: 'trainer'
   },
+  {
+    icon: '🚁',
+    name: 'Formateur Off-Road/Médicoptère',
+    value: 'restricted_trainer'
+  },
 ]
 
 for (let perm of permissions) {
