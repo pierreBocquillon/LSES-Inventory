@@ -15,9 +15,16 @@
       <v-btn color="success" class="ml-2" prepend-icon="mdi-contacts" @click="openDirectoryDialog">
         Annuaire
       </v-btn>
-      <v-btn color="deep-purple" class="ml-2" prepend-icon="mdi-file-document-edit" @click="openCandidatureDialog">
-        Candidatures
-      </v-btn>
+      <v-badge color="error" :content="waitingCandidaturesCount" :model-value="waitingCandidaturesCount > 0" class="ml-2">
+        <v-btn color="deep-purple" prepend-icon="mdi-file-document-edit" @click="openCandidatureDialog">
+            Candidatures
+        </v-btn>
+      </v-badge>
+      <v-badge color="amber" :content="promotionRequests.length" :model-value="promotionRequests.length > 0" class="ml-2">
+        <v-btn color="amber-darken-2" prepend-icon="mdi-medal" @click="openPromotionRequestsDialog">
+            Promotions
+        </v-btn>
+      </v-badge>
 
     </div>
 
@@ -49,6 +56,25 @@
                     </v-btn>
                 </template>
                 <span>Remboursement formation hélico dû ! Cliquer pour valider.</span>
+            </v-tooltip>
+
+
+             <v-tooltip location="top" v-if="item.simpleFault">
+                <template v-slot:activator="{ props }">
+                    <v-icon 
+                        color="error" 
+                        class="ml-2 cursor-pointer" 
+                        v-bind="props" 
+                        @click="showFaultDetails(item)"
+                    >
+                        mdi-alert-circle
+                    </v-icon>
+                </template>
+                <div class="text-center">
+                    <strong>Faute simple</strong><br>
+                    {{ item.simpleFault.reason }}<br>
+                    <span class="text-caption">Expire le : {{ formatDate(item.simpleFault.expireDate) }}</span>
+                </div>
             </v-tooltip>
           </div>
         </template>
@@ -148,6 +174,21 @@
             <template v-slot:activator="{ props }">
               <v-btn icon variant="text" size="small" color="info" v-bind="props" @click="openDetails(item)">
                 <v-icon>mdi-calendar</v-icon>
+              </v-btn>
+            </template>
+          </v-tooltip>
+          
+          <v-tooltip v-if="!item.simpleFault" text="Ajouter une faute" location="top">
+            <template v-slot:activator="{ props }">
+              <v-btn icon variant="text" size="small" color="orange-darken-4" v-bind="props" @click="openFaultDialog(item)">
+                <v-icon>mdi-alert-plus</v-icon>
+              </v-btn>
+            </template>
+          </v-tooltip>
+           <v-tooltip v-else text="Supprimer la faute" location="top">
+            <template v-slot:activator="{ props }">
+              <v-btn icon variant="text" size="small" color="green" v-bind="props" @click="deleteFault(item)">
+                <v-icon>mdi-alert-remove</v-icon>
               </v-btn>
             </template>
           </v-tooltip>
@@ -654,6 +695,68 @@
             </v-card-actions>
         </v-card>
     </v-dialog>
+
+    <v-dialog v-model="promotionRequestsDialog" max-width="700px">
+        <v-card>
+            <v-card-title class="bg-amber-darken-2 text-white">
+                <span class="text-h5">Demandes de promotion</span>
+            </v-card-title>
+            <v-card-text class="pt-4">
+                 <v-list v-if="promotionRequests.length > 0">
+                    <v-list-item v-for="emp in promotionRequests" :key="emp.id">
+                        <template v-slot:prepend>
+                             <v-avatar color="primary" class="text-white">{{ emp.name.charAt(0) }}</v-avatar>
+                        </template>
+                        <v-list-item-title class="font-weight-bold">{{ emp.name }}</v-list-item-title>
+                        <v-list-item-subtitle>
+                            {{ (emp.promotionRequest.value || emp.promotionRequest) === 'Intégration RH' ? 'Demande :' : 'Candidature Responsable Pôle :' }}
+                            <v-chip size="small" class="ml-2">
+                                {{ getSpecialtyIcon(emp.promotionRequest.value || emp.promotionRequest) }} {{ getSpecialtyName(emp.promotionRequest.value || emp.promotionRequest) }}
+                            </v-chip>
+                        </v-list-item-subtitle>
+                        <v-list-item-subtitle v-if="emp.promotionRequest.motivation" class="mt-2 text-wrap">
+                            <v-icon size="small" class="mr-1">mdi-text-box-outline</v-icon> 
+                            <i>"{{ emp.promotionRequest.motivation }}"</i>
+                        </v-list-item-subtitle>
+                        <template v-slot:append>
+                            <v-btn color="success" icon="mdi-check" size="small" variant="text" @click="acceptPromotion(emp)" class="mr-2"></v-btn>
+                            <v-btn color="error" icon="mdi-close" size="small" variant="text" @click="rejectPromotion(emp)"></v-btn>
+                        </template>
+                    </v-list-item>
+                 </v-list>
+                 <div v-else class="text-center text-grey my-4">
+                     Aucune demande en attente.
+                 </div>
+            </v-card-text>
+            <v-card-actions>
+                <v-spacer></v-spacer>
+                <v-btn color="primary" variant="text" @click="promotionRequestsDialog = false">Fermer</v-btn>
+            </v-card-actions>
+        </v-card>
+    </v-dialog>
+    <v-dialog v-model="faultDialog" max-width="500px">
+      <v-card>
+        <v-card-title class="bg-error text-white">
+          <span class="text-h5">Ajouter une faute simple</span>
+        </v-card-title>
+        <v-card-text class="pt-4">
+          <p class="mb-2">Employé : <strong>{{ faultEmployee?.name }}</strong></p>
+          <v-textarea
+            v-model="faultReason"
+            label="Raison de la faute"
+            variant="outlined"
+            rows="3"
+            auto-grow
+          ></v-textarea>
+          <p class="text-caption text-grey">Cette faute s'effacera automatiquement dans 30 jours.</p>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn color="grey" variant="text" @click="faultDialog = false">Annuler</v-btn>
+          <v-btn color="error" variant="text" @click="saveFault">Ajouter</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </v-container>
 </template>
 
@@ -697,6 +800,7 @@ export default {
     candidatures: [],
     candidatureDialog: false,
     candidatureFormDialog: false,
+    promotionRequestsDialog: false,
     editedCandidature: {
         id: null,
         name: '',
@@ -773,6 +877,10 @@ export default {
     detailsDialog: false,
     selectedEmployee: null,
 
+    faultDialog: false,
+    faultReason: '',
+    faultEmployee: null,
+
     unsub: [],
     showAllEmails: false,
   }),
@@ -799,6 +907,9 @@ export default {
         return (completed / total) * 100
     },
 
+    waitingCandidaturesCount() {
+        return this.candidatures.filter(c => c.status === 'Candidature reçue').length
+    },
     sortedDirectoryEmployees() {
         const roleOrder = ['Directeur', 'Directeur Adjoint', 'Assistant RH', 'Responsable de Service', 'Spécialiste', 'Titulaire', 'Résident', 'Interne']
         
@@ -812,6 +923,9 @@ export default {
             if (!b.arrivalDate) return -1
             return new Date(a.arrivalDate) - new Date(b.arrivalDate)
         })
+    },
+    promotionRequests() {
+        return this.employees.filter(e => e.promotionRequest)
     }
   },
 
@@ -949,6 +1063,11 @@ export default {
         if (this.editedItem.id) {
            const original = this.employees.find(e => e.id === this.editedItem.id)
            if (original) oldRole = original.role
+           
+           let promReq = this.editedItem.promotionRequest
+           if (oldRole && oldRole !== this.editedItem.role)
+               promReq = null
+
            profile = new Employee(
              this.editedItem.id,
              this.editedItem.name,
@@ -964,7 +1083,9 @@ export default {
              this.editedItem.lastPromotionDate,
              this.editedItem.medicalDegreeDate,
              this.editedItem.helicopterTrainingDate,
-             this.editedItem.helicopterTrainingReimbursed
+             this.editedItem.helicopterTrainingReimbursed,
+             this.editedItem.trainingRequests,
+             promReq
            )
         } else {
           // Creating new
@@ -984,7 +1105,9 @@ export default {
             this.editedItem.lastPromotionDate,
             this.editedItem.medicalDegreeDate,
             this.editedItem.helicopterTrainingDate,
-            this.editedItem.helicopterTrainingReimbursed
+            this.editedItem.helicopterTrainingReimbursed,
+            [], // new employee has no requests
+            null // new employee has no promotion request
           )
         }
 
@@ -1380,8 +1503,165 @@ export default {
                 }
             }
         })
+    },
+
+    openPromotionRequestsDialog() {
+        this.promotionRequestsDialog = true
+    },
+
+    async acceptPromotion(emp) {
+        try {
+            const requestValue = emp.promotionRequest.value || emp.promotionRequest
+            if (!emp.specialties) emp.specialties = []
+            if (!emp.specialties.includes(requestValue)) {
+                emp.specialties.push(requestValue)
+            }
+            emp.promotionRequest = null
+            await emp.save()
+            
+            Swal.fire({
+                icon: 'success',
+                title: 'Promotion validée',
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 3000
+            })
+        } catch (e) {
+            console.error(e)
+            Swal.fire({ icon: 'error', title: 'Erreur', text: "Erreur lors de la validation" })
+        }
+    },
+
+    async rejectPromotion(emp) {
+         try {
+            emp.promotionRequest = null
+            await emp.save()
+            
+            Swal.fire({
+                icon: 'info',
+                title: 'Promotion refusée',
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 3000
+            })
+        } catch (e) {
+            console.error(e)
+            Swal.fire({ icon: 'error', title: 'Erreur', text: "Erreur lors du refus" })
+        }
+    },
+
+    openFaultDialog(item) {
+        this.faultEmployee = item
+        this.faultReason = ''
+        this.faultDialog = true
+    },
+
+    async saveFault() {
+        if (!this.faultReason) return
+        
+        try {
+            const today = new Date()
+            const expireDate = new Date(today)
+            expireDate.setDate(expireDate.getDate() + 30)
+
+            this.faultEmployee.simpleFault = {
+                reason: this.faultReason,
+                date: today.toISOString(),
+                expireDate: expireDate.toISOString()
+            }
+            await this.faultEmployee.save()
+            
+            logger.log(this.userStore.profile.id, "Ajout faute", `Ajout d'une faute simple à ${this.faultEmployee.name} : ${this.faultReason}`)
+            
+            this.faultDialog = false
+            Swal.fire({
+                icon: 'success',
+                title: 'Faute ajoutée',
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 3000
+            })
+        } catch (e) {
+            console.error(e)
+            Swal.fire({ icon: 'error', title: 'Erreur', text: "Erreur lors de l'ajout" })
+        }
+    },
+
+    async deleteFault(item) {
+        Swal.fire({
+            title: 'Retirer la faute ?',
+            text: `Voulez-vous retirer la faute de ${item.name} ?`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Oui, retirer',
+            cancelButtonText: 'Annuler'
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                try {
+                    item.simpleFault = null
+                    await item.save()
+                    
+                    logger.log(this.userStore.profile.id, "Retrait faute", `Retrait de la faute simple de ${item.name}`)
+                    
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Faute retirée',
+                        toast: true,
+                        position: 'top-end',
+                        showConfirmButton: false,
+                        timer: 3000
+                    })
+                } catch (e) {
+                    console.error(e)
+                    Swal.fire({ icon: 'error', title: 'Erreur', text: "Erreur lors du retrait" })
+                }
+            }
+        })
+    },
+
+    showFaultDetails(item) {
+        if (!item.simpleFault) return
+        Swal.fire({
+            title: 'Détails de la faute',
+            html: `
+                <div class="text-left">
+                    <p><strong>Employé :</strong> ${item.name}</p>
+                    <p><strong>Raison :</strong> ${item.simpleFault.reason}</p>
+                    <p><strong>Date d'ajout :</strong> ${this.formatDate(item.simpleFault.date)}</p>
+                    <p><strong>Expire le :</strong> ${this.formatDate(item.simpleFault.expireDate)}</p>
+                </div>
+            `,
+            icon: 'warning',
+            confirmButtonText: 'Fermer'
+        })
+    },
+
+    checkFaultExpirations() {
+        const today = new Date()
+        this.employees.forEach(async emp => {
+            if (emp.simpleFault && emp.simpleFault.expireDate) {
+                const expireDate = new Date(emp.simpleFault.expireDate)
+                if (today > expireDate) {
+                    console.log(`Fault expired for ${emp.name}, removing...`)
+                    emp.simpleFault = null
+                    await emp.save()
+                }
+            }
+        })
     }
   },
+  
+  watch: {
+    employees: {
+        handler() {
+            this.checkFaultExpirations()
+        },
+        deep: true
+    }
+  }
 }
 </script>
 

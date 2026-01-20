@@ -14,12 +14,12 @@ let permissions = [
     name: 'Gestion des vehicules',
     value: 'vehicles'
   },
-  { 
+  {
     icon: '⚰️',
     name: 'Médecine légale',
     value: 'legist'
   },
-  { 
+  {
     icon: '😊',
     name: 'Gestion des utilisateurs',
     value: 'user'
@@ -48,6 +48,16 @@ let permissions = [
     icon: '👔',
     name: 'Ressources Humaines',
     value: 'rh'
+  },
+  {
+    icon: '🎓',
+    name: 'Formation',
+    value: 'trainer'
+  },
+  {
+    icon: '🚁',
+    name: 'Formateur Off-Road/Médicoptère',
+    value: 'restricted_trainer'
   },
 ]
 

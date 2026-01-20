@@ -10,11 +10,12 @@ function docToInstance(document) {
     if (data.chiefSpecialty && !chiefSpecs.length) {
         chiefSpecs = [data.chiefSpecialty]
     }
-    return data ? new Employee(document.id, data.name, data.email, data.role, data.sex, data.phone, data.specialties, chiefSpecs, data.birthDate, data.arrivalDate, data.cdiDate, data.lastPromotionDate, data.medicalDegreeDate, data.helicopterTrainingDate, data.helicopterTrainingReimbursed) : null
+    return data ? new Employee(document.id, data.name, data.email, data.role, data.sex, data.phone, data.specialties, chiefSpecs, data.birthDate, data.arrivalDate, data.cdiDate, data.lastPromotionDate, data.medicalDegreeDate, data.helicopterTrainingDate, data.helicopterTrainingReimbursed, data.trainingRequests, data.promotionRequest, data.validatedSubCompetencies, data.competencyProgress, data.lastFollowUpDate, data.simpleFault) : null
 }
 
+
 class Employee {
-    constructor(id, name, email, role, sex, phone, specialties, chiefSpecialties, birthDate, arrivalDate, cdiDate, lastPromotionDate, medicalDegreeDate, helicopterTrainingDate, helicopterTrainingReimbursed) {
+    constructor(id, name, email, role, sex, phone, specialties, chiefSpecialties, birthDate, arrivalDate, cdiDate, lastPromotionDate, medicalDegreeDate, helicopterTrainingDate, helicopterTrainingReimbursed, trainingRequests, promotionRequest, validatedSubCompetencies, competencyProgress, lastFollowUpDate, simpleFault) {
         this.id = id
         this.name = name
         this.email = email
@@ -30,6 +31,17 @@ class Employee {
         this.medicalDegreeDate = medicalDegreeDate || null
         this.helicopterTrainingDate = helicopterTrainingDate || null
         this.helicopterTrainingReimbursed = helicopterTrainingReimbursed || false
+        this.trainingRequests = trainingRequests || []
+        this.promotionRequest = promotionRequest || null
+
+        this.competencyProgress = competencyProgress || {}
+        if (validatedSubCompetencies && Array.isArray(validatedSubCompetencies)) {
+            validatedSubCompetencies.forEach(id => {
+                this.competencyProgress[id] = 'validated'
+            })
+        }
+        this.lastFollowUpDate = lastFollowUpDate || null
+        this.simpleFault = simpleFault || null
     }
 
     static listenAll(callback) {
@@ -57,7 +69,12 @@ class Employee {
             lastPromotionDate: this.lastPromotionDate || null,
             medicalDegreeDate: this.medicalDegreeDate || null,
             helicopterTrainingDate: this.helicopterTrainingDate || null,
-            helicopterTrainingReimbursed: this.helicopterTrainingReimbursed || false
+            helicopterTrainingReimbursed: this.helicopterTrainingReimbursed || false,
+            trainingRequests: this.trainingRequests || [],
+            promotionRequest: this.promotionRequest || null,
+            competencyProgress: this.competencyProgress || {},
+            lastFollowUpDate: this.lastFollowUpDate || null,
+            simpleFault: this.simpleFault || null
         }
 
         if (this.id) {

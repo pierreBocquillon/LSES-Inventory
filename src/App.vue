@@ -130,7 +130,7 @@ export default {
 
       if (userPerms.some(p => ['dev', 'admin'].includes(p))) return true
       
-      return requiredPerms.every(p => userPerms.includes(p))
+      return requiredPerms.some(p => userPerms.includes(p))
     },
     canAccess() {
       if(!this.$route.meta.needAccount){
