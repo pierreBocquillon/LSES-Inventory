@@ -859,7 +859,6 @@ export default {
     this.unsub.push(Employee.listenAll((employees) => {
       this.employees = [...employees].sort((a, b) => a.name.localeCompare(b.name))
     }))
-
     this.unsub.push(Specialty.listenAll((list) => {
       this.specialties = list
     }))
@@ -1104,7 +1103,6 @@ export default {
         const config = TRAININGS_CONFIG.find(t => t.title === training)
         return config ? config.color : 'primary'
     },
-    
     getNextRole(currentRole) {
         const roles = ['Interne', 'Résident', 'Titulaire', 'Spécialiste', 'Responsable de Service', 'Assistant RH', 'Directeur Adjoint', 'Directeur']
         const index = roles.indexOf(currentRole)

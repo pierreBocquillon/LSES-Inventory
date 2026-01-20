@@ -11,12 +11,13 @@ let navItems = [
   [
     { title: 'Stocks', icon: 'mdi-package-variant', link: '/stocks' },
     { title: 'Vehicules', icon: 'mdi-helicopter', link: '/vehicles' },
-    { title: 'Autopsie', icon: 'mdi-coffin', link: '/autopsie-reports'},
+    { title: 'Autopsie', icon: 'mdi-coffin', link: '/autopsie-reports' },
     { title: 'Ressources Humaines', icon: 'mdi-account-tie', link: '/rh' },
   ],
   [
     { title: 'Utilisateurs', icon: 'mdi-account-group', link: '/users' },
     { title: 'Logs', icon: 'mdi-account-group', link: '/logs' },
+    { title: 'Formation', icon: 'mdi-school', link: '/training' },
   ],
 ]
 

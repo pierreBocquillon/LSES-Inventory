@@ -1,5 +1,6 @@
 import { reactive, computed } from 'vue'
 import { useUserStore } from '@/store/user.js'
+import Candidature from '@/classes/Candidature.js'
 
 import Profile from '@/classes/Profile.js'
 import Company from '@/classes/Company.js'
@@ -13,6 +14,7 @@ import Vehicle from '@/classes/Vehicle.js'
 export const notifState = reactive({
   waitingUsers: [],
   waitingExpenseNotes: [],
+  waitingCandidatures: [],
   companies: [],
   items: [],
   orders: [],
@@ -35,6 +37,9 @@ export function initNotifManager() {
   notifState.unsubscribers.push(ExpenseNote.listenAll(notes => {
     notifState.waitingExpenseNotes = notes.filter(note => !note.isPaid && !note.isRefused)
   }))
+  notifState.unsubscribers.push(Candidature.listenAll(candidatures => {
+    notifState.waitingCandidatures = candidatures.filter(c => c.status === 'Candidature reçue')
+  }))
   notifState.unsubscribers.push(SaveDate.listenAll(dates => {
     notifState.saveDates = {}
     dates.forEach(date => {
@@ -43,7 +48,7 @@ export function initNotifManager() {
   }))
   notifState.unsubscribers.push(SaveDate.listenById('repa_flotte', saveDate => {
     notifState.lastVehicleSaveDate = saveDate
-    if(!notifState.lastVehicleSaveDate) {
+    if (!notifState.lastVehicleSaveDate) {
       let newDate = SaveDate.initOne()
       newDate.id = 'repa_flotte'
       newDate.date = new Date().getTime()
@@ -84,11 +89,11 @@ export function stopNotifManager() {
 
 export const storageDeltaTime = computed(() => {
   let deltaTime = {}
-  for(let storage of notifState.storages){
-    if(notifState.saveDates[storage.id] == undefined){
+  for (let storage of notifState.storages) {
+    if (notifState.saveDates[storage.id] == undefined) {
       deltaTime[storage.id] = 9999
     }
-    if(notifState.saveDates[storage.id]){
+    if (notifState.saveDates[storage.id]) {
       deltaTime[storage.id] = (new Date().getTime() - new Date(notifState.saveDates[storage.id].date).getTime()) / (1000 * 60 * 60)
     }
   }
@@ -97,8 +102,8 @@ export const storageDeltaTime = computed(() => {
 
 export const storagesOutdated = computed(() => {
   let amount = 0
-  for(let storage of notifState.storages){
-    if(storageDeltaTime.value[storage.id] >= 12){
+  for (let storage of notifState.storages) {
+    if (storageDeltaTime.value[storage.id] >= 12) {
       amount += 1
     }
   }
@@ -114,16 +119,16 @@ export const garageNotif = computed(() => {
   deltaTime = Math.floor(diff / (1000 * 60 * 60))
 
   let count = 0
-  
+
   if (deltaTime >= 24) {
     count += 1
   }
   notifState.vehicles.forEach(vehicle => {
-    if(vehicle.where == "dead") return;
+    if (vehicle.where == "dead") return;
     if (vehicle.insurance) {
       count += 1
     }
-    if (!vehicle.insurance && ((vehicle.underGuard && parseInt(vehicle.recupDate) < new Date().getTime()) || vehicle.needRepair) ) {
+    if (!vehicle.insurance && ((vehicle.underGuard && parseInt(vehicle.recupDate) < new Date().getTime()) || vehicle.needRepair)) {
       count += 1
     }
     if (!vehicle.insurance && !vehicle.underGuard && !vehicle.hideAlert && (parseInt(vehicle.lastRepairDate) < new Date().getTime() - (24 * 60 * 60 * 1000))) {
@@ -135,10 +140,10 @@ export const garageNotif = computed(() => {
 })
 
 function getItemInfo(item) {
-  if(item.id.includes('#')) {
+  if (item.id.includes('#')) {
     let id = item.id.split('#')[0]
     let info = notifState.items.find(i => i.id === id) || {}
-    if(info) {
+    if (info) {
       info = JSON.parse(JSON.stringify(info))
       info.alert = false
 
@@ -146,14 +151,14 @@ function getItemInfo(item) {
       info.name = info.name + ' ' + item.id.split('#')[1]
 
       info.old = false
-      if(new Date(item.id.split('#')[1]) < new Date().setDate(new Date().getDate())) {
+      if (new Date(item.id.split('#')[1]) < new Date().setDate(new Date().getDate())) {
         info.old = true
       }
 
       info.sellerName = notifState.companies.find(c => c.id === info.seller)?.name || 'Inconnu'
       return info
     }
-  }else{
+  } else {
     let info = notifState.items.find(i => i.id === item.id) || {}
     info.alert = false
     info.old = false
@@ -181,27 +186,27 @@ export const alerts = computed(() => {
     let tmp_alert = {
       item: item,
       info: getItemInfo(item),
-      orderNeeded: 0,  
-      alertLevel: 0,          
+      orderNeeded: 0,
+      alertLevel: 0,
     }
 
     let threshold = 10
-    if(parseInt(item.wanted) <= 10) threshold = 1
-    if(parseInt(item.amount) <= 50) threshold = 5
+    if (parseInt(item.wanted) <= 10) threshold = 1
+    if (parseInt(item.amount) <= 50) threshold = 5
 
-    if(parseInt(item.wanted) > 0 && parseInt(item.amount) < parseInt(item.wanted) && (!item.isSecure || userStore.profile.permissions.some(p => ['dev', 'admin', 'security'].includes(p)))) {
-      if(parseInt(item.amount) <= parseInt(item.wanted) * 0.25){
+    if (parseInt(item.wanted) > 0 && parseInt(item.amount) < parseInt(item.wanted) && (!item.isSecure || userStore.profile.permissions.some(p => ['dev', 'admin', 'security'].includes(p)))) {
+      if (parseInt(item.amount) <= parseInt(item.wanted) * 0.25) {
         tmp_alert.alertLevel = 2
-      }else if(parseInt(item.amount) <= parseInt(item.wanted) * 0.5){
+      } else if (parseInt(item.amount) <= parseInt(item.wanted) * 0.5) {
         tmp_alert.alertLevel = 1
-      }else{
+      } else {
         tmp_alert.alertLevel = 0
       }
 
       tmp_alert.orderNeeded = Math.ceil((parseInt(item.wanted) - parseInt(item.amount)) / threshold) * threshold
-      if(tmp_alert.orderNeeded > 0){
+      if (tmp_alert.orderNeeded > 0) {
         alerts[tmp_alert.info.seller].items.push(tmp_alert)
-        
+
         alerts[tmp_alert.info.seller].maxAlertLevel = Math.max(alerts[tmp_alert.info.seller].maxAlertLevel, tmp_alert.alertLevel)
         alerts[tmp_alert.info.seller].totalAlertLevel += tmp_alert.alertLevel
         alerts[tmp_alert.info.seller].totalItemCount += tmp_alert.orderNeeded
@@ -213,7 +218,7 @@ export const alerts = computed(() => {
   alerts.sort((a, b) => {
     if (b.maxAlertLevel == a.maxAlertLevel) {
       return b.totalWeight - a.totalWeight
-    }else{
+    } else {
       return b.maxAlertLevel - a.maxAlertLevel
     }
   })
