@@ -10,11 +10,12 @@ function docToInstance(document) {
     if (data.chiefSpecialty && !chiefSpecs.length) {
         chiefSpecs = [data.chiefSpecialty]
     }
-    return data ? new Employee(document.id, data.name, data.email, data.role, data.sex, data.phone, data.specialties, chiefSpecs, data.birthDate, data.arrivalDate, data.cdiDate, data.lastPromotionDate, data.medicalDegreeDate, data.helicopterTrainingDate, data.helicopterTrainingReimbursed, data.trainingRequests, data.promotionRequest, data.validatedSubCompetencies, data.competencyProgress, data.lastFollowUpDate) : null
+    return data ? new Employee(document.id, data.name, data.email, data.role, data.sex, data.phone, data.specialties, chiefSpecs, data.birthDate, data.arrivalDate, data.cdiDate, data.lastPromotionDate, data.medicalDegreeDate, data.helicopterTrainingDate, data.helicopterTrainingReimbursed, data.trainingRequests, data.promotionRequest, data.validatedSubCompetencies, data.competencyProgress, data.lastFollowUpDate, data.simpleFault) : null
 }
 
+
 class Employee {
-    constructor(id, name, email, role, sex, phone, specialties, chiefSpecialties, birthDate, arrivalDate, cdiDate, lastPromotionDate, medicalDegreeDate, helicopterTrainingDate, helicopterTrainingReimbursed, trainingRequests, promotionRequest, validatedSubCompetencies, competencyProgress, lastFollowUpDate) {
+    constructor(id, name, email, role, sex, phone, specialties, chiefSpecialties, birthDate, arrivalDate, cdiDate, lastPromotionDate, medicalDegreeDate, helicopterTrainingDate, helicopterTrainingReimbursed, trainingRequests, promotionRequest, validatedSubCompetencies, competencyProgress, lastFollowUpDate, simpleFault) {
         this.id = id
         this.name = name
         this.email = email
@@ -40,6 +41,7 @@ class Employee {
             })
         }
         this.lastFollowUpDate = lastFollowUpDate || null
+        this.simpleFault = simpleFault || null
     }
 
     static listenAll(callback) {
@@ -71,7 +73,8 @@ class Employee {
             trainingRequests: this.trainingRequests || [],
             promotionRequest: this.promotionRequest || null,
             competencyProgress: this.competencyProgress || {},
-            lastFollowUpDate: this.lastFollowUpDate || null
+            lastFollowUpDate: this.lastFollowUpDate || null,
+            simpleFault: this.simpleFault || null
         }
 
         if (this.id) {
