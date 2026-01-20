@@ -19,7 +19,7 @@
         </v-card-text>
     </v-card>
 
-    <v-card class="mb-4" variant="tonal" color="purple" v-if="promotionRequests.length > 0">
+    <v-card class="mb-4" variant="tonal" color="purple" v-if="promotionRequests.length > 0 && !isRestrictedTrainer">
         <v-card-title class="text-subtitle-1 font-weight-bold">
             Demandes de promotion en cours
         </v-card-title>
