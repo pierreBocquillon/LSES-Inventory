@@ -377,6 +377,14 @@ export default {
       async savePromotionRequest() {
           if (!this.newPromotion.employee) return
           if (this.newPromotion.type === 'specialist' && !this.newPromotion.specialty) return
+          if (!this.newPromotion.motivation) {
+               Swal.fire({
+                  icon: 'error',
+                  title: 'Erreur',
+                  text: "Les motivations sont obligatoires"
+              })
+              return
+          }
 
           try {
               const emp = this.newPromotion.employee

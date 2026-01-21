@@ -5,16 +5,20 @@
             Demandes de formation en cours
         </v-card-title>
         <v-card-text>
-            <div class="d-flex flex-wrap gap-2">
-                <v-chip
-                    v-for="req in trainingRequests"
-                    :key="req.id + req.training"
-                    :color="getTrainingColor(req.training)"
-                    closable
-                    @click:close="removeRequest(req)"
-                >
-                    {{ req.name }} - {{ req.training }}
-                </v-chip>
+            <div v-for="(group, trainingName) in groupedTrainingRequests" :key="trainingName" class="mb-3">
+                <div class="text-caption font-weight-bold mb-1 text-grey-darken-1">{{ trainingName }}</div>
+                <div class="d-flex flex-wrap gap-2">
+                    <v-chip
+                        v-for="req in group"
+                        :key="req.id + req.training"
+                        :color="getTrainingColor(req.training)"
+                        closable
+                        size="small"
+                        @click:close="removeRequest(req)"
+                    >
+                        {{ req.name }}
+                    </v-chip>
+                </div>
             </div>
         </v-card-text>
     </v-card>
@@ -293,17 +297,18 @@
                                         <td 
                                             v-if="j === 0" 
                                             :rowspan="group.items.length"
-                                            :class="`align-top pt-4 border-e border-${getGuideTheme(currentGuide.id)}-lighten-4 bg-${getGuideTheme(currentGuide.id)}-lighten-5 text-subtitle-2 font-weight-bold text-${getGuideTheme(currentGuide.id)}-darken-4`"
+                                            style="vertical-align: middle;"
+                                            :class="`text-center border-e border-${getGuideTheme(currentGuide.id)}-lighten-4 bg-${getGuideTheme(currentGuide.id)}-lighten-5 text-subtitle-2 font-weight-bold text-${getGuideTheme(currentGuide.id)}-darken-4`"
                                         >
                                             {{ group.header }}
                                         </td>
-                                        <td class="align-top pt-3 font-weight-medium text-body-2">
+                                        <td class="align-top pt-3 font-weight-medium text-body-2" :style="j === group.items.length - 1 ? 'border-bottom: 2px solid #9e9e9e !important' : ''">
                                             {{ step.title }}
                                         </td>
-                                        <td class="pt-3 pb-3 align-top text-body-2 text-high-emphasis">
+                                        <td class="pt-3 pb-3 align-top text-body-2 text-high-emphasis" :style="j === group.items.length - 1 ? 'border-bottom: 2px solid #9e9e9e !important' : ''">
                                             <div style="white-space: pre-line; line-height: 1.5;">{{ step.description }}</div>
                                         </td>
-                                        <td class="align-top pt-2 text-center">
+                                        <td class="align-top pt-2 text-center" :style="j === group.items.length - 1 ? 'border-bottom: 2px solid #9e9e9e !important' : ''">
                                             <v-checkbox-btn 
                                                 v-model="checkedSteps[step.originalIndex]" 
                                                 :color="getGuideTheme(currentGuide.id)"
@@ -757,13 +762,21 @@ export default {
         })
         return reqs
     },
+    groupedTrainingRequests() {
+        const groups = {}
+        this.trainingRequests.forEach(req => {
+            if (!groups[req.training]) groups[req.training] = []
+            groups[req.training].push(req)
+        })
+        return groups
+    },
     promotionRequests() {
         return this.employees
-            .filter(e => e.promotionRequest)
+            .filter(e => e.rankPromotionRequest)
             .map(e => ({
                 id: e.id,
                 name: e.name,
-                request: e.promotionRequest,
+                request: e.rankPromotionRequest,
                 employeeObj: e
             }))
     },
@@ -1130,7 +1143,7 @@ export default {
                 votes: {}
             }
 
-            emp.promotionRequest = request
+            emp.rankPromotionRequest = request
             await emp.save()
 
             this.promotionDialog = false
@@ -1209,10 +1222,35 @@ export default {
     },
 
     async removePromotion(emp) {
-         try {
-            emp.promotionRequest = null
-            await emp.save()
-        } catch (e) { console.error(e) }
+        Swal.fire({
+            title: 'Supprimer ?',
+            text: `Voulez-vous supprimer la demande de ${emp.name} ?`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Oui, supprimer',
+            cancelButtonText: 'Annuler',
+            confirmButtonColor: '#d33'
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                try {
+                    emp.rankPromotionRequest = null
+                    await emp.save()
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Supprimée',
+                        timer: 1500,
+                        showConfirmButton: false
+                    })
+                } catch (e) { 
+                    console.error(e)
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Erreur',
+                        text: "Erreur lors de la suppression"
+                    })
+                }
+            }
+        })
     },
 
     async vote(emp, type) {
@@ -1227,8 +1265,8 @@ export default {
         })
 
         if (text) {
-             if (!emp.promotionRequest.votes) emp.promotionRequest.votes = {}
-             emp.promotionRequest.votes[this.userStore.profile.id] = {
+             if (!emp.rankPromotionRequest.votes) emp.rankPromotionRequest.votes = {}
+             emp.rankPromotionRequest.votes[this.userStore.profile.id] = {
                  vote: type,
                  opinion: text,
                  voterName: this.userStore.profile.name || 'Inconnu'
