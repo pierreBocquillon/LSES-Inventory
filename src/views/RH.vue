@@ -26,6 +26,7 @@
         </v-btn>
       </v-badge>
 
+
     </div>
 
     <v-card class="flex-grow-1">
@@ -111,6 +112,21 @@
                 </v-btn>
               </template>
             </v-tooltip>
+            <v-tooltip text="Statistiques" location="top">
+              <template v-slot:activator="{ props }">
+                <v-btn
+                  icon
+                  variant="text"
+                  color="grey-darken-1"
+                  class="mr-2"
+                  v-bind="props"
+                  @click="openStatisticsDialog"
+                >
+                  <v-icon>mdi-chart-bar</v-icon>
+                </v-btn>
+              </template>
+            </v-tooltip>
+
             <v-text-field
               v-model="search"
               prepend-inner-icon="mdi-magnify"
@@ -526,7 +542,7 @@
     <v-dialog v-model="directoryDialog" max-width="500px">
       <v-card>
         <v-card-title class="bg-success text-white">
-          <span class="text-h5">Annuaire</span>
+          <span class="text-h5">Annuaire ({{ sortedDirectoryEmployees.length }})</span>
         </v-card-title>
         <v-card-text class="pt-4">
              <v-data-table
@@ -547,6 +563,53 @@
       </v-card>
     </v-dialog>
 
+
+
+    <v-dialog v-model="statisticsDialog" max-width="1200px">
+        <v-card>
+            <v-toolbar color="blue-grey" title="Statistiques RH">
+                <v-spacer></v-spacer>
+                <v-btn icon="mdi-close" @click="statisticsDialog = false"></v-btn>
+            </v-toolbar>
+            <v-card-text class="pa-4 bg-grey-lighten-4">
+                <v-row>
+                    <v-col cols="12" md="6">
+                        <v-card class="h-100 pa-4" elevation="2">
+                            <v-card-title class="text-center">Répartition des Grades</v-card-title>
+                            <div style="height: 300px; position: relative;">
+                                <Pie :data="rankChartData" :options="chartOptions" />
+                            </div>
+                        </v-card>
+                    </v-col>
+                    <v-col cols="12" md="6">
+                        <v-card class="h-100 pa-4" elevation="2">
+                            <v-card-title class="text-center">Parité Hommes / Femmes</v-card-title>
+                            <div style="height: 300px; position: relative;">
+                                <Pie :data="genderChartData" :options="chartOptions" />
+                            </div>
+                        </v-card>
+                    </v-col>
+                    <v-col cols="12" md="6">
+                        <v-card class="h-100 pa-4" elevation="2">
+                            <v-card-title class="text-center">Répartition des Spécialités</v-card-title>
+                            <div style="height: 300px; position: relative;">
+                                <Bar :data="specialtyChartData" :options="barChartOptions" />
+                            </div>
+                        </v-card>
+                    </v-col>
+                    <v-col cols="12" md="6">
+                        <v-card class="h-100 pa-4" elevation="2">
+                            <v-card-title class="text-center">Stagnation Moyenne (Jours)</v-card-title>
+                            <div style="height: 300px; position: relative;">
+                                <Bar :data="promotionChartData" :options="barChartOptions" />
+                            </div>
+                        </v-card>
+                    </v-col>
+                </v-row>
+            </v-card-text>
+        </v-card>
+    </v-dialog>
+
     <v-dialog v-model="candidatureDialog" max-width="900px">
         <v-card>
             <v-card-title class="bg-deep-purple text-white d-flex align-center">
@@ -558,6 +621,7 @@
             </v-card-title>
             <v-card-text class="pt-4">
                 <v-data-table
+                    class="candidature-table"
                     :headers="candidatureHeaders"
                     :items="candidatures"
                     items-per-page="5"
@@ -768,14 +832,40 @@ import Swal from 'sweetalert2/dist/sweetalert2.js'
 import { rhChecklists } from '@/config/rh_checklists'
 import { useUserStore } from '@/store/user.js'
 import logger from '@/functions/logger.js'
+import {
+  Chart as ChartJS,
+  ArcElement,
+  Tooltip,
+  Legend,
+  BarElement,
+  CategoryScale,
+  LinearScale,
+  Title
+} from 'chart.js'
+import { Pie, Bar } from 'vue-chartjs'
+
+ChartJS.register(ArcElement, Tooltip, Legend, BarElement, CategoryScale, LinearScale, Title)
 
 export default {
   name: 'RH',
+  components: { Pie, Bar },
   data: () => ({
 
     userStore: useUserStore(),
     dialog: false,
     deleteDialog: false,
+    statisticsDialog: false,
+    chartOptions: {
+        responsive: true,
+        maintainAspectRatio: false
+    },
+    barChartOptions: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            y: { beginAtZero: true }
+        }
+    },
     itemToDelete: null,
     deleteReason: null,
     specialtiesDialog: false,
@@ -927,6 +1017,87 @@ export default {
 
     promotionRequests() {
         return this.employees.filter(e => e.promotionRequest)
+    },
+
+    rankChartData() {
+        const counts = {}
+        const roles = ['Directeur', 'Directeur Adjoint', 'Responsable de Service', 'Assistant RH', 'Spécialiste', 'Titulaire', 'Résident', 'Interne']
+        const bgColors = ['#ed2618', '#F44336', '#9C27B0', '#FF9800', '#5585d9', '#2196F3', '#306bd1', '#4CAF50']
+        
+        roles.forEach(r => counts[r] = 0)
+        this.employees.forEach(e => {
+            if (counts[e.role] !== undefined) counts[e.role]++
+            else counts[e.role] = 1
+        })
+
+        return {
+            labels: roles,
+            datasets: [{
+                backgroundColor: bgColors,
+                data: roles.map(r => counts[r])
+            }]
+        }
+    },
+    genderChartData() {
+        let males = 0
+        let females = 0
+        this.employees.forEach(e => {
+            if (e.sex === 'Homme') males++
+            else if (e.sex === 'Femme') females++
+        })
+        return {
+            labels: ['Hommes', 'Femmes'],
+            datasets: [{
+                backgroundColor: ['#2196F3', '#E91E63'],
+                data: [males, females]
+            }]
+        }
+    },
+    specialtyChartData() {
+        const counts = {}
+        this.employees.forEach(e => {
+            if (e.specialties) {
+                e.specialties.forEach(s => {
+                    const name = this.getSpecialtyName(s)
+                    counts[name] = (counts[name] || 0) + 1
+                })
+            }
+        })
+        
+        return {
+            labels: Object.keys(counts),
+            datasets: [{
+                label: 'Effectifs',
+                backgroundColor: '#FFC107',
+                data: Object.values(counts)
+            }]
+        }
+    },
+    promotionChartData() {
+        const roles = ['Interne', 'Résident', 'Titulaire', 'Spécialiste']
+        const data = []
+        
+        roles.forEach(role => {
+            const relevant = this.employees.filter(e => e.role === role && e.lastPromotionDate)
+            if (relevant.length === 0) {
+                data.push(0)
+            } else {
+                let totalDays = 0
+                relevant.forEach(e => {
+                    totalDays += this.calculateDays(e.lastPromotionDate)
+                })
+                data.push(Math.round(totalDays / relevant.length))
+            }
+        })
+
+        return {
+            labels: roles,
+            datasets: [{
+                label: 'Jours moyens depuis dernière promotion',
+                backgroundColor: '#9C27B0',
+                data: data
+            }]
+        }
     }
   },
 
@@ -949,6 +1120,9 @@ export default {
   },
 
   methods: {
+    openStatisticsDialog() {
+        this.statisticsDialog = true
+    },
     getRoleColor(role) {
       if (['Directeur', 'Directeur Adjoint'].includes(role)) return 'red'
       if (['Responsable de Service'].includes(role)) return 'purple'
@@ -1731,5 +1905,19 @@ export default {
   filter: blur(0);
   user-select: text;
   cursor: text;
+}
+
+.candidature-table :deep(.v-table__wrapper::-webkit-scrollbar) {
+  height: 14px;
+}
+
+.candidature-table :deep(.v-table__wrapper::-webkit-scrollbar-thumb) {
+  border-radius: 7px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+
+.candidature-table :deep(.v-table__wrapper::-webkit-scrollbar-track) {
+  background-color: rgba(0,0,0,0.05);
 }
 </style>
