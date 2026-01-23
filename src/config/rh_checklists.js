@@ -107,7 +107,7 @@ export const rhChecklists = [
             'Mettre à jour le suivi effectif',
             'Mettre à jour le dispatch',
             { text: 'Mettre à jour les groupes', link: { text: 'Groupe Google', url: 'https://groups.google.com/g/21-lses-interne-resident-medecin/members' } },
-            'Supprimer l\'agent dans le suivi des formations et clôturer son fil (si interne)',
+            'Clôturer son fil de formation (si interne)',
             { text: 'Modifier le trombinoscope et l\'envoyer dans LSES Infos', link: { text: 'Trombinoscope', url: 'https://www.canva.com/design/DAGzQCSaqAY/ASNs1-k_xRGAXdlg_oL1xw/edit' } },
             { text: 'Modifier l\'annuaire et l\'envoyer dans LSES Infos', link: { text: 'Annuaire', url: 'https://www.canva.com/design/DAGzivD6iCM/IAypIsutJJhUXMjhxitILw/edit' } },
             'Mettre à jour le LSES inventory (Supprimer l\'employé)',

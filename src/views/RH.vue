@@ -572,12 +572,38 @@
                 <v-btn icon="mdi-close" @click="statisticsDialog = false"></v-btn>
             </v-toolbar>
             <v-card-text class="pa-4 bg-grey-lighten-4">
+                <v-row class="mb-4">
+                     <v-col cols="12" md="4">
+                        <v-card class="py-4 text-center" elevation="2">
+                            <div class="text-h3 font-weight-bold text-primary">
+                                <AnimatedCounter :value="employees.length" :duration="2000" />
+                            </div>
+                            <div class="text-subtitle-1 text-grey-darken-1">Employés Total</div>
+                        </v-card>
+                     </v-col>
+                     <v-col cols="12" md="4">
+                        <v-card class="py-4 text-center" elevation="2">
+                            <div class="text-h3 font-weight-bold text-blue">
+                                <AnimatedCounter :value="employees.filter(e => e.sex === 'Homme').length" :duration="2000" />
+                            </div>
+                            <div class="text-subtitle-1 text-grey-darken-1">Hommes</div>
+                        </v-card>
+                     </v-col>
+                     <v-col cols="12" md="4">
+                        <v-card class="py-4 text-center" elevation="2">
+                            <div class="text-h3 font-weight-bold text-pink">
+                                <AnimatedCounter :value="employees.filter(e => e.sex === 'Femme').length" :duration="2000" />
+                            </div>
+                             <div class="text-subtitle-1 text-grey-darken-1">Femmes</div>
+                        </v-card>
+                     </v-col>
+                </v-row>
                 <v-row>
                     <v-col cols="12" md="6">
                         <v-card class="h-100 pa-4" elevation="2">
                             <v-card-title class="text-center">Répartition des Grades</v-card-title>
                             <div style="height: 300px; position: relative;">
-                                <Pie :data="rankChartData" :options="chartOptions" />
+                                <Pie v-if="showCharts" :data="rankChartData" :options="chartOptions" />
                             </div>
                         </v-card>
                     </v-col>
@@ -585,7 +611,7 @@
                         <v-card class="h-100 pa-4" elevation="2">
                             <v-card-title class="text-center">Parité Hommes / Femmes</v-card-title>
                             <div style="height: 300px; position: relative;">
-                                <Pie :data="genderChartData" :options="chartOptions" />
+                                <Pie v-if="showCharts" :data="genderChartData" :options="chartOptions" />
                             </div>
                         </v-card>
                     </v-col>
@@ -593,7 +619,7 @@
                         <v-card class="h-100 pa-4" elevation="2">
                             <v-card-title class="text-center">Répartition des Spécialités</v-card-title>
                             <div style="height: 300px; position: relative;">
-                                <Bar :data="specialtyChartData" :options="barChartOptions" />
+                                <Bar v-if="showCharts" :data="specialtyChartData" :options="barChartOptions" />
                             </div>
                         </v-card>
                     </v-col>
@@ -601,7 +627,7 @@
                         <v-card class="h-100 pa-4" elevation="2">
                             <v-card-title class="text-center">Stagnation Moyenne (Jours)</v-card-title>
                             <div style="height: 300px; position: relative;">
-                                <Bar :data="promotionChartData" :options="barChartOptions" />
+                                <Bar v-if="showCharts" :data="promotionChartData" :options="barChartOptions" />
                             </div>
                         </v-card>
                     </v-col>
@@ -610,7 +636,7 @@
         </v-card>
     </v-dialog>
 
-    <v-dialog v-model="candidatureDialog" max-width="900px">
+    <v-dialog v-model="candidatureDialog" max-width="900px" persistent>
         <v-card>
             <v-card-title class="bg-deep-purple text-white d-flex align-center">
                 <span class="text-h5">Gestion des Candidatures</span>
@@ -644,7 +670,7 @@
         </v-card>
     </v-dialog>
 
-    <v-dialog v-model="candidatureFormDialog" max-width="500px">
+    <v-dialog v-model="candidatureFormDialog" max-width="500px" persistent>
         <v-card>
             <v-card-title class="bg-deep-purple text-white">
                 <span class="text-h5">{{ editedCandidature.id ? 'Modifier' : 'Nouvelle' }} Candidature</span>
@@ -834,36 +860,41 @@ import { useUserStore } from '@/store/user.js'
 import logger from '@/functions/logger.js'
 import {
   Chart as ChartJS,
-  ArcElement,
-  Tooltip,
-  Legend,
-  BarElement,
-  CategoryScale,
-  LinearScale,
-  Title
+  registerables
 } from 'chart.js'
 import { Pie, Bar } from 'vue-chartjs'
+import AnimatedCounter from '@/components/AnimatedCounter.vue'
 
-ChartJS.register(ArcElement, Tooltip, Legend, BarElement, CategoryScale, LinearScale, Title)
+ChartJS.register(...registerables)
 
 export default {
   name: 'RH',
-  components: { Pie, Bar },
+  components: { Pie, Bar, AnimatedCounter },
   data: () => ({
 
     userStore: useUserStore(),
     dialog: false,
     deleteDialog: false,
     statisticsDialog: false,
+    showCharts: false,
+    statsKey: 0,
     chartOptions: {
         responsive: true,
-        maintainAspectRatio: false
+        maintainAspectRatio: false,
+        animation: {
+            duration: 1500,
+            easing: 'easeOutQuart'
+        }
     },
     barChartOptions: {
         responsive: true,
         maintainAspectRatio: false,
         scales: {
             y: { beginAtZero: true }
+        },
+        animation: {
+            duration: 1500,
+            easing: 'easeOutQuart'
         }
     },
     itemToDelete: null,
@@ -1121,7 +1152,12 @@ export default {
 
   methods: {
     openStatisticsDialog() {
+        this.showCharts = false
+        this.statsKey++ // Keep for counters
         this.statisticsDialog = true
+        setTimeout(() => {
+            this.showCharts = true
+        }, 300)
     },
     getRoleColor(role) {
       if (['Directeur', 'Directeur Adjoint'].includes(role)) return 'red'
