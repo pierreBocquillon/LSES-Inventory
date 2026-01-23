@@ -11,10 +11,12 @@
   },
   "dependencies": {
     "@mdi/font": "7.4.47",
+    "chart.js": "^4.5.1",
     "core-js": "^3.6.5",
     "crypto-js": "^4.2.0",
     "firebase": "^9.18.0",
     "form-data": "^4.0.0",
+    "jspdf": "^2.5.1",
     "pinia": "^2.1.6",
     "roboto-fontface": "*",
     "sal.js": "^0.8.5",
@@ -22,10 +24,10 @@
     "sweetalert2": "^11.7.3",
     "uuid": "^11.1.0",
     "vue": "^3.2.47",
+    "vue-chartjs": "^5.3.3",
     "vue-router": "^4.0.0-0",
     "vuetify": "^3.7.4",
-    "webfontloader": "^1.0.0",
-    "jspdf": "^2.5.1"
+    "webfontloader": "^1.0.0"
   },
   "devDependencies": {
     "@vue/cli-plugin-babel": "5.0.8",
