@@ -78,10 +78,11 @@
                     hover 
                     variant="outlined" 
                     class="h-100 d-flex flex-column"
-                    :color="getGuideTheme(guide.id)"
+                    :color="guide.id === 'grenouille' ? 'green-darken-4' : getGuideTheme(guide.id)"
                 >
-                    <v-card-title :class="`bg-${getGuideTheme(guide.id)}-lighten-4 text-${getGuideTheme(guide.id)}-darken-4 d-flex align-center`">
-                        <v-icon :color="getGuideTheme(guide.id) + '-darken-2'" class="mr-2">mdi-text-box-check-outline</v-icon>
+                    <v-card-title :class="guide.id === 'grenouille' ? 'bg-green-darken-4 text-white d-flex align-center' : `bg-${getGuideTheme(guide.id)}-lighten-4 text-${getGuideTheme(guide.id)}-darken-4 d-flex align-center`">
+                        <v-icon v-if="getGuideIcon(guide.id).startsWith('mdi-')" :color="guide.id === 'grenouille' ? 'white' : getGuideTheme(guide.id) + '-darken-2'" class="mr-2">{{ getGuideIcon(guide.id) }}</v-icon>
+                        <span v-else class="mr-2 text-h6">{{ getGuideIcon(guide.id) }}</span>
                         {{ guide.title }}
                     </v-card-title>
                     <v-card-text class="pt-4 flex-grow-1 text-high-emphasis">
@@ -243,6 +244,7 @@
                     return-object
                     label="Candidat"
                     variant="outlined"
+                    :custom-filter="customFilter"
                 ></v-autocomplete>
             </v-card-text>
             <v-card-actions>
@@ -268,9 +270,9 @@
         </v-card>
     </v-dialog>
 
-    <v-dialog v-model="guideDialog" max-width="800px" scrollable>
+    <v-dialog v-model="guideDialog" max-width="1200px" scrollable>
         <v-card v-if="currentGuide">
-            <v-toolbar color="primary" :title="isEditingGuide ? 'Modifier ' + currentGuide.title : currentGuide.title">
+            <v-toolbar :color="currentGuide.id === 'grenouille' ? 'green-darken-4' : 'primary'" :title="isEditingGuide ? 'Modifier ' + currentGuide.title : currentGuide.title">
                  <v-spacer></v-spacer>
                  <v-btn icon="mdi-pencil" v-if="!isEditingGuide" @click="isEditingGuide = true"></v-btn>
                  <v-btn icon="mdi-close" @click="guideDialog = false"></v-btn>
@@ -284,7 +286,7 @@
                     <v-sheet border class="rounded-lg overflow-hidden elevation-1">
                         <v-table density="default">
                             <thead>
-                                <tr :class="`bg-${getGuideTheme(currentGuide.id)}-lighten-4 text-uppercase text-caption font-weight-bold text-${getGuideTheme(currentGuide.id)}-darken-4`">
+                                <tr :class="currentGuide.id === 'grenouille' ? 'bg-green-darken-4 text-white text-uppercase text-caption font-weight-bold' : `bg-${getGuideTheme(currentGuide.id)}-lighten-4 text-uppercase text-caption font-weight-bold text-${getGuideTheme(currentGuide.id)}-darken-4`">
                                     <th class="text-left" style="width: 20%;">Catégorie</th>
                                     <th class="text-left" style="width: 25%;">Titre</th>
                                     <th class="text-left">Description</th>
@@ -298,7 +300,7 @@
                                             v-if="j === 0" 
                                             :rowspan="group.items.length"
                                             style="vertical-align: middle;"
-                                            :class="`text-center border-e border-${getGuideTheme(currentGuide.id)}-lighten-4 bg-${getGuideTheme(currentGuide.id)}-lighten-5 text-subtitle-2 font-weight-bold text-${getGuideTheme(currentGuide.id)}-darken-4`"
+                                            :class="currentGuide.id === 'grenouille' ? 'text-center border-e border-green-darken-4 bg-green-darken-3 text-subtitle-2 font-weight-bold text-white' : `text-center border-e border-${getGuideTheme(currentGuide.id)}-lighten-4 bg-${getGuideTheme(currentGuide.id)}-lighten-5 text-subtitle-2 font-weight-bold text-${getGuideTheme(currentGuide.id)}-darken-4`"
                                         >
                                             {{ group.header }}
                                         </td>
@@ -307,6 +309,22 @@
                                         </td>
                                         <td class="pt-3 pb-3 align-top text-body-2 text-high-emphasis" :style="j === group.items.length - 1 ? 'border-bottom: 2px solid #9e9e9e !important' : ''">
                                             <div style="white-space: pre-line; line-height: 1.5;">{{ step.description }}</div>
+                                            <div v-if="step.image" class="mt-2">
+                                                <v-img 
+                                                    :src="step.image" 
+                                                    max-height="600" 
+                                                    max-width="100%" 
+                                                    class="rounded elevation-2 cursor-pointer" 
+                                                    cover 
+                                                    @click="openImageZoom(step.image)"
+                                                >
+                                                    <template v-slot:placeholder>
+                                                        <div class="d-flex align-center justify-center fill-height bg-grey-lighten-4">
+                                                            <v-progress-circular indeterminate color="grey-lighten-2"></v-progress-circular>
+                                                        </div>
+                                                    </template>
+                                                </v-img>
+                                            </div>
                                         </td>
                                         <td class="align-top pt-2 text-center" :style="j === group.items.length - 1 ? 'border-bottom: 2px solid #9e9e9e !important' : ''">
                                             <v-checkbox-btn 
@@ -381,6 +399,15 @@
                                                     rows="2"
                                                     auto-grow
                                                 ></v-textarea>
+                                                <v-text-field
+                                                    v-model="step.image"
+                                                    label="URL Image (Discord)"
+                                                    variant="outlined"
+                                                    density="compact"
+                                                    hide-details="auto"
+                                                    class="mt-2"
+                                                    prepend-inner-icon="mdi-image"
+                                                ></v-text-field>
                                             </v-col>
                                         </v-row>
                                      </v-col>
@@ -399,6 +426,15 @@
     </v-dialog>
 
 
+
+    <v-dialog v-model="imageZoomDialog" max-width="90vw" max-height="90vh">
+        <v-card class="bg-black">
+            <v-card-text class="pa-0 d-flex justify-center align-center" style="height: 90vh; position: relative;">
+                <v-btn icon="mdi-close" variant="text" color="white" style="position: absolute; top: 10px; right: 10px; z-index: 10;" @click="imageZoomDialog = false"></v-btn>
+                <v-img :src="zoomedImage" contain max-height="100%" max-width="100%"></v-img>
+            </v-card-text>
+        </v-card>
+    </v-dialog>
 
     <v-dialog v-model="competenciesDialog" max-width="900px" scrollable>
         <v-card v-if="selectedTrainee">
@@ -479,6 +515,7 @@
                     return-object
                     label="Employé demandeur"
                     variant="outlined"
+                    :custom-filter="customFilter"
                 ></v-autocomplete>
                 <v-select
                     v-model="newRequest.training"
@@ -732,7 +769,10 @@ export default {
         steps: []
     },
     isEditingGuide: false,
-    checkedSteps: []
+    checkedSteps: [],
+    
+    imageZoomDialog: false,
+    zoomedImage: ''
   }),
 
   computed: {
@@ -781,7 +821,7 @@ export default {
             }))
     },
     sortedGuides() {
-        const order = ['introduction', 'qa', 'resident', 'titulaire']
+        const order = ['introduction', 'qa', 'resident', 'titulaire', 'grenouille']
         return this.guides.sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id))
     },
     groupedSteps() {
@@ -917,6 +957,15 @@ export default {
             if (!this.guides.find(g => g.id === def.id)) {
                 const newGuide = new Guide(def.id, def.title, def.description, def.steps || [])
                 await newGuide.save()
+            }
+            if (!this.guides.find(g => g.id === 'grenouille')) {
+                 const grenouille = new Guide(
+                    'grenouille', 
+                    'Formation Grenouille', 
+                    'Procédure pour la formation Grenouille.', 
+                    []
+                 )
+                 await grenouille.save()
             }
         }
     }))
@@ -1320,7 +1369,7 @@ export default {
     },
 
     addStep() {
-        this.editedGuide.steps.push({ header: '', title: '', description: '' })
+        this.editedGuide.steps.push({ header: '', title: '', description: '', image: '' })
     },
 
     removeStep(index) {
@@ -1341,8 +1390,13 @@ export default {
     },
     
     getGuideTheme(id) {
-        if (['introduction', 'qa'].includes(id)) return 'green'
+        if (['introduction', 'qa', 'grenouille'].includes(id)) return 'green'
         return 'blue'
+    },
+
+    getGuideIcon(id) {
+        if (id === 'grenouille') return '🐸'
+        return 'mdi-text-box-check-outline'
     },
 
     openCompetencyTracking(employee) {
@@ -1455,6 +1509,17 @@ export default {
         ).length
         
         return (validated / total) * 100
+    },
+
+    customFilter (itemTitle, queryText, item) {
+        const text = itemTitle.toLowerCase().trim()
+        const query = queryText.toLowerCase().trim()
+        return text.indexOf(query) > -1
+    },
+
+    openImageZoom(url) {
+        this.zoomedImage = url
+        this.imageZoomDialog = true
     }
   }
 }
