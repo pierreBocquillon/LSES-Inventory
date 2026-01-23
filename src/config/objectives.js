@@ -98,6 +98,13 @@ export const OBJECTIFS = [
         scenarioCategory: 'Chutes +15m'
     },
     {
+        id: 'drowning',
+        title: "Noyade",
+        rank: "Interne",
+        target: 50,
+        scenarioCategory: 'Noyades'
+    },
+    {
         id: 'fractures',
         title: "Fractures",
         rank: "Résident",
@@ -138,6 +145,13 @@ export const OBJECTIFS = [
         title: "Trépanation",
         rank: "Résident",
         target: 66
+    },
+    {
+        id: 'drowning',
+        title: "Noyade",
+        rank: "Résident",
+        target: 75,
+        scenarioCategory: 'Noyades'
     },
 
     {
