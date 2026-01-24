@@ -164,7 +164,7 @@ import Swal from 'sweetalert2/dist/sweetalert2.js'
 import navItems from '@/config/navItems.js'
 import permissions from '@/config/permissions'
 
-import { initNotifManager, stopNotifManager, notifState, storagesOutdated, garageNotif, alerts } from '@/functions/nofifManager.js'
+import { initNotifManager, stopNotifManager, notifState, storagesOutdated, garageNotif, alerts, rhNotif } from '@/functions/nofifManager.js'
 import { TRAININGS_CONFIG } from '@/config/trainings'
 
 export default {
@@ -237,6 +237,9 @@ export default {
     waitingCandidatures() {
         return notifState.waitingCandidatures
     },
+    rhNotif() {
+        return rhNotif.value
+    },
     filteredNavItems() {
       let filteredItems = []
       let currentGroup = []
@@ -275,7 +278,7 @@ export default {
               tmp_item.notif = this.garageNotif
             }
             if(tmp_item.link == '/rh') {
-              tmp_item.notif = this.waitingCandidatures.length + this.employees.filter(e => e.promotionRequest).length
+              tmp_item.notif = this.rhNotif
             }
             currentGroup.push(tmp_item)
           }

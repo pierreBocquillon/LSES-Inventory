@@ -29,6 +29,138 @@
 
     </div>
 
+    <v-row class="mb-2">
+        <!-- Weekly Checklist -->
+        <v-col cols="12" md="6">
+            <v-expansion-panels multiple>
+                <v-expansion-panel>
+                    <v-expansion-panel-title class="bg-blue-lighten-4 font-weight-bold">
+                        <div class="d-flex flex-grow-1 align-center justify-space-between mr-2">
+                            <div class="d-flex align-center">
+                                <v-icon start class="mr-2">mdi-checkbox-marked-outline</v-icon>
+                                Hebdomadaire
+                                <v-chip v-if="weeklyOverdueCount > 0" color="red" size="x-small" class="ml-2 font-weight-bold" variant="flat">
+                                    {{ weeklyOverdueCount }} à faire
+                                </v-chip>
+                            </div>
+
+                        </div>
+                    </v-expansion-panel-title>
+                    <v-expansion-panel-text class="pt-2">
+                        <div class="d-flex align-center mb-2">
+                             <v-text-field 
+                                v-model="newWeeklyTask" 
+                                label="Nouvelle tâche" 
+                                density="compact" 
+                                hide-details 
+                                variant="outlined" 
+                                class="mr-2"
+                                style="flex: 2;"
+                                @keyup.enter="addWeeklyTask"
+                            ></v-text-field>
+                             <v-text-field 
+                                v-model="newWeeklyTaskLink" 
+                                label="Lien (optionnel)" 
+                                density="compact" 
+                                hide-details 
+                                variant="outlined" 
+                                class="mr-2"
+                                style="flex: 1;"
+                                prepend-inner-icon="mdi-link"
+                                @keyup.enter="addWeeklyTask"
+                            ></v-text-field>
+                             <v-btn color="success" size="small" icon="mdi-plus" @click="addWeeklyTask"></v-btn>
+
+                        </div>
+                        <v-list density="compact" style="max-height: 200px; overflow-y: auto;">
+                             <v-list-item v-for="task in weeklyTasks" :key="task.id" :value="task">
+
+                                <div class="d-flex align-center w-100">
+                                    <span :class="{'text-grey': task.done, 'text-red font-weight-bold': isTaskOverdue(task, 'weekly')}">{{ task.text }}</span>
+                                    <a v-if="task.link" :href="task.link" target="_blank" class="ml-1 text-decoration-none" @click.stop>
+                                        <v-icon size="small" color="primary">mdi-open-in-new</v-icon>
+                                    </a>
+                                    <span v-if="task.done" class="text-caption ml-2 text-no-wrap" :class="isTaskOverdue(task, 'weekly') ? 'text-red font-weight-bold' : 'text-grey'">{{ getCheckDate(task.doneAt) }}</span>
+                                    
+                                    <v-btn icon="mdi-update" size="x-small" variant="text" color="primary" class="ml-1" title="Actualiser la date" @click.stop="updateWeeklyTaskDate(task.id)"></v-btn>
+
+                                    <v-spacer></v-spacer>
+                                     <v-btn icon="mdi-delete" size="x-small" variant="text" color="grey" class="ml-2" @click="removeWeeklyTask(task.id)"></v-btn>
+                                </div>
+                             </v-list-item>
+                             <div v-if="weeklyTasks.length === 0" class="text-caption text-grey text-center">Aucune tâche.</div>
+                        </v-list>
+                    </v-expansion-panel-text>
+                </v-expansion-panel>
+            </v-expansion-panels>
+        </v-col>
+
+        <!-- Monthly Checklist -->
+        <v-col cols="12" md="6">
+            <v-expansion-panels multiple>
+                <v-expansion-panel>
+                    <v-expansion-panel-title class="bg-indigo-lighten-4 font-weight-bold">
+                        <div class="d-flex flex-grow-1 align-center justify-space-between mr-2">
+                            <div class="d-flex align-center">
+                                <v-icon start class="mr-2">mdi-calendar-month</v-icon>
+                                Mensuelle
+                                <v-chip v-if="monthlyOverdueCount > 0" color="red" size="x-small" class="ml-2 font-weight-bold" variant="flat">
+                                    {{ monthlyOverdueCount }} à faire
+                                </v-chip>
+                            </div>
+
+                        </div>
+                    </v-expansion-panel-title>
+                    <v-expansion-panel-text class="pt-2">
+                        <div class="d-flex align-center mb-2">
+                             <v-text-field 
+                                v-model="newMonthlyTask" 
+                                label="Nouvelle tâche" 
+                                density="compact" 
+                                hide-details 
+                                variant="outlined" 
+                                class="mr-2"
+                                style="flex: 2;"
+                                @keyup.enter="addMonthlyTask"
+                            ></v-text-field>
+                             <v-text-field 
+                                v-model="newMonthlyTaskLink" 
+                                label="Lien (optionnel)" 
+                                density="compact" 
+                                hide-details 
+                                variant="outlined" 
+                                class="mr-2"
+                                style="flex: 1;"
+                                prepend-inner-icon="mdi-link"
+                                @keyup.enter="addMonthlyTask"
+                            ></v-text-field>
+                             <v-btn color="success" size="small" icon="mdi-plus" @click="addMonthlyTask"></v-btn>
+
+                        </div>
+                        <v-list density="compact" style="max-height: 200px; overflow-y: auto;">
+                             <v-list-item v-for="task in monthlyTasks" :key="task.id" :value="task">
+
+                                <div class="d-flex align-center w-100">
+                                    <span :class="{'text-grey': task.done, 'text-red font-weight-bold': isTaskOverdue(task, 'monthly')}">{{ task.text }}</span>
+                                    <a v-if="task.link" :href="task.link" target="_blank" class="ml-1 text-decoration-none" @click.stop>
+                                        <v-icon size="small" color="primary">mdi-open-in-new</v-icon>
+                                    </a>
+                                    <span v-if="task.done" class="text-caption ml-2 text-no-wrap" :class="isTaskOverdue(task, 'monthly') ? 'text-red font-weight-bold' : 'text-grey'">{{ getCheckDate(task.doneAt) }}</span>
+
+                                    <v-btn icon="mdi-update" size="x-small" variant="text" color="primary" class="ml-1" title="Actualiser la date" @click.stop="updateMonthlyTaskDate(task.id)"></v-btn>
+
+                                    <v-spacer></v-spacer>
+                                     <v-btn icon="mdi-delete" size="x-small" variant="text" color="grey" class="ml-2" @click="removeMonthlyTask(task.id)"></v-btn>
+                                </div>
+                             </v-list-item>
+                             <div v-if="monthlyTasks.length === 0" class="text-caption text-grey text-center">Aucune tâche.</div>
+                        </v-list>
+                    </v-expansion-panel-text>
+                </v-expansion-panel>
+            </v-expansion-panels>
+        </v-col>
+    </v-row>
+
     <v-card class="flex-grow-1">
       <v-data-table
         :headers="headers"
@@ -539,6 +671,9 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+
+
+
     <v-dialog v-model="directoryDialog" max-width="500px">
       <v-card>
         <v-card-title class="bg-success text-white">
@@ -565,7 +700,7 @@
 
 
 
-    <v-dialog v-model="statisticsDialog" max-width="1200px">
+    <v-dialog v-model="statisticsDialog" max-width="850px">
         <v-card>
             <v-toolbar color="blue-grey" title="Statistiques RH">
                 <v-spacer></v-spacer>
@@ -573,65 +708,70 @@
             </v-toolbar>
             <v-card-text class="pa-4 bg-grey-lighten-4">
                 <v-row class="mb-4">
-                     <v-col cols="12" md="4">
+                    <v-col cols="12" md="4">
                         <v-card class="py-4 text-center" elevation="2">
                             <div class="text-h3 font-weight-bold text-primary">
-                                <AnimatedCounter :value="employees.length" :duration="2000" />
+                                <AnimatedCounter :key="statsKey" :value="employees.length" :duration="2000" />
                             </div>
                             <div class="text-subtitle-1 text-grey-darken-1">Employés Total</div>
                         </v-card>
-                     </v-col>
-                     <v-col cols="12" md="4">
+                    </v-col>
+                    <v-col cols="12" md="4">
                         <v-card class="py-4 text-center" elevation="2">
                             <div class="text-h3 font-weight-bold text-blue">
-                                <AnimatedCounter :value="employees.filter(e => e.sex === 'Homme').length" :duration="2000" />
+                                <AnimatedCounter :key="statsKey" :value="employees.filter(e => e.sex === 'Homme').length" :duration="2000" />
                             </div>
                             <div class="text-subtitle-1 text-grey-darken-1">Hommes</div>
                         </v-card>
-                     </v-col>
-                     <v-col cols="12" md="4">
+                    </v-col>
+                    <v-col cols="12" md="4">
                         <v-card class="py-4 text-center" elevation="2">
                             <div class="text-h3 font-weight-bold text-pink">
-                                <AnimatedCounter :value="employees.filter(e => e.sex === 'Femme').length" :duration="2000" />
+                                <AnimatedCounter :key="statsKey" :value="employees.filter(e => e.sex === 'Femme').length" :duration="2000" />
                             </div>
-                             <div class="text-subtitle-1 text-grey-darken-1">Femmes</div>
-                        </v-card>
-                     </v-col>
-                </v-row>
-                <v-row>
-                    <v-col cols="12" md="6">
-                        <v-card class="h-100 pa-4" elevation="2">
-                            <v-card-title class="text-center">Répartition des Grades</v-card-title>
-                            <div style="height: 300px; position: relative;">
-                                <Pie v-if="showCharts" :data="rankChartData" :options="chartOptions" />
-                            </div>
-                        </v-card>
-                    </v-col>
-                    <v-col cols="12" md="6">
-                        <v-card class="h-100 pa-4" elevation="2">
-                            <v-card-title class="text-center">Parité Hommes / Femmes</v-card-title>
-                            <div style="height: 300px; position: relative;">
-                                <Pie v-if="showCharts" :data="genderChartData" :options="chartOptions" />
-                            </div>
-                        </v-card>
-                    </v-col>
-                    <v-col cols="12" md="6">
-                        <v-card class="h-100 pa-4" elevation="2">
-                            <v-card-title class="text-center">Répartition des Spécialités</v-card-title>
-                            <div style="height: 300px; position: relative;">
-                                <Bar v-if="showCharts" :data="specialtyChartData" :options="barChartOptions" />
-                            </div>
-                        </v-card>
-                    </v-col>
-                    <v-col cols="12" md="6">
-                        <v-card class="h-100 pa-4" elevation="2">
-                            <v-card-title class="text-center">Stagnation Moyenne (Jours)</v-card-title>
-                            <div style="height: 300px; position: relative;">
-                                <Bar v-if="showCharts" :data="promotionChartData" :options="barChartOptions" />
-                            </div>
+                            <div class="text-subtitle-1 text-grey-darken-1">Femmes</div>
                         </v-card>
                     </v-col>
                 </v-row>
+                <div v-if="showCharts">
+                    <v-row>
+                        <v-col cols="12" md="6">
+                            <v-card class="h-100 pa-4" elevation="2">
+                                <v-card-title class="text-center">Répartition des Grades</v-card-title>
+                                <div style="height: 180px; position: relative;">
+                                    <Pie :data="rankChartData" :options="chartOptions" />
+                                </div>
+                            </v-card>
+                        </v-col>
+                        <v-col cols="12" md="6">
+                            <v-card class="h-100 pa-4" elevation="2">
+                                <v-card-title class="text-center">Parité Hommes / Femmes</v-card-title>
+                                <div style="height: 180px; position: relative;">
+                                    <Pie :data="genderChartData" :options="chartOptions" />
+                                </div>
+                            </v-card>
+                        </v-col>
+                        <v-col cols="12" md="6">
+                            <v-card class="h-100 pa-4" elevation="2">
+                                <v-card-title class="text-center">Répartition des Spécialités</v-card-title>
+                                <div style="height: 180px; position: relative;">
+                                    <Bar :data="specialtyChartData" :options="barChartOptions" />
+                                </div>
+                            </v-card>
+                        </v-col>
+                        <v-col cols="12" md="6">
+                            <v-card class="h-100 pa-4" elevation="2">
+                                <v-card-title class="text-center">Stagnation Moyenne (Jours)</v-card-title>
+                                <div style="height: 180px; position: relative;">
+                                    <Bar :data="promotionChartData" :options="barChartOptions" />
+                                </div>
+                            </v-card>
+                        </v-col>
+                    </v-row>
+                </div>
+                <div v-else class="d-flex justify-center align-center" style="height: 220px;">
+                    <v-progress-circular indeterminate color="primary" size="64"></v-progress-circular>
+                </div>
             </v-card-text>
         </v-card>
     </v-dialog>
@@ -853,6 +993,7 @@
 <script>
 import Employee from '@/classes/Employee'
 import Specialty from '@/classes/Specialty'
+import SharedChecklist from '@/classes/SharedChecklist'
 import Candidature from '@/classes/Candidature'
 import Swal from 'sweetalert2/dist/sweetalert2.js'
 import { rhChecklists } from '@/config/rh_checklists'
@@ -874,6 +1015,18 @@ export default {
 
     userStore: useUserStore(),
     dialog: false,
+    
+    // Checklists
+    weeklyTasks: [],
+    lastWeekReset: null,
+    newWeeklyTask: '',
+    newWeeklyTaskLink: '',
+    
+    monthlyTasks: [],
+    lastMonthReset: null,
+    newMonthlyTask: '',
+    newMonthlyTaskLink: '',
+    
     deleteDialog: false,
     statisticsDialog: false,
     showCharts: false,
@@ -882,7 +1035,7 @@ export default {
         responsive: true,
         maintainAspectRatio: false,
         animation: {
-            duration: 1500,
+            duration: 1000,
             easing: 'easeOutQuart'
         }
     },
@@ -893,7 +1046,7 @@ export default {
             y: { beginAtZero: true }
         },
         animation: {
-            duration: 1500,
+            duration: 1000,
             easing: 'easeOutQuart'
         }
     },
@@ -1003,10 +1156,28 @@ export default {
     faultEmployee: null,
 
     unsub: [],
+    unsub: [],
+    unsub: [],
+    unsub: [],
+    unsub: [],
+    unsub: [],
     showAllEmails: false,
+    showCharts: false,
+    visibleCharts: {
+        rank: false,
+        gender: false,
+        specialty: false,
+        promotion: false
+    }
   }),
 
   computed: {
+    weeklyOverdueCount() {
+        return this.weeklyTasks.filter(t => this.isTaskOverdue(t, 'weekly')).length
+    },
+    monthlyOverdueCount() {
+        return this.monthlyTasks.filter(t => this.isTaskOverdue(t, 'monthly')).length
+    },
     formTitle() {
       return this.editedItem.id ? 'Modifier l\'employé' : 'Nouvel employé'
     },
@@ -1129,10 +1300,32 @@ export default {
                 data: data
             }]
         }
-    }
+    },
+    
+    isOverdue() {
+        if (!this.lastWeekReset) return false
+        const resetDate = new Date(this.lastWeekReset)
+        const diffTime = Math.abs(Date.now() - resetDate)
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) 
+        return diffDays > 7
+    },
+    
+
   },
 
   mounted() {
+    this.weeklyChecklistManager = new SharedChecklist('weekly_rh')
+    this.unsub.push(this.weeklyChecklistManager.listen((data) => {
+        this.weeklyTasks = data.tasks
+        this.lastWeekReset = data.lastReset
+    }))
+
+    this.monthlyChecklistManager = new SharedChecklist('monthly_rh')
+    this.unsub.push(this.monthlyChecklistManager.listen((data) => {
+        this.monthlyTasks = data.tasks
+        this.lastMonthReset = data.lastReset
+    }))
+
     this.unsub.push(Employee.listenAll((employees) => {
       this.employees = employees
     }))
@@ -1151,20 +1344,48 @@ export default {
   },
 
   methods: {
-    openStatisticsDialog() {
-        this.showCharts = false
-        this.statsKey++ // Keep for counters
-        this.statisticsDialog = true
-        setTimeout(() => {
-            this.showCharts = true
-        }, 300)
+    getCheckDate(timestamp) {
+        if (!timestamp) return '(Date inconnue)'
+        return `(Fait le ${new Date(timestamp).toLocaleDateString('fr-FR')})`
     },
+
+    openStatisticsDialog() {
+        this.statisticsDialog = true
+        this.showCharts = false
+        this.statsKey++
+        
+        // Wait for dialog to fully open, then use requestAnimationFrame for reliable DOM paint
+        setTimeout(() => {
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    this.showCharts = true
+                    // Force Chart.js to recalculate dimensions
+                    this.$nextTick(() => {
+                        window.dispatchEvent(new Event('resize'))
+                    })
+                })
+            })
+        }, 400)
+    },
+
+
     getRoleColor(role) {
       if (['Directeur', 'Directeur Adjoint'].includes(role)) return 'red'
       if (['Responsable de Service'].includes(role)) return 'purple'
       if (['Assistant RH'].includes(role)) return 'orange'
       if (['Résident', 'Titulaire', 'Spécialiste'].includes(role)) return 'blue'
       return 'green'
+    },
+
+    isTaskOverdue(task, type) {
+        if (!task.doneAt) return true
+        const doneDate = new Date(task.doneAt)
+        const diffTime = Math.abs(Date.now() - doneDate)
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+
+        if (type === 'weekly') return diffDays > 7
+        if (type === 'monthly') return diffDays > 30
+        return false
     },
 
     getSpecialtyIcon(value) {
@@ -1453,6 +1674,93 @@ export default {
             Swal.fire({ icon: 'error', title: 'Erreur', text: "Erreur lors de l'ajout" })
         }
     },
+
+
+
+    async addWeeklyTask() {
+        if (!this.newWeeklyTask) return
+        try {
+            await this.weeklyChecklistManager.addTask(this.weeklyTasks, this.lastWeekReset, this.newWeeklyTask, this.newWeeklyTaskLink || null)
+            this.newWeeklyTask = ''
+            this.newWeeklyTaskLink = ''
+        } catch (e) { console.error(e) }
+    },
+    async removeWeeklyTask(taskId) {
+        Swal.fire({
+            title: 'Supprimer la tâche ?',
+            text: "Cette action est irréversible.",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Oui, supprimer',
+            cancelButtonText: 'Annuler',
+            confirmButtonColor: '#d33',
+            focusConfirm: false,
+            customClass: {
+                confirmButton: 'no-focus-outline',
+                cancelButton: 'no-focus-outline'
+            }
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                try {
+                    await this.weeklyChecklistManager.removeTask(this.weeklyTasks, this.lastWeekReset, taskId)
+                } catch (e) { console.error(e) }
+            }
+        })
+    },
+    async toggleWeeklyTask(taskId) {
+        try {
+            await this.weeklyChecklistManager.toggleTask(this.weeklyTasks, this.lastWeekReset, taskId)
+        } catch (e) { console.error(e) }
+    },
+    async updateWeeklyTaskDate(taskId) {
+        try {
+            await this.weeklyChecklistManager.updateTaskDate(this.weeklyTasks, this.lastWeekReset, taskId)
+        } catch (e) { console.error(e) }
+    },
+
+
+    // Monthly Logic
+    async addMonthlyTask() {
+        if (!this.newMonthlyTask) return
+        try {
+            await this.monthlyChecklistManager.addTask(this.monthlyTasks, this.lastMonthReset, this.newMonthlyTask, this.newMonthlyTaskLink || null)
+            this.newMonthlyTask = ''
+            this.newMonthlyTaskLink = ''
+        } catch (e) { console.error(e) }
+    },
+    async removeMonthlyTask(taskId) {
+        Swal.fire({
+            title: 'Supprimer la tâche ?',
+            text: "Cette action est irréversible.",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Oui, supprimer',
+            cancelButtonText: 'Annuler',
+            confirmButtonColor: '#d33',
+            focusConfirm: false,
+            customClass: {
+                confirmButton: 'no-focus-outline',
+                cancelButton: 'no-focus-outline'
+            }
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                try {
+                    await this.monthlyChecklistManager.removeTask(this.monthlyTasks, this.lastMonthReset, taskId)
+                } catch (e) { console.error(e) }
+            }
+        })
+    },
+    async toggleMonthlyTask(taskId) {
+        try {
+            await this.monthlyChecklistManager.toggleTask(this.monthlyTasks, this.lastMonthReset, taskId)
+        } catch (e) { console.error(e) }
+    },
+    async updateMonthlyTaskDate(taskId) {
+        try {
+            await this.monthlyChecklistManager.updateTaskDate(this.monthlyTasks, this.lastMonthReset, taskId)
+        } catch (e) { console.error(e) }
+    },
+
 
     async removeSpecialty(item) {
         try {
@@ -1915,6 +2223,26 @@ export default {
                 }
             }
         })
+    },
+
+    checkFaultExpirations() {
+        const today = new Date()
+        this.employees.forEach(async emp => {
+            if (emp.simpleFault && emp.simpleFault.expireDate) {
+                const expireDate = new Date(emp.simpleFault.expireDate)
+                if (today > expireDate) {
+                    console.log(`Fault expired for ${emp.name}, removing...`)
+                    emp.simpleFault = null
+                    await emp.save()
+                }
+            }
+        })
+    },
+
+    onChartIntersect(isIntersecting, chartId) {
+        if (isIntersecting) {
+            this.visibleCharts[chartId] = true
+        }
     }
   },
   
@@ -1955,5 +2283,19 @@ export default {
 
 .candidature-table :deep(.v-table__wrapper::-webkit-scrollbar-track) {
   background-color: rgba(0,0,0,0.05);
+}
+</style>
+
+
+<style>
+/* Aggressive override for SweetAlert2 Focus */
+div:where(.swal2-container) button:where(.swal2-styled).swal2-confirm:focus,
+div:where(.swal2-container) button:where(.swal2-styled).swal2-cancel:focus {
+    box-shadow: none !important;
+    outline: none !important;
+}
+.no-focus-outline:focus {
+    box-shadow: none !important;
+    outline: none !important;
 }
 </style>

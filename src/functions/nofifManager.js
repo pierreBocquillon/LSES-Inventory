@@ -10,6 +10,7 @@ import Storage from '@/classes/Storage.js'
 import SaveDate from '@/classes/SaveDate.js'
 import ExpenseNote from '@/classes/ExpenseNote.js'
 import Vehicle from '@/classes/Vehicle.js'
+import SharedChecklist from '@/classes/SharedChecklist.js'
 
 export const notifState = reactive({
   waitingUsers: [],
@@ -22,6 +23,8 @@ export const notifState = reactive({
   saveDates: {},
   vehicles: [],
   lastVehicleSaveDate: null,
+  rhWeeklyTasks: [],
+  rhMonthlyTasks: [],
   unsubscribers: []
 })
 
@@ -73,6 +76,16 @@ export function initNotifManager() {
   }))
   notifState.unsubscribers.push(Order.listenAll(orders => {
     notifState.orders = orders
+  }))
+
+  const weeklyManager = new SharedChecklist('weekly_rh')
+  notifState.unsubscribers.push(weeklyManager.listen(data => {
+    notifState.rhWeeklyTasks = data.tasks
+  }))
+
+  const monthlyManager = new SharedChecklist('monthly_rh')
+  notifState.unsubscribers.push(monthlyManager.listen(data => {
+    notifState.rhMonthlyTasks = data.tasks
   }))
 }
 
@@ -133,6 +146,34 @@ export const garageNotif = computed(() => {
     }
     if (!vehicle.insurance && !vehicle.underGuard && !vehicle.hideAlert && (parseInt(vehicle.lastRepairDate) < new Date().getTime() - (24 * 60 * 60 * 1000))) {
       count += 1
+    }
+  })
+
+  return count
+})
+
+export const rhNotif = computed(() => {
+  let count = 0
+
+  // Weekly Check
+  notifState.rhWeeklyTasks.forEach(task => {
+    if (!task.doneAt) {
+      count++
+    } else {
+      const diffTime = Math.abs(Date.now() - new Date(task.doneAt))
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+      if (diffDays > 7) count++
+    }
+  })
+
+  // Monthly Check
+  notifState.rhMonthlyTasks.forEach(task => {
+    if (!task.doneAt) {
+      count++
+    } else {
+      const diffTime = Math.abs(Date.now() - new Date(task.doneAt))
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+      if (diffDays > 30) count++
     }
   })
 

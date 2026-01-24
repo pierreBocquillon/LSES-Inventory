@@ -67,7 +67,7 @@ import Swal from 'sweetalert2/dist/sweetalert2.js'
 
 import navItems from '@/config/navItems.js'
 
-import { initNotifManager, stopNotifManager, notifState, storagesOutdated, garageNotif, alerts } from '@/functions/nofifManager.js'
+import { initNotifManager, stopNotifManager, notifState, storagesOutdated, garageNotif, alerts, rhNotif } from '@/functions/nofifManager.js'
 
 import logger from '../../functions/logger'
 
@@ -95,6 +95,9 @@ export default {
     },
     alerts() {
       return alerts.value
+    },
+    rhNotif() {
+        return rhNotif.value
     },
     waitingUsers() {
       return notifState.waitingUsers
@@ -141,6 +144,9 @@ export default {
             }
             if(tmp_item.link == '/garage') {
               tmp_item.notif = this.garageNotif
+            }
+            if(tmp_item.link == '/rh') {
+              tmp_item.notif = this.rhNotif
             }
             currentGroup.push(tmp_item)
           }
