@@ -27,6 +27,7 @@ export const rhChecklists = [
             { header: 'Accès tous les Documents' },
             'Demander l\'adresse mail de la personne (format "gmail.com")',
             { text: 'Aller dans "21-LSES-Interne-Résident-Médecin" et ajouter l\'adresse mail (accès dispatch).', link: { text: 'Groupes', url: 'https://groups.google.com/g/21-lses-interne-resident-medecin/members' } },
+            { text: 'Donner le lien du dispatch', link: { text: 'Dispatch', url: 'https://docs.google.com/spreadsheets/d/1Vho76MbebIo4d1RgpVL0wGFqbMjeK1e3HcirZV_C7Uk/edit?gid=180456797#gid=180456797' } },
 
             { header: 'Mettre à jour tous les documents RH' },
             { link: { text: 'Trombinoscope', url: 'https://www.canva.com/design/DAGzQCSaqAY/ASNs1-k_xRGAXdlg_oL1xw/edit' } },

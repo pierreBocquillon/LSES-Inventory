@@ -209,6 +209,24 @@
                     <span class="text-caption">Expire le : {{ formatDate(item.simpleFault.expireDate) }}</span>
                 </div>
             </v-tooltip>
+
+             <v-tooltip location="top" v-if="item.suspension">
+                <template v-slot:activator="{ props }">
+                    <v-icon 
+                        color="deep-purple" 
+                        class="ml-2 cursor-pointer" 
+                        v-bind="props" 
+                        @click="showSuspensionDetails(item)"
+                    >
+                        mdi-shoe-print
+                    </v-icon>
+                </template>
+                <div class="text-center">
+                    <strong>Mise à pied</strong><br>
+                    Début : {{ formatDate(item.suspension.startDate) }}<br>
+                    <span class="text-caption">Durée : {{ item.suspension.duration }} jour(s)</span>
+                </div>
+            </v-tooltip>
           </div>
         </template>
         <template v-slot:top>
@@ -337,6 +355,21 @@
             <template v-slot:activator="{ props }">
               <v-btn icon variant="text" size="small" color="green" v-bind="props" @click="deleteFault(item)">
                 <v-icon>mdi-alert-remove</v-icon>
+              </v-btn>
+            </template>
+          </v-tooltip>
+
+          <v-tooltip v-if="!item.suspension" text="Mise à pied" location="top">
+            <template v-slot:activator="{ props }">
+              <v-btn icon variant="text" size="small" color="deep-purple" v-bind="props" @click="openSuspensionDialog(item)">
+                <v-icon>mdi-shoe-print</v-icon>
+              </v-btn>
+            </template>
+          </v-tooltip>
+           <v-tooltip v-else text="Supprimer la mise à pied" location="top">
+            <template v-slot:activator="{ props }">
+              <v-btn icon variant="text" size="small" color="teal" v-bind="props" @click="deleteSuspension(item)">
+                <v-icon>mdi-account-check</v-icon>
               </v-btn>
             </template>
           </v-tooltip>
@@ -987,6 +1020,41 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+
+    <v-dialog v-model="suspensionDialog" max-width="500px">
+      <v-card>
+        <v-card-title class="bg-deep-purple text-white">
+          <span class="text-h5">Mise à pied</span>
+        </v-card-title>
+        <v-card-text class="pt-4">
+          <p class="mb-4">Employé : <strong>{{ suspensionEmployee?.name }}</strong></p>
+          <v-row>
+            <v-col cols="12" md="6">
+              <v-text-field
+                v-model="suspensionStartDate"
+                label="Date de début"
+                type="date"
+                variant="outlined"
+              ></v-text-field>
+            </v-col>
+            <v-col cols="12" md="6">
+              <v-text-field
+                v-model="suspensionDuration"
+                label="Durée (jours)"
+                type="number"
+                min="1"
+                variant="outlined"
+              ></v-text-field>
+            </v-col>
+          </v-row>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn color="grey" variant="text" @click="suspensionDialog = false">Annuler</v-btn>
+          <v-btn color="deep-purple" variant="text" @click="saveSuspension">Appliquer</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </v-container>
 </template>
 
@@ -1154,6 +1222,11 @@ export default {
     faultDialog: false,
     faultReason: '',
     faultEmployee: null,
+
+    suspensionDialog: false,
+    suspensionEmployee: null,
+    suspensionStartDate: '',
+    suspensionDuration: 1,
 
     unsub: [],
     unsub: [],
@@ -2211,6 +2284,94 @@ export default {
         })
     },
 
+    openSuspensionDialog(item) {
+        this.suspensionEmployee = item
+        this.suspensionStartDate = new Date().toISOString().substr(0, 10)
+        this.suspensionDuration = 1
+        this.suspensionDialog = true
+    },
+
+    async saveSuspension() {
+        if (!this.suspensionStartDate || !this.suspensionDuration) return
+        
+        try {
+            const startDate = new Date(this.suspensionStartDate)
+            const endDate = new Date(startDate)
+            endDate.setDate(endDate.getDate() + parseInt(this.suspensionDuration))
+
+            this.suspensionEmployee.suspension = {
+                startDate: this.suspensionStartDate,
+                duration: parseInt(this.suspensionDuration),
+                endDate: endDate.toISOString().substr(0, 10)
+            }
+            await this.suspensionEmployee.save()
+            
+            logger.log(this.userStore.profile.id, "Mise à pied", `Mise à pied de ${this.suspensionEmployee.name} pour ${this.suspensionDuration} jour(s) à partir du ${this.suspensionStartDate}`)
+            
+            this.suspensionDialog = false
+            Swal.fire({
+                icon: 'success',
+                title: 'Mise à pied appliquée',
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 3000
+            })
+        } catch (e) {
+            console.error(e)
+            Swal.fire({ icon: 'error', title: 'Erreur', text: "Erreur lors de l'application" })
+        }
+    },
+
+    async deleteSuspension(item) {
+        Swal.fire({
+            title: 'Retirer la mise à pied ?',
+            text: `Voulez-vous retirer la mise à pied de ${item.name} ?`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Oui, retirer',
+            cancelButtonText: 'Annuler'
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                try {
+                    item.suspension = null
+                    await item.save()
+                    
+                    logger.log(this.userStore.profile.id, "Retrait mise à pied", `Retrait de la mise à pied de ${item.name}`)
+                    
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Mise à pied retirée',
+                        toast: true,
+                        position: 'top-end',
+                        showConfirmButton: false,
+                        timer: 3000
+                    })
+                } catch (e) {
+                    console.error(e)
+                    Swal.fire({ icon: 'error', title: 'Erreur', text: "Erreur lors du retrait" })
+                }
+            }
+        })
+    },
+
+    showSuspensionDetails(item) {
+        if (!item.suspension) return
+        Swal.fire({
+            title: 'Détails de la mise à pied',
+            html: `
+                <div class="text-left">
+                    <p><strong>Employé :</strong> ${item.name}</p>
+                    <p><strong>Date de début :</strong> ${this.formatDate(item.suspension.startDate)}</p>
+                    <p><strong>Durée :</strong> ${item.suspension.duration} jour(s)</p>
+                    <p><strong>Date de fin :</strong> ${this.formatDate(item.suspension.endDate)}</p>
+                </div>
+            `,
+            icon: 'info',
+            confirmButtonText: 'Fermer'
+        })
+    },
+
     checkFaultExpirations() {
         const today = new Date()
         this.employees.forEach(async emp => {
@@ -2233,6 +2394,22 @@ export default {
                 if (today > expireDate) {
                     console.log(`Fault expired for ${emp.name}, removing...`)
                     emp.simpleFault = null
+                    await emp.save()
+                }
+            }
+        })
+    },
+
+    checkSuspensionExpirations() {
+        const today = new Date()
+        today.setHours(0, 0, 0, 0)
+        this.employees.forEach(async emp => {
+            if (emp.suspension && emp.suspension.endDate) {
+                const endDate = new Date(emp.suspension.endDate)
+                endDate.setHours(0, 0, 0, 0)
+                if (today >= endDate) {
+                    console.log(`Suspension expired for ${emp.name}, removing...`)
+                    emp.suspension = null
                     await emp.save()
                 }
             }
@@ -2250,6 +2427,7 @@ export default {
     employees: {
         handler() {
             this.checkFaultExpirations()
+            this.checkSuspensionExpirations()
         },
         deep: true
     }
