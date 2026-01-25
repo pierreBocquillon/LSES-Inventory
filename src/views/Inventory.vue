@@ -108,6 +108,10 @@
               <h3 class="font-weight-regular text-error" v-else>{{ parseInt(item.wanted) - parseInt(item.amount) }}</h3>
             </template>
 
+            <template v-slot:item.action="{ item }" v-if="this.userStore.profile.permissions.some(p => ['dev', 'admin', 'logs'].includes(p))">
+              <v-btn color="cyan" variant="tonal" size="small" @click="showMovement(item)" icon><v-icon>mdi-chart-bell-curve</v-icon></v-btn>
+            </template>
+
           </v-data-table>
         </v-tabs-window-item>
       </v-tabs-window>
@@ -188,6 +192,23 @@
         </v-card-text>
       </v-card>
     </v-dialog>
+    
+    <v-dialog v-model="dialogMovement" max-width="800px">
+      <v-card>
+        <v-card-text>
+          <div style="height: 400px; width: 100%;" v-if="movementItem && movementItem.history && movementItem.history.length > 0">
+            <Line :data="chartData" :options="chartOptions" />
+          </div>
+          <h3 v-else class="text-center mt-5">Aucun historique disponible</h3>
+
+          <div class="d-flex justify-center mt-5">
+            <v-btn variant="tonal" color="error" class="ml-3" @click="closeMovementDialog">Fermer</v-btn>
+          </div>       
+        </v-card-text>
+      </v-card>
+    </v-dialog>
+
+
   </div>
 </template>
 
@@ -205,8 +226,13 @@ import Instance from '@/classes/Instance.js'
 import logger from '@/functions/logger.js'
 
 import { initNotifManager, stopNotifManager, notifState, storageDeltaTime } from '@/functions/nofifManager.js'
+import { Line } from 'vue-chartjs'
+import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from 'chart.js'
+
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend)
 
 export default {
+  components: { Line },
   props : [],
   data() {
     return {
@@ -222,6 +248,7 @@ export default {
         { title: 'Stock actuel', key: 'amount', align: 'start' },
         { title: 'Stock souhaité', key: 'wanted', align: 'start' },
         { title: 'Besoin', key: 'needed', align: 'start' },
+        { title: '', key: 'action', sortable: false, align: 'end' },
       ],
 
       filter: {
@@ -239,6 +266,9 @@ export default {
       dialogDate: false,
       instanceDate: '',
       instanceAmount: 0,
+      
+      dialogMovement: false,
+      movementItem: null,
 
       instanceDateHeader: [{ title: 'Date', key: 'date', align: 'start' }, { title: 'Quantité', key: 'amount', align: 'start' }, { title: '', key: 'locked', align: 'end', sortable: false }],
       instanceNameHeader: [{ title: 'Nom', key: 'name', align: 'start' }, { title: 'Quantité', key: 'amount', align: 'start' }, { title: '', key: 'actions', align: 'end', sortable: false }],
@@ -292,6 +322,38 @@ export default {
       }
 
       return filteredItems
+    },
+    chartData() {
+      if (!this.movementItem || !this.movementItem.history) return { labels: [], datasets: [] }
+      
+      return {
+        labels: this.movementItem.history.map(h => new Date(h.date).toLocaleString()),
+        datasets: [
+          {
+            label: 'Quantité',
+            backgroundColor: '#fdbe35',
+            borderColor: '#fdbe35',
+            data: this.movementItem.history.map(h => h.amount)
+          }
+        ]
+      }
+    },
+    chartOptions() {
+      return {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            labels: {
+              color: '#ffffff'
+            }
+          }
+        },
+        scales: {
+          x: {ticks: {color: '#ffffff'}},
+          y: {ticks: {color: '#ffffff'}}
+        }
+      }
     },
   },
 
@@ -370,6 +432,13 @@ export default {
     },
     closeDateDialog() {
       this.dialogDate = false
+    },
+    showMovement(item) {
+      this.dialogMovement = true
+      this.movementItem = item
+    },
+    closeMovementDialog() {
+      this.dialogMovement = false
     },
     addInstance() {
       if(!this.instanceName || this.instanceName.trim() == ''){

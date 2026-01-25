@@ -5,11 +5,11 @@ let collectionName = "items"
 
 function docToInstance(document) {
   let data = document.data()
-  return data ? new Item(document.id, data.icon, data.name, data.storage, data.weight, data.seller, data.amount, data.wanted, data.maxOrder, data.isInstantiated, data.instanceByDate, data.isSecure) : null
+  return data ? new Item(document.id, data.icon, data.name, data.storage, data.weight, data.seller, data.amount, data.wanted, data.maxOrder, data.isInstantiated, data.instanceByDate, data.isSecure, data.history) : null
 }
 
 class Item {
-  constructor(id, icon, name, storage, weight, seller, amount=0, wanted=0, maxOrder=0, isInstantiated=false, instanceByDate=false, isSecure=false) {
+  constructor(id, icon, name, storage, weight, seller, amount=0, wanted=0, maxOrder=0, isInstantiated=false, instanceByDate=false, isSecure=false, history=[]) {
     this.id = id
     this.icon = icon
     this.name = name
@@ -22,11 +22,12 @@ class Item {
     this.isInstantiated = isInstantiated
     this.instanceByDate = instanceByDate
     this.isSecure = isSecure
+    this.history = history
   }
 
   static initOne(name="") {
     let id = Item.createId(name)
-    const newItem = new Item(id, "", name, "", 0, "", 0, 0, 0, false, false, false)
+    const newItem = new Item(id, "", name, "", 0, "", 0, 0, 0, false, false, false, [])
     return newItem
   }
   
@@ -91,6 +92,33 @@ class Item {
       isInstantiated: this.isInstantiated,
       instanceByDate: this.instanceByDate,
       isSecure: this.isSecure,
+      history: this.history
+    }
+    let historyData = {
+      date: new Date().getTime(),
+      amount: this.amount
+    }
+    //check (if history in the same minute) update instead of push
+    if (new_doc.history.length > 0) {
+      let lastEntry = new_doc.history[new_doc.history.length - 1]
+      let lastDate = new Date(lastEntry.date)
+      let currentDate = new Date(historyData.date)
+      if (lastDate.getFullYear() === currentDate.getFullYear() &&
+          lastDate.getMonth() === currentDate.getMonth() &&
+          lastDate.getDate() === currentDate.getDate() &&
+          lastDate.getHours() === currentDate.getHours() &&
+          lastDate.getMinutes() === currentDate.getMinutes()) {
+        //update last entry
+        new_doc.history[new_doc.history.length - 1] = historyData
+      } else {
+        new_doc.history.push(historyData)
+      }
+    }else{
+      new_doc.history.push(historyData)
+    }
+
+    if (new_doc.history.length > 50) {
+      new_doc.history = new_doc.history.slice(new_doc.history.length - 50)
     }
 
     if (this.id) {
