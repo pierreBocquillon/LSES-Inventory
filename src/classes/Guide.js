@@ -43,7 +43,7 @@ class Guide {
             description: this.description,
             steps: this.steps
         }
-        await setDoc(doc(db, collectionName, this.id), new_doc)
+        await setDoc(doc(db, collectionName, this.id), new_doc, { merge: true })
     }
 
     async delete() {

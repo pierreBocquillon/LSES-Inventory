@@ -29,7 +29,7 @@ class SharedChecklist {
     async saveState(data) {
         // Deep clone to remove Vue Proxies
         const sanitized = JSON.parse(JSON.stringify(data))
-        await setDoc(doc(db, COLLECTION, this.docId), sanitized)
+        await setDoc(doc(db, COLLECTION, this.docId), sanitized, { merge: true })
     }
 
     async addTask(currentTasks, currentLastReset, text, link = null) {

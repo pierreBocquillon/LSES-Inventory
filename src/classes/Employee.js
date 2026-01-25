@@ -10,12 +10,12 @@ function docToInstance(document) {
     if (data.chiefSpecialty && !chiefSpecs.length) {
         chiefSpecs = [data.chiefSpecialty]
     }
-    return data ? new Employee(document.id, data.name, data.email, data.role, data.sex, data.phone, data.specialties, chiefSpecs, data.birthDate, data.arrivalDate, data.cdiDate, data.lastPromotionDate, data.medicalDegreeDate, data.helicopterTrainingDate, data.helicopterTrainingReimbursed, data.trainingRequests, data.promotionRequest, data.rankPromotionRequest, data.validatedSubCompetencies, data.competencyProgress, data.lastFollowUpDate, data.simpleFault) : null
+    return data ? new Employee(document.id, data.name, data.email, data.role, data.sex, data.phone, data.specialties, chiefSpecs, data.birthDate, data.arrivalDate, data.cdiDate, data.lastPromotionDate, data.medicalDegreeDate, data.helicopterTrainingDate, data.helicopterTrainingReimbursed, data.trainingRequests, data.promotionRequest, data.rankPromotionRequest, data.validatedSubCompetencies, data.competencyProgress, data.lastFollowUpDate, data.simpleFault, data.suspension) : null
 }
 
 
 class Employee {
-    constructor(id, name, email, role, sex, phone, specialties, chiefSpecialties, birthDate, arrivalDate, cdiDate, lastPromotionDate, medicalDegreeDate, helicopterTrainingDate, helicopterTrainingReimbursed, trainingRequests, promotionRequest, rankPromotionRequest, validatedSubCompetencies, competencyProgress, lastFollowUpDate, simpleFault) {
+    constructor(id, name, email, role, sex, phone, specialties, chiefSpecialties, birthDate, arrivalDate, cdiDate, lastPromotionDate, medicalDegreeDate, helicopterTrainingDate, helicopterTrainingReimbursed, trainingRequests, promotionRequest, rankPromotionRequest, validatedSubCompetencies, competencyProgress, lastFollowUpDate, simpleFault, suspension) {
         this.id = id
         this.name = name
         this.email = email
@@ -43,6 +43,7 @@ class Employee {
         }
         this.lastFollowUpDate = lastFollowUpDate || null
         this.simpleFault = simpleFault || null
+        this.suspension = suspension || null
     }
 
     static listenAll(callback) {
@@ -76,11 +77,12 @@ class Employee {
             rankPromotionRequest: this.rankPromotionRequest || null,
             competencyProgress: this.competencyProgress || {},
             lastFollowUpDate: this.lastFollowUpDate || null,
-            simpleFault: this.simpleFault || null
+            simpleFault: this.simpleFault || null,
+            suspension: this.suspension || null
         }
 
         if (this.id) {
-            await setDoc(doc(db, collectionName, this.id), new_doc)
+            await setDoc(doc(db, collectionName, this.id), new_doc, { merge: true })
         } else {
             const docRef = await addDoc(collection(db, collectionName), new_doc)
             this.id = docRef.id

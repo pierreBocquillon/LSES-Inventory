@@ -44,7 +44,7 @@ class Candidature {
         }
 
         if (this.id)
-            await setDoc(doc(db, collectionName, this.id), new_doc)
+            await setDoc(doc(db, collectionName, this.id), new_doc, { merge: true })
         else {
             const docRef = await addDoc(collection(db, collectionName), new_doc)
 
