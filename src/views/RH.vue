@@ -2009,13 +2009,56 @@ export default {
         }
     },
 
-    finalizeCandidature(decision) {
+    async finalizeCandidature(decision) {
         if (decision === 'accept') {
             this.editedCandidature.status = 'Recrutement planifié'
+            await this.createEmployeeFromCandidature(this.editedCandidature)
         } else {
             this.editedCandidature.status = 'Refusé'
         }
         this.saveCandidature()
+    },
+
+    async createEmployeeFromCandidature(candidature) {
+        const today = new Date().toISOString().split('T')[0]
+        
+        const newEmployee = new Employee(
+            null,
+            candidature.name,
+            '',
+            'Interne',
+            null,
+            candidature.phone,
+            [],
+            [],
+            null,
+            today,
+            null,
+            today,
+            null,
+            null,
+            false
+        )
+        
+        try {
+            await newEmployee.save()
+            Swal.fire({
+                icon: 'info',
+                title: 'Employé créé',
+                text: `${candidature.name} a été ajouté(e) à la liste des employés en tant qu'Interne.`,
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 3000
+            })
+        } catch (e) {
+            console.error('Erreur lors de la création de l\'employé:', e)
+            Swal.fire({
+                icon: 'error',
+                title: 'Erreur',
+                text: "L'employé n'a pas pu être créé automatiquement."
+            })
+        }
     },
 
     async saveCandidature() {

@@ -105,7 +105,6 @@ export const rhChecklists = [
 
             { header: 'Dans tous les cas' },
             'Penser à mettre la lettre dans le fil agent',
-            'Mettre à jour le suivi effectif',
             'Mettre à jour le dispatch',
             { text: 'Mettre à jour les groupes', link: { text: 'Groupe Google', url: 'https://groups.google.com/g/21-lses-interne-resident-medecin/members' } },
             'Clôturer son fil de formation (si interne)',
