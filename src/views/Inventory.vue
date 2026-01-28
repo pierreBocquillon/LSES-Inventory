@@ -93,7 +93,7 @@
                 </div>
               </template>
               <template v-else>
-                <v-text-field type="number" variant="solo-filled" v-model="item.amount" class="ma-0 pa-0" hide-details style="max-width: 100px;" @change="updateItem(item)"/>
+                <v-text-field type="number" variant="solo-filled" v-model="item.amount" class="ma-0 pa-0" hide-details style="max-width: 100px;" @focus="startEditing(item)" @blur="stopEditing(item)" @change="updateItem(item)"/>
               </template>
             </template>
 
@@ -225,7 +225,7 @@ import Instance from '@/classes/Instance.js'
 
 import logger from '@/functions/logger.js'
 
-import { initNotifManager, stopNotifManager, notifState, storageDeltaTime } from '@/functions/nofifManager.js'
+import { initNotifManager, stopNotifManager, notifState, storageDeltaTime, editingItemIds } from '@/functions/nofifManager.js'
 import { Line } from 'vue-chartjs'
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from 'chart.js'
 
@@ -358,6 +358,14 @@ export default {
   },
 
   methods: {
+    startEditing(item) {
+      editingItemIds.add(item.id)
+    },
+    stopEditing(item) {
+      setTimeout(() => {
+        editingItemIds.delete(item.id)
+      }, 500)
+    },
     updateItem(item) {
       item.save()
       if (this.saveDates[item.storage]) {

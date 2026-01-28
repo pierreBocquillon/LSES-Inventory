@@ -30,6 +30,8 @@ export const notifState = reactive({
 
 let initCount = 0
 
+export const editingItemIds = new Set()
+
 export function initNotifManager() {
   initCount++
   if (initCount > 1) return
@@ -71,7 +73,20 @@ export function initNotifManager() {
     notifState.companies.sort((a, b) => a.name.localeCompare(b.name))
   }))
   notifState.unsubscribers.push(Item.listenAll(items => {
-    notifState.items = items
+    const existingMap = new Map(notifState.items.map(item => [item.id, item]))
+    items.forEach(newItem => {
+      const existing = existingMap.get(newItem.id)
+
+      if (existing) {
+        const preservedAmount = editingItemIds.has(existing.id) ? existing.amount : newItem.amount
+
+        Object.assign(existing, newItem)
+        existing.amount = preservedAmount
+      } else
+        notifState.items.push(newItem)
+    })
+    const newIds = new Set(items.map(i => i.id))
+    notifState.items = notifState.items.filter(item => newIds.has(item.id))
     notifState.items.sort((a, b) => a.id.localeCompare(b.id))
   }))
   notifState.unsubscribers.push(Order.listenAll(orders => {
