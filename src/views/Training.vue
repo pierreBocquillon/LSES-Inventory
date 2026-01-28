@@ -78,10 +78,10 @@
                     hover 
                     variant="outlined" 
                     class="h-100 d-flex flex-column"
-                    :color="guide.id === 'grenouille' ? 'green-darken-4' : getGuideTheme(guide.id)"
+                    :color="guide.id === 'grenouille' ? 'green-darken-4' : (guide.id === 'conduite' ? 'orange-darken-2' : getGuideTheme(guide.id))"
                 >
-                    <v-card-title :class="guide.id === 'grenouille' ? 'bg-green-darken-4 text-white d-flex align-center' : `bg-${getGuideTheme(guide.id)}-lighten-4 text-${getGuideTheme(guide.id)}-darken-4 d-flex align-center`">
-                        <v-icon v-if="getGuideIcon(guide.id).startsWith('mdi-')" :color="guide.id === 'grenouille' ? 'white' : getGuideTheme(guide.id) + '-darken-2'" class="mr-2">{{ getGuideIcon(guide.id) }}</v-icon>
+                    <v-card-title :class="guide.id === 'grenouille' ? 'bg-green-darken-4 text-white d-flex align-center' : (guide.id === 'conduite' ? 'bg-orange-darken-2 text-white d-flex align-center' : `bg-${getGuideTheme(guide.id)}-lighten-4 text-${getGuideTheme(guide.id)}-darken-4 d-flex align-center`)">
+                        <v-icon v-if="getGuideIcon(guide.id).startsWith('mdi-')" :color="guide.id === 'grenouille' || guide.id === 'conduite' ? 'white' : getGuideTheme(guide.id) + '-darken-2'" class="mr-2">{{ getGuideIcon(guide.id) }}</v-icon>
                         <span v-else class="mr-2 text-h6">{{ getGuideIcon(guide.id) }}</span>
                         {{ guide.title }}
                     </v-card-title>
@@ -401,7 +401,7 @@
                                                 ></v-textarea>
                                                 <v-text-field
                                                     v-model="step.image"
-                                                    label="URL Image (Discord)"
+                                                    label="URL Image"
                                                     variant="outlined"
                                                     density="compact"
                                                     hide-details="auto"
@@ -540,79 +540,72 @@
                 <v-toolbar-title>Objectifs de la semaine</v-toolbar-title>
                 <v-spacer></v-spacer>
             </v-toolbar>
-            <v-card-text>
-                <v-tabs v-model="objectivesTab" align-tabs="center" color="orange-darken-2">
-                    <v-tab value="interne">Internes</v-tab>
-                    <v-tab value="resident">Résidents</v-tab>
-                </v-tabs>
+            <v-card-text style="overflow-y: auto;">
+                <h2 class="text-h5 mb-3 mt-2">Internes</h2>
+                <v-table density="compact" class="mb-6">
+                    <thead>
+                        <tr>
+                            <th class="text-left font-weight-bold">Interne</th>
+                            <th v-for="obj in internObjectives" :key="obj.hash" class="text-center font-weight-bold" style="white-space: nowrap;">
+                                {{ obj.title }}
+                                <div class="text-caption text-grey">{{ obj.target }}%</div>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="emp in interns" :key="emp.id">
+                            <td class="font-weight-medium">{{ emp.name }}</td>
+                            <td v-for="obj in internObjectives" :key="obj.hash" class="text-center">
+                                <v-icon v-if="calculateProgress(emp, obj.id) >= obj.target" color="success">mdi-check-circle</v-icon>
+                                <v-progress-linear
+                                    v-else
+                                    :model-value="calculateProgress(emp, obj.id)"
+                                    :color="getCompetencyColor(calculateProgress(emp, obj.id), obj.target)"
+                                    height="15"
+                                    rounded
+                                >
+                                    <template v-slot:default="{ value }">
+                                        <span class="text-caption text-white">{{ Math.ceil(value) }}%</span>
+                                    </template>
+                                </v-progress-linear>
+                            </td>
+                        </tr>
+                    </tbody>
+                </v-table>
 
-                <v-window v-model="objectivesTab">
-                    <v-window-item value="interne">
-                        <v-table density="compact" fixed-header height="calc(100vh - 150px)">
-                            <thead>
-                                <tr>
-                                    <th class="text-left font-weight-bold">Interne</th>
-                                    <th v-for="obj in internObjectives" :key="obj.hash" class="text-center font-weight-bold" style="white-space: nowrap;">
-                                        {{ obj.title }}
-                                        <div class="text-caption text-grey">{{ obj.target }}%</div>
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr v-for="emp in interns" :key="emp.id">
-                                    <td class="font-weight-medium">{{ emp.name }}</td>
-                                    <td v-for="obj in internObjectives" :key="obj.hash" class="text-center">
-                                        <v-icon v-if="calculateProgress(emp, obj.id) >= obj.target" color="success">mdi-check-circle</v-icon>
-                                        <v-progress-linear
-                                            v-else
-                                            :model-value="calculateProgress(emp, obj.id)"
-                                            :color="getCompetencyColor(calculateProgress(emp, obj.id), obj.target)"
-                                            height="15"
-                                            rounded
-                                        >
-                                            <template v-slot:default="{ value }">
-                                                <span class="text-caption text-white">{{ Math.ceil(value) }}%</span>
-                                            </template>
-                                        </v-progress-linear>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </v-table>
-                    </v-window-item>
+                <v-divider class="mb-4"></v-divider>
 
-                    <v-window-item value="resident">
-                        <v-table density="compact" fixed-header height="calc(100vh - 150px)">
-                            <thead>
-                                <tr>
-                                    <th class="text-left font-weight-bold">Résident</th>
-                                    <th v-for="obj in residentObjectives" :key="obj.hash" class="text-center font-weight-bold" style="white-space: nowrap;">
-                                        {{ obj.title }}
-                                        <div class="text-caption text-grey">{{ obj.target }}%</div>
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr v-for="emp in residentsList" :key="emp.id">
-                                    <td class="font-weight-medium">{{ emp.name }}</td>
-                                    <td v-for="obj in residentObjectives" :key="obj.hash" class="text-center">
-                                        <v-icon v-if="calculateProgress(emp, obj.id) >= obj.target" color="success">mdi-check-circle</v-icon>
-                                        <v-progress-linear
-                                            v-else
-                                            :model-value="calculateProgress(emp, obj.id)"
-                                            :color="getCompetencyColor(calculateProgress(emp, obj.id), obj.target)"
-                                            height="15"
-                                            rounded
-                                        >
-                                            <template v-slot:default="{ value }">
-                                                <span class="text-caption text-white">{{ Math.ceil(value) }}%</span>
-                                            </template>
-                                        </v-progress-linear>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </v-table>
-                    </v-window-item>
-                </v-window>
+                <h2 class="text-h5 mb-3">Résidents</h2>
+                <v-table density="compact">
+                    <thead>
+                        <tr>
+                            <th class="text-left font-weight-bold">Résident</th>
+                            <th v-for="obj in residentObjectives" :key="obj.hash" class="text-center font-weight-bold" style="white-space: nowrap;">
+                                {{ obj.title }}
+                                <div class="text-caption text-grey">{{ obj.target }}%</div>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="emp in residentsList" :key="emp.id">
+                            <td class="font-weight-medium">{{ emp.name }}</td>
+                            <td v-for="obj in residentObjectives" :key="obj.hash" class="text-center">
+                                <v-icon v-if="calculateProgress(emp, obj.id) >= obj.target" color="success">mdi-check-circle</v-icon>
+                                <v-progress-linear
+                                    v-else
+                                    :model-value="calculateProgress(emp, obj.id)"
+                                    :color="getCompetencyColor(calculateProgress(emp, obj.id), obj.target)"
+                                    height="15"
+                                    rounded
+                                >
+                                    <template v-slot:default="{ value }">
+                                        <span class="text-caption text-white">{{ Math.ceil(value) }}%</span>
+                                    </template>
+                                </v-progress-linear>
+                            </td>
+                        </tr>
+                    </tbody>
+                </v-table>
             </v-card-text>
         </v-card>
     </v-dialog>
@@ -821,7 +814,7 @@ export default {
             }))
     },
     sortedGuides() {
-        const order = ['introduction', 'qa', 'resident', 'titulaire', 'grenouille']
+        const order = ['introduction', 'qa', 'resident', 'titulaire', 'grenouille', 'conduite']
         return this.guides.sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id))
     },
     groupedSteps() {
@@ -1391,11 +1384,13 @@ export default {
     
     getGuideTheme(id) {
         if (['introduction', 'qa', 'grenouille'].includes(id)) return 'green'
+        if (id === 'conduite') return 'orange'
         return 'blue'
     },
 
     getGuideIcon(id) {
         if (id === 'grenouille') return '🐸'
+        if (id === 'conduite') return '🚗'
         return 'mdi-text-box-check-outline'
     },
 
