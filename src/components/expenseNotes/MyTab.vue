@@ -15,8 +15,8 @@
           <div class="py-2 pl-5">
             <template v-if="note.reason == 'buy'">
               <div class="py-3" style="border-left: 2px #FFFFFF33 solid;">
-                <div class="pl-3 d-flex flex-row align-center justify-start mb-2 text-white">
-                  📱 Téléphone - 40
+                <div class="pl-3 d-flex flex-row align-center justify-start mb-2 text-white" v-for="item in getHystoryInfo(note.data).items">
+                  {{ getItemInfo(item.id)?.icon }} {{ getItemInfo(item.id)?.name }} - {{ item.amount }}
                 </div>
               </div>
               <div class="mt-3 text-white">
