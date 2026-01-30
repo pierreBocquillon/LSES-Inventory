@@ -324,16 +324,15 @@ export default {
       return filteredItems
     },
     chartData() {
-      if (!this.movementItem || !this.movementItem.history) return { labels: [], datasets: [] }
+      if (!this.movementItem || !this.movementItem.history) return { datasets: [] }
       
       return {
-        labels: this.movementItem.history.map(h => new Date(h.date).toLocaleString()),
         datasets: [
           {
             label: 'Quantité',
             backgroundColor: '#fdbe35',
             borderColor: '#fdbe35',
-            data: this.movementItem.history.map(h => h.amount)
+            data: this.movementItem.history.map(h => ({ x: new Date(h.date).getTime(), y: h.amount })).sort((a, b) => a.x - b.x)
           }
         ]
       }
@@ -343,15 +342,32 @@ export default {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
-          legend: {
-            labels: {
-              color: '#ffffff'
+          legend: { labels: { color: '#ffffff' } },
+          tooltip: {
+            callbacks: {
+              title: (context) => new Date(context[0].parsed.x).toLocaleString()
             }
           }
         },
         scales: {
-          x: {ticks: {color: '#ffffff'}},
-          y: {ticks: {color: '#ffffff'}}
+          x: {
+            type: 'linear',
+            ticks: {
+              color: '#ffffff',
+              callback: function(value, index, ticks) {
+                const date = new Date(value).toLocaleDateString()
+                if (index > 0) {
+                  const prevDate = new Date(ticks[index - 1].value).toLocaleDateString()
+                  if (date === prevDate) return null
+                }
+                return date
+              }
+            }
+          },
+          y: {
+            ticks: {color: '#ffffff'},
+            beginAtZero: true
+          }
         }
       }
     },
