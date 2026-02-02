@@ -105,7 +105,7 @@
         Demande de formation
       </v-btn>
        <v-btn color="orange-darken-2" prepend-icon="mdi-target" class="ml-2" @click="objectivesDialog = true" v-if="!isRestrictedTrainer">
-        Objectifs Semaine
+        Objectifs
       </v-btn>
        <v-btn color="teal" prepend-icon="mdi-format-list-bulleted" class="ml-2" @click="openScenarioDialog" v-if="!isRestrictedTrainer">
         Voir les simulations
@@ -194,6 +194,18 @@
                         </v-btn>
                     </div>
 
+                    <v-select
+                        v-model="selectedMalus"
+                        :items="availableMalus"
+                        label="Malus à appliquer"
+                        variant="outlined"
+                        multiple
+                        chips
+                        class="mb-4"
+                        prepend-inner-icon="mdi-alert-octagon"
+                        color="error"
+                    ></v-select>
+
                     <div v-if="generatedInjuries.length > 0">
                         <v-divider class="mb-4"></v-divider>
                         <h3 class="text-subtitle-1 font-weight-bold mb-3 text-teal">
@@ -209,7 +221,6 @@
                                     </v-chip>
                                 </div>
 
-                                <div class="font-weight-bold mb-2">Blessures:</div>
                                 <v-list density="compact" bg-color="transparent">
                                     <v-list-item v-for="(inj, i) in generatedInjuries" :key="i">
                                         <template v-slot:prepend>
@@ -221,8 +232,39 @@
                                         </v-list-item-subtitle>
                                     </v-list-item>
                                 </v-list>
+
+                                <div v-if="selectedMalus.length > 0" class="mt-4">
+                                    <div class="font-weight-bold mb-2 text-error"><v-icon start color="error">mdi-alert-octagon</v-icon>Malus:</div>
+                                    <div class="d-flex flex-wrap gap-2">
+                                        <v-chip v-for="malus in selectedMalus" :key="malus" size="small" color="error" variant="elevated" class="text-white">
+                                            {{ malus }}
+                                        </v-chip>
+                                    </div>
+                                </div>
                             </v-card-text>
                         </v-card>
+
+                        <div class="d-flex justify-center flex-wrap gap-4 mt-3">
+                            <v-btn
+                                color="blue-grey"
+                                variant="tonal"
+                                prepend-icon="mdi-pin"
+                                density="compact"
+                                class="mr-2"
+                                @click="pinSimulation(false)"
+                            >
+                                Entraînement
+                            </v-btn>
+                            <v-btn
+                                color="success"
+                                variant="tonal"
+                                prepend-icon="mdi-pin"
+                                density="compact"
+                                @click="pinSimulation(true)"
+                            >
+                                Validante
+                            </v-btn>
+                        </div>
                     </div>
                 </div>
             </v-card-text>
@@ -537,7 +579,7 @@
         <v-card>
             <v-toolbar color="orange-darken-2">
                 <v-btn icon="mdi-close" @click="objectivesDialog = false"></v-btn>
-                <v-toolbar-title>Objectifs de la semaine</v-toolbar-title>
+                <v-toolbar-title>Objectifs</v-toolbar-title>
                 <v-spacer></v-spacer>
             </v-toolbar>
             <v-card-text style="overflow-y: auto;">
@@ -554,8 +596,19 @@
                     </thead>
                     <tbody>
                         <tr v-for="emp in interns" :key="emp.id">
-                            <td class="font-weight-medium">{{ emp.name }}</td>
-                            <td v-for="obj in internObjectives" :key="obj.hash" class="text-center">
+                            <td class="font-weight-medium">
+                                {{ emp.name }}
+                                <v-btn size="small" variant="text" color="orange" class="ml-2" @click.stop="openHistory(emp)" icon>
+                                    <v-icon>mdi-history</v-icon>
+                                    <v-tooltip activator="parent" location="top">Historique des simulations</v-tooltip>
+                                </v-btn>
+                            </td>
+                            <td 
+                                v-for="obj in internObjectives" 
+                                :key="obj.hash" 
+                                class="text-center cursor-pointer hover-bg"
+                                @click="openQuickValidation(emp, obj.id)"
+                            >
                                 <v-icon v-if="calculateProgress(emp, obj.id) >= obj.target" color="success">mdi-check-circle</v-icon>
                                 <v-progress-linear
                                     v-else
@@ -588,8 +641,19 @@
                     </thead>
                     <tbody>
                         <tr v-for="emp in residentsList" :key="emp.id">
-                            <td class="font-weight-medium">{{ emp.name }}</td>
-                            <td v-for="obj in residentObjectives" :key="obj.hash" class="text-center">
+                            <td class="font-weight-medium">
+                                {{ emp.name }}
+                                <v-btn size="small" variant="text" color="orange" class="ml-2" @click.stop="openHistory(emp)" icon>
+                                    <v-icon>mdi-history</v-icon>
+                                    <v-tooltip activator="parent" location="top">Historique des simulations</v-tooltip>
+                                </v-btn>
+                            </td>
+                            <td 
+                                v-for="obj in residentObjectives" 
+                                :key="obj.hash" 
+                                class="text-center cursor-pointer hover-bg"
+                                @click="openQuickValidation(emp, obj.id)"
+                            >
                                 <v-icon v-if="calculateProgress(emp, obj.id) >= obj.target" color="success">mdi-check-circle</v-icon>
                                 <v-progress-linear
                                     v-else
@@ -602,6 +666,155 @@
                                         <span class="text-caption text-white">{{ Math.ceil(value) }}%</span>
                                     </template>
                                 </v-progress-linear>
+                            </td>
+                        </tr>
+                    </tbody>
+                </v-table>
+
+                <v-divider class="mb-4" v-if="trainerTrainees.length > 0"></v-divider>
+
+                <div v-if="trainerTrainees.length > 0">
+                    <h2 class="text-h5 mb-3">Formateurs en Formation</h2>
+                    <v-table density="compact">
+                        <thead>
+                            <tr>
+                                <th class="text-left font-weight-bold">Formateur</th>
+                                <th v-for="obj in trainerObjectives" :key="obj.id" class="text-center font-weight-bold" style="white-space: nowrap;">
+                                    {{ obj.title }}
+                                </th>
+                                <th class="text-center font-weight-bold" style="width: 80px;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="emp in trainerTrainees" :key="emp.id">
+                                <td class="font-weight-medium">{{ emp.name }}</td>
+                                <td v-for="obj in trainerObjectives" :key="obj.id" class="text-center" style="min-width: 120px;">
+                                    <v-menu>
+                                        <template v-slot:activator="{ props }">
+                                            <v-chip 
+                                                v-bind="props" 
+                                                :color="getTrainerStatusColor(getTrainerStatus(emp, obj.id))"
+                                                size="small"
+                                                variant="flat"
+                                                class="cursor-pointer"
+                                            >
+                                                {{ getTrainerStatusLabel(getTrainerStatus(emp, obj.id)) }}
+                                            </v-chip>
+                                        </template>
+                                        <v-list density="compact">
+                                            <v-list-item 
+                                                v-for="status in trainerStatuses" 
+                                                :key="status.value"
+                                                @click="setTrainerStatus(emp, obj.id, status.value)"
+                                            >
+                                                <template v-slot:prepend>
+                                                    <v-icon :color="status.color" size="small">{{ status.icon }}</v-icon>
+                                                </template>
+                                                <v-list-item-title>{{ status.label }}</v-list-item-title>
+                                            </v-list-item>
+                                        </v-list>
+                                    </v-menu>
+                                </td>
+                                <td class="text-center">
+                                    <v-btn icon="mdi-delete" size="small" color="error" variant="text" @click="removeTrainerTrainee(emp)"></v-btn>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </v-table>
+                </div>
+
+                <h3 class="text-h6 mb-3 mt-4">Ajouter un formateur en formation</h3>
+                <v-autocomplete
+                    v-model="selectedTrainerTrainee"
+                    :items="availableTrainerTrainees"
+                    item-title="name"
+                    return-object
+                    label="Sélectionner un Formateur"
+                    variant="outlined"
+                    density="compact"
+                    clearable
+                    :custom-filter="customFilter"
+                    class="mb-2"
+                    style="max-width: 400px;"
+                >
+                    <template v-slot:append>
+                        <v-btn color="primary" size="small" :disabled="!selectedTrainerTrainee" @click="addTrainerTrainee">
+                            Ajouter
+                        </v-btn>
+                    </template>
+                </v-autocomplete>
+            </v-card-text>
+        </v-card>
+    </v-dialog>
+
+    <v-dialog v-model="subCompetenciesDialog" max-width="500" z-index="2500">
+        <v-card v-if="currentTrainee">
+            <v-toolbar color="primary" density="compact">
+                <v-toolbar-title class="text-subtitle-1">{{ currentCompetencyTitle }} - {{ currentTrainee.name }}</v-toolbar-title>
+                <v-btn icon="mdi-close" variant="text" @click="subCompetenciesDialog = false"></v-btn>
+            </v-toolbar>
+            <v-card-text class="pa-0">
+                <v-list density="compact">
+                    <v-list-item 
+                        v-for="sub in currentSubCompetencies" 
+                        :key="sub.id"
+                        @click="toggleSubVal(sub.id)"
+                        active-color="primary"
+                    >
+                        <template v-slot:prepend>
+                             <v-icon :color="isSubVal(sub.id) ? 'success' : 'grey-lighten-2'" class="mr-3">
+                                {{ isSubVal(sub.id) ? 'mdi-check-circle' : 'mdi-circle-outline' }}
+                             </v-icon>
+                        </template>
+                        <v-list-item-title>{{ sub.title }}</v-list-item-title>
+                    </v-list-item>
+                </v-list>
+            </v-card-text>
+        </v-card>
+    </v-dialog>
+
+    <v-dialog v-model="simulationHistoryDialog" max-width="1200" z-index="2500">
+        <v-card v-if="historyEmployee">
+            <v-toolbar color="primary" density="compact">
+                <v-toolbar-title class="text-subtitle-1">Historique des Simulations - {{ historyEmployee.name }}</v-toolbar-title>
+                <v-btn icon="mdi-close" variant="text" @click="simulationHistoryDialog = false"></v-btn>
+            </v-toolbar>
+            <v-card-text>
+                <div v-if="!historyEmployee.simulations || historyEmployee.simulations.length === 0" class="text-center pa-4 text-grey">
+                    Aucune simulation enregistrée.
+                </div>
+                <v-table v-else density="compact">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Formateur</th>
+                            <th>Scénarios</th>
+                            <th>Malus</th>
+                            <th>Type</th>
+                            <th>Objectifs</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="sim in historyEmployee.simulations" :key="sim.id">
+                            <td>{{ formatDate(sim.date) }}</td>
+                            <td>{{ sim.trainer }}</td>
+                            <td>
+                                <v-chip v-for="s in sim.scenarios" :key="s" size="x-small" class="mr-1">{{ s }}</v-chip>
+                            </td>
+                            <td>
+                                <v-chip v-for="m in sim.malus" :key="m" size="x-small" color="error" class="mr-1">{{ m }}</v-chip>
+                            </td>
+                            <td>
+                                <v-chip :color="sim.isValidating ? 'success' : 'blue-grey'" size="small" variant="flat">
+                                    {{ sim.isValidating ? 'Validante' : 'Entraînement' }}
+                                </v-chip>
+                            </td>
+                            <td>
+                                <v-chip v-for="obj in sim.objectives" :key="obj" size="x-small" variant="outlined" class="mr-1">{{ obj }}</v-chip>
+                            </td>
+                            <td>
+                                <v-btn icon="mdi-delete" size="small" color="error" variant="text" @click="deleteSimulation(sim)"></v-btn>
                             </td>
                         </tr>
                     </tbody>
@@ -704,6 +917,7 @@ import { trainingCompetencies } from '@/config/training_competencies'
 import { OBJECTIFS } from '@/config/objectives'
 import { EVENTS, SCENARIOS } from '@/config/events'
 import { TRAININGS_CONFIG } from '@/config/trainings'
+import { PENALTIES } from '@/config/penalties'
 
 import { BODY_PARTS } from '@/config/body_parts'
 import { useUserStore } from '@/store/user'
@@ -733,11 +947,14 @@ export default {
     requestDialog: false,
     objectivesDialog: false,
     objectivesTab: 'interne',
+    selectedTrainerTrainee: null,
     scenarioDialog: false,
     selectedScenarioTrainee: null,
     selectedScenarioObjectives: [],
     selectedScenarios: [],
     generatedInjuries: [],
+    selectedMalus: [],
+    availableMalus: PENALTIES,
     newRequest: {
         employee: null,
         training: 'Formation Grenouille'
@@ -765,7 +982,22 @@ export default {
     checkedSteps: [],
     
     imageZoomDialog: false,
-    zoomedImage: ''
+    zoomedImage: '',
+    
+    trainerStatuses: [
+        { value: 'not_seen', label: 'Non vue', color: 'grey', icon: 'mdi-eye-off' },
+        { value: 'seen', label: 'Vue', color: 'blue', icon: 'mdi-eye' },
+        { value: 'in_progress', label: 'En cours', color: 'orange', icon: 'mdi-progress-clock' },
+        { value: 'mastered', label: 'Maîtrisée', color: 'success', icon: 'mdi-check-circle' }
+    ],
+    
+    subCompetenciesDialog: false,
+    currentSubCompetencies: [],
+    currentCompetencyTitle: '',
+    currentTrainee: null,
+
+    simulationHistoryDialog: false,
+    historyEmployee: null,
   }),
 
   computed: {
@@ -850,6 +1082,15 @@ export default {
     },
     residentsList() {
         return this.employees.filter(e => e.role === 'Résident').sort((a,b) => a.name.localeCompare(b.name))
+    },
+    trainerObjectives() {
+        return OBJECTIFS.filter(o => o.id.startsWith('trainer_'))
+    },
+    trainerTrainees() {
+        return this.employees.filter(e => e.isTrainerTrainee).sort((a,b) => a.name.localeCompare(b.name))
+    },
+    availableTrainerTrainees() {
+        return this.employees.filter(e => e.specialties && e.specialties.includes('formateur') && !e.isTrainerTrainee).sort((a,b) => a.name.localeCompare(b.name))
     },
     availableObjectives() {
         if (!this.selectedScenarioTrainee) return []
@@ -1003,6 +1244,77 @@ export default {
         this.selectedScenarioObjectives = []
         this.selectedScenarios = []
         this.generatedInjuries = []
+        this.selectedMalus = []
+    },
+
+    getTrainerStatus(employee, objectiveId) {
+        if (!employee.competencyProgress) return 'not_seen'
+        return employee.competencyProgress[objectiveId] || 'not_seen'
+    },
+
+    async setTrainerStatus(employee, objectiveId, status) {
+        if (!employee.competencyProgress) employee.competencyProgress = {}
+        employee.competencyProgress[objectiveId] = status
+        await employee.save()
+    },
+
+    getTrainerStatusLabel(status) {
+        const found = this.trainerStatuses.find(s => s.value === status)
+        return found ? found.label : 'Non vue'
+    },
+
+    getTrainerStatusColor(status) {
+        const found = this.trainerStatuses.find(s => s.value === status)
+        return found ? found.color : 'grey'
+    },
+
+    openQuickValidation(employee, objectiveId) {
+        const comp = this.findCompetencyById(objectiveId)
+        if (!comp || !comp.subCompetencies || comp.subCompetencies.length === 0) return
+
+        this.currentTrainee = employee
+        this.currentCompetencyTitle = comp.title
+        this.currentSubCompetencies = comp.subCompetencies
+        this.subCompetenciesDialog = true
+    },
+
+    isSubVal(subId) {
+        if (!this.currentTrainee || !this.currentTrainee.competencyProgress) return false
+        return this.currentTrainee.competencyProgress[subId] === 'validated'
+    },
+
+    async toggleSubVal(subId) {
+        if (!this.currentTrainee) return
+        if (!this.currentTrainee.competencyProgress) this.currentTrainee.competencyProgress = {}
+
+        if (this.isSubVal(subId)) {
+            delete this.currentTrainee.competencyProgress[subId]
+        } else {
+            this.currentTrainee.competencyProgress[subId] = 'validated'
+        }
+        await this.currentTrainee.save()
+    },
+
+    async addTrainerTrainee() {
+        if (!this.selectedTrainerTrainee) return
+        this.selectedTrainerTrainee.isTrainerTrainee = true
+        await this.selectedTrainerTrainee.save()
+        this.selectedTrainerTrainee = null
+    },
+
+    async removeTrainerTrainee(employee) {
+        const result = await Swal.fire({
+            icon: 'warning',
+            title: 'Retirer le formateur ?',
+            text: `Voulez-vous retirer ${employee.name} de la formation de formateur ?`,
+            showCancelButton: true,
+            confirmButtonText: 'Retirer',
+            cancelButtonText: 'Annuler'
+        })
+        if (result.isConfirmed) {
+            employee.isTrainerTrainee = false
+            await employee.save()
+        }
     },
 
     generateInjuries() {
@@ -1029,6 +1341,67 @@ export default {
         }
 
         this.generatedInjuries = injuries
+    },
+
+    async pinSimulation(isValidating) {
+        if (!this.selectedScenarioTrainee) return
+        
+        const simulation = {
+            id: Date.now().toString(),
+            date: new Date().toISOString(),
+            trainer: this.userStore.profile.name || 'Inconnu',
+            scenarios: [...this.selectedScenarios],
+            injuries: [...this.generatedInjuries],
+            malus: [...this.selectedMalus],
+            isValidating: isValidating,
+            objectives: this.selectedScenarioObjectives.map(o => o.title)
+        }
+
+        if (!this.selectedScenarioTrainee.simulations) this.selectedScenarioTrainee.simulations = []
+        this.selectedScenarioTrainee.simulations.push(simulation)
+        this.selectedScenarioTrainee.simulations.sort((a,b) => new Date(b.date) - new Date(a.date))
+
+        await this.selectedScenarioTrainee.save()
+
+        Swal.fire({
+            icon: 'success',
+            title: 'Simulation épinglée',
+            text: isValidating ? 'Enregistrée comme Validante' : 'Enregistrée comme Entraînement',
+            showConfirmButton: false,
+            timer: 1500
+        })
+    },
+
+    async deleteSimulation(simulation) {
+        const result = await Swal.fire({
+            title: 'Supprimer ?',
+            text: "Cette action est irréversible.",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Oui, supprimer',
+            cancelButtonText: 'Annuler',
+            confirmButtonColor: '#d33'
+        })
+
+        if (result.isConfirmed) {
+            const index = this.historyEmployee.simulations.indexOf(simulation)
+            if (index > -1) {
+                 this.historyEmployee.simulations.splice(index, 1)
+                 await this.historyEmployee.save()
+                 
+                 Swal.fire({
+                    icon: 'success',
+                    title: 'Supprimée',
+                    showConfirmButton: false,
+                    timer: 1000
+                 })
+            }
+        }
+    },
+
+    openHistory(employee) {
+        this.historyEmployee = employee
+        this.simulationHistoryDialog = true
     },
 
     pickRandomSimulation() {

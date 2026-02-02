@@ -166,4 +166,25 @@ export const OBJECTIFS = [
         rank: "Interne",
         target: 33
     },
+
+    {
+        id: 'trainer_integration',
+        title: "Intégration"
+    },
+    {
+        id: 'trainer_qa',
+        title: "Q&A"
+    },
+    {
+        id: 'trainer_resident',
+        title: "Passage résident"
+    },
+    {
+        id: 'trainer_titulaire',
+        title: "Passage titulaire"
+    },
+    {
+        id: 'trainer_simulation',
+        title: "Simulation"
+    },
 ]

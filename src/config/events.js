@@ -2,7 +2,7 @@ export const SCENARIOS = {
     "AVP": ["AVP moto sans casque", "AVP moto avec casque", "AVP pare brise", "AVP piéton sur la freeway", "Chute à vélo"],
     "Animaux": ["Morsure puma", "Morsure requin", "Morsure chien"],
     "Explosions": ["Explosion de station service", "Explosion de véhicule", "Crash d'avion", "Tir de lance-missiles", "Explosion d'hélico"],
-    "Brulures": ["Brulure dans une flaque d'essence", "Brulure dans un feu de camp", "Brulure avec présence de particules"],
+    "Brulures": ["Brulure dans une flaque d'essence", "Brulure dans un feu de camp", "Brulure avec présence de particules", "Présence de particules sans brulures"],
     "BPB": ["BPB foie", "BPB poumon", "BPB sans dégat", "BPB avec artère touchée"],
     "Noyades": ["Accident de jetski", "Noyade", "Accident de sous-marin", "Accident de pêche"],
     "Chutes +15m": ["Tombé d'un gratte ciel", "Accident de parachute", "Tombé d'une montagne", "Tombé d'une échelle"],

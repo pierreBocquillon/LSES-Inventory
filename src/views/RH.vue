@@ -1386,7 +1386,15 @@ export default {
             this.editedItem.helicopterTrainingDate,
             this.editedItem.helicopterTrainingReimbursed,
             this.editedItem.trainingRequests,
-            promReq
+            promReq,
+            this.editedItem.rankPromotionRequest,
+            this.editedItem.validatedSubCompetencies,
+            this.editedItem.competencyProgress,
+            this.editedItem.lastFollowUpDate,
+            this.editedItem.simpleFault,
+            this.editedItem.suspension,
+            this.editedItem.isTrainerTrainee,
+            this.editedItem.simulations
           )
         } else {
           // Creating new
