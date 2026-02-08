@@ -759,14 +759,18 @@
             </v-expand-transition>
           </v-container>
         </v-card-text>
-        <v-card-actions>
+
+        <v-card-actions class="d-flex flex-column align-center">
+          <div class="d-flex mb-2">
+            <v-btn color="grey" variant="text" @click="candidatureFormDialog = false">Annuler</v-btn>
+            <v-btn color="deep-purple" variant="text" @click="saveCandidature">Sauvegarder</v-btn>
+          </div>
           <template v-if="editedCandidature.status === 'Entretien en cours d\'analyse'">
-            <v-btn color="error" variant="text" prepend-icon="mdi-close" @click="finalizeCandidature('reject')">Refuser</v-btn>
-            <v-btn color="success" variant="text" prepend-icon="mdi-check" @click="finalizeCandidature('accept')">Valider</v-btn>
+            <div class="d-flex">
+              <v-btn color="error" variant="text" prepend-icon="mdi-close" @click="confirmFinalize('reject')">Refuser</v-btn>
+              <v-btn color="success" variant="text" prepend-icon="mdi-check" @click="confirmFinalize('accept')">Embaucher</v-btn>
+            </div>
           </template>
-          <v-spacer></v-spacer>
-          <v-btn color="grey" variant="text" @click="candidatureFormDialog = false">Annuler</v-btn>
-          <v-btn color="deep-purple" variant="text" @click="saveCandidature">Sauvegarder</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -1862,10 +1866,35 @@ export default {
       }
     },
 
+    async confirmFinalize(decision) {
+      const actionText = decision === 'accept' ? 'Embaucher' : 'Refuser'
+      const confirmText = decision === 'accept' ? 'Oui, embaucher' : 'Oui, refuser'
+      const icon = decision === 'accept' ? 'question' : 'warning'
+      const confirmColor = decision === 'accept' ? '#4CAF50' : '#d33'
+
+      Swal.fire({
+        title: `${actionText} le candidat ?`,
+        text: `Êtes-vous sûr de vouloir ${actionText.toLowerCase()} ${this.editedCandidature.name} ?`,
+        icon: icon,
+        showCancelButton: true,
+        confirmButtonText: confirmText,
+        cancelButtonText: 'Annuler',
+        confirmButtonColor: confirmColor,
+        focusConfirm: false
+      }).then((result) => {
+        if (result.isConfirmed) {
+          this.finalizeCandidature(decision)
+        }
+      })
+    },
+
     async finalizeCandidature(decision) {
       if (decision === 'accept') {
-        this.editedCandidature.status = 'Recrutement planifié'
-        await this.createEmployeeFromCandidature(this.editedCandidature)
+        const created = await this.createEmployeeFromCandidature(this.editedCandidature)
+        if (created) {
+          this.editedCandidature.status = 'Recrutement planifié'
+        } else
+          return
       } else {
         this.editedCandidature.status = 'Refusé'
       }
@@ -1873,6 +1902,16 @@ export default {
     },
 
     async createEmployeeFromCandidature(candidature) {
+      const exists = this.employees.some(e => e.name.toLowerCase() === candidature.name.toLowerCase())
+      if (exists) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'Déjà employé',
+          text: `${candidature.name} est déjà dans la liste des employés !`,
+        })
+        return false
+      }
+
       const today = new Date().toISOString().split('T')[0]
 
       const newEmployee = new Employee(
@@ -1904,6 +1943,7 @@ export default {
           showConfirmButton: false,
           timer: 3000
         })
+        return true
       } catch (e) {
         console.error('Erreur lors de la création de l\'employé:', e)
         Swal.fire({
@@ -1911,6 +1951,7 @@ export default {
           title: 'Erreur',
           text: "L'employé n'a pas pu être créé automatiquement."
         })
+        return false
       }
     },
 
