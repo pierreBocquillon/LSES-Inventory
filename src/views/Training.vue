@@ -922,6 +922,7 @@ import { PENALTIES } from '@/config/penalties'
 import { BODY_PARTS } from '@/config/body_parts'
 import { useUserStore } from '@/store/user'
 import Swal from 'sweetalert2/dist/sweetalert2.js'
+import logger from '@/functions/logger.js'
 
 export default {
   name: 'Training',
@@ -1488,6 +1489,7 @@ export default {
                     showConfirmButton: false,
                     timer: 3000
                 })
+                logger.log(this.userStore.profile.id, 'FORMATION', `Ajout de la formation "${this.newRequest.training}" pour ${this.newRequest.employee.name}`)
             } else {
                  Swal.fire({
                     icon: 'info',
@@ -1522,6 +1524,7 @@ export default {
                 showConfirmButton: false,
                 timer: 3000
             })
+            logger.log(this.userStore.profile.id, 'FORMATION', `Suppression de la formation "${req.training}" pour ${req.name}`)
         } catch (e) {
             console.error(e)
         }

@@ -166,6 +166,7 @@ import permissions from '@/config/permissions'
 
 import { initNotifManager, stopNotifManager, notifState, storagesOutdated, garageNotif, alerts, rhNotif } from '@/functions/nofifManager.js'
 import { TRAININGS_CONFIG } from '@/config/trainings'
+import logger from '@/functions/logger.js'
 
 export default {
   props : [],
@@ -340,6 +341,7 @@ export default {
                       showConfirmButton: false,
                       timer: 3000
                   })
+                  logger.log(this.userStore.profile.id, 'FORMATION', `Ajout de la formation "${this.newRequest.training}" pour ${this.newRequest.employee.name}`)
               } else {
                     Swal.fire({
                       icon: 'info',

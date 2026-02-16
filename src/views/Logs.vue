@@ -28,6 +28,8 @@
                 {{ item.raw.name }}
               </template>
             </v-select>
+            
+            <v-select class="my-2" color="primary" base-color="primary" variant="outlined" hide-details :items="types" v-model="filter.type" label="Type" clearable></v-select>
 
             <v-text-field class="my-2" color="primary" base-color="primary" variant="outlined" hide-details v-model="filter.search" label="Recherche" clearable> </v-text-field>
 
@@ -82,9 +84,19 @@ export default {
       profiles: [],
       filter: {
         profile: null,
+        type: null,
         search: "",
       },
+      types: [],
       timeout: null,
+    }
+  },
+  watch: {
+    filter: {
+      handler() {
+        this.getLogs()
+      },
+      deep: true
     }
   },
   async mounted() {
@@ -119,6 +131,12 @@ export default {
 
       if (this.filter.profile) {
         filtered = filtered.filter(log => log.user == this.filter.profile)
+      }
+
+      this.types = [...new Set(this.logs.map(log => log.type))].sort()
+
+      if (this.filter.type) {
+        filtered = filtered.filter(log => log.type == this.filter.type)
       }
 
       if (this.filter.search && this.filter.search.trim() != "") {
