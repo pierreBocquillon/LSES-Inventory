@@ -7,9 +7,9 @@
       </v-btn>
     </div>
 
-    <h3 class="my-5 text-center font-weight-regular text-success" v-if="deltaTime < 24">🚑 Derniere répa flotte : {{ new Date(lastSaveDate?.date).toLocaleString().slice(0, 16) }}</h3>
-    <h3 class="my-5 text-center font-weight-regular text-primary" v-else-if="deltaTime < 36">🚑 Derniere répa flotte : {{ new Date(lastSaveDate?.date).toLocaleString().slice(0, 16) }}</h3>
-    <h3 class="my-5 text-center font-weight-regular text-error" v-else>🚑 Derniere répa flotte : {{ new Date(lastSaveDate?.date).toLocaleString().slice(0, 16) }}</h3>
+    <h3 class="my-5 text-center font-weight-regular text-success" v-if="deltaTime < 24">🚑 Dernière réparation flotte : {{ new Date(lastSaveDate?.date).toLocaleString().slice(0, 16) }}</h3>
+    <h3 class="my-5 text-center font-weight-regular text-primary" v-else-if="deltaTime < 36">🚑 Dernière réparation flotte : {{ new Date(lastSaveDate?.date).toLocaleString().slice(0, 16) }}</h3>
+    <h3 class="my-5 text-center font-weight-regular text-error" v-else>🚑 Dernière réparation flotte : {{ new Date(lastSaveDate?.date).toLocaleString().slice(0, 16) }}</h3>
 
     <v-data-table :headers="headers" :items="vehicles" items-per-page="-1" no-data-text="Aucun véhicule">
       <template v-slot:bottom />
@@ -20,7 +20,7 @@
             <template v-slot:activator="{ props }">
               <v-icon v-bind="props" color="error">mdi-hazard-lights</v-icon>
             </template>
-            <h4>Attention ce vehicule doit être réparé avant utilisation</h4>
+            <h4>Attention ce véhicule doit être réparé avant utilisation</h4>
           </v-tooltip>
           <v-tooltip location="top" content-class="bg-background" text="string" v-if="item.insurance">
             <template v-slot:activator="{ props }">
@@ -32,14 +32,14 @@
             <template v-slot:activator="{ props }">
               <v-icon v-bind="props" color="warning">mdi-tow-truck</v-icon>
             </template>
-            <h4>Ce vehicule est en gardiennage/fourrière</h4>
+            <h4>Ce véhicule est en gardiennage/fourrière</h4>
           </v-tooltip>
 
           <v-tooltip location="top" content-class="bg-background" text="string" v-else-if="!item.hideAlert && new Date().getTime() - parseInt(item.lastRepairDate) > (24 * 60 * 60 * 1000)">
             <template v-slot:activator="{ props }">
               <v-icon v-bind="props" color="error">mdi-alert-octagon-outline</v-icon>
             </template>
-            <h4>Attention ce vehicule n'as pas etait réparé depuis le {{ new Date(parseInt(item.lastRepairDate)).toLocaleString().slice(0, 16) }}</h4>
+            <h4>Attention ce véhicule n'a pas été réparé depuis le {{ new Date(parseInt(item.lastRepairDate)).toLocaleString().slice(0, 16) }}</h4>
           </v-tooltip>
         </h3>
       </template>
@@ -85,7 +85,7 @@
           <template v-slot:activator="{ props }">
           <v-btn v-bind="props" color="cyan" variant="text" icon @click="repairNow(item)"><v-icon>mdi-tools</v-icon></v-btn>
           </template>
-          <h4>Viens d'etre réparé</h4>
+          <h4>Vient d'être réparé</h4>
         </v-tooltip>
         
         <v-tooltip location="top" content-class="bg-background" text="string" v-if="!item.underGuard && !item.insurance && !item.needRepair">
