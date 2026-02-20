@@ -1392,7 +1392,7 @@ export default {
         if (!this.currentTrainee.competencyProgress) this.currentTrainee.competencyProgress = {}
 
         if (this.isSubVal(subId)) {
-            delete this.currentTrainee.competencyProgress[subId]
+            this.currentTrainee.competencyProgress[subId] = null
         } else {
             this.currentTrainee.competencyProgress[subId] = 'validated'
         }
@@ -2006,7 +2006,7 @@ export default {
         if (!this.selectedTrainee.competencyProgress) this.selectedTrainee.competencyProgress = {}
 
         if (this.isCompetencySeen(compId)) {
-            delete this.selectedTrainee.competencyProgress[compId]
+            this.selectedTrainee.competencyProgress[compId] = null
         } else {
             this.selectedTrainee.competencyProgress[compId] = 'seen'
         }
@@ -2022,7 +2022,7 @@ export default {
 
         const isVal = this.isSubCompetencyValidated(subId)
         if (isVal) {
-             delete this.selectedTrainee.competencyProgress[subId]
+             this.selectedTrainee.competencyProgress[subId] = null
         } else {
              this.selectedTrainee.competencyProgress[subId] = 'validated'
         }
