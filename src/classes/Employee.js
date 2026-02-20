@@ -10,12 +10,12 @@ function docToInstance(document) {
     if (data.chiefSpecialty && !chiefSpecs.length) {
         chiefSpecs = [data.chiefSpecialty]
     }
-    return data ? new Employee(document.id, data.name, data.email, data.role, data.sex, data.phone, data.specialties, chiefSpecs, data.birthDate, data.arrivalDate, data.cdiDate, data.lastPromotionDate, data.medicalDegreeDate, data.helicopterTrainingDate, data.helicopterTrainingReimbursed, data.trainingRequests, data.promotionRequest, data.rankPromotionRequest, data.validatedSubCompetencies, data.competencyProgress, data.lastFollowUpDate, data.simpleFault, data.suspension, data.isTrainerTrainee, data.simulations, data.isRHTrainee) : null
+    return data ? new Employee(document.id, data.name, data.email, data.role, data.sex, data.phone, data.specialties, chiefSpecs, data.birthDate, data.arrivalDate, data.cdiDate, data.lastPromotionDate, data.medicalDegreeDate, data.helicopterTrainingDate, data.helicopterTrainingReimbursed, data.trainingRequests, data.promotionRequest, data.rankPromotionRequest, data.validatedSubCompetencies, data.competencyProgress, data.lastFollowUpDate, data.simpleFault, data.suspension, data.isTrainerTrainee, data.simulations, data.isRHTrainee, data.validatedTrainings) : null
 }
 
 
 class Employee {
-    constructor(id, name, email, role, sex, phone, specialties, chiefSpecialties, birthDate, arrivalDate, cdiDate, lastPromotionDate, medicalDegreeDate, helicopterTrainingDate, helicopterTrainingReimbursed, trainingRequests, promotionRequest, rankPromotionRequest, validatedSubCompetencies, competencyProgress, lastFollowUpDate, simpleFault, suspension, isTrainerTrainee, simulations, isRHTrainee) {
+    constructor(id, name, email, role, sex, phone, specialties, chiefSpecialties, birthDate, arrivalDate, cdiDate, lastPromotionDate, medicalDegreeDate, helicopterTrainingDate, helicopterTrainingReimbursed, trainingRequests, promotionRequest, rankPromotionRequest, validatedSubCompetencies, competencyProgress, lastFollowUpDate, simpleFault, suspension, isTrainerTrainee, simulations, isRHTrainee, validatedTrainings) {
         this.id = id
         this.name = name
         this.email = email
@@ -47,6 +47,7 @@ class Employee {
         this.isTrainerTrainee = isTrainerTrainee || false
         this.simulations = simulations || []
         this.isRHTrainee = isRHTrainee || false
+        this.validatedTrainings = validatedTrainings || []
     }
 
     static listenAll(callback) {
@@ -84,7 +85,8 @@ class Employee {
             suspension: this.suspension || null,
             isTrainerTrainee: this.isTrainerTrainee || false,
             simulations: this.simulations || [],
-            isRHTrainee: this.isRHTrainee || false
+            isRHTrainee: this.isRHTrainee || false,
+            validatedTrainings: this.validatedTrainings || []
         }
 
         if (this.id) {

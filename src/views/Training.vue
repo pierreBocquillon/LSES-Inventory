@@ -107,8 +107,11 @@
        <v-btn color="orange-darken-2" prepend-icon="mdi-target" class="ml-2" @click="objectivesDialog = true" v-if="!isRestrictedTrainer">
         Objectifs
       </v-btn>
-       <v-btn color="teal" prepend-icon="mdi-format-list-bulleted" class="ml-2" @click="openScenarioDialog" v-if="!isRestrictedTrainer">
+       <v-btn color="teal" prepend-icon="mdi-format-list-bulleted" class="ml-2 mr-2" @click="openScenarioDialog" v-if="!isRestrictedTrainer">
         Voir les simulations
+      </v-btn>
+      <v-btn color="blue" prepend-icon="mdi-account-group" @click="allValidationsDialog = true" v-if="!isRestrictedTrainer">
+        Validations
       </v-btn>
     </div>
 
@@ -308,6 +311,25 @@
                 <v-spacer></v-spacer>
                 <v-btn color="grey" variant="text" @click="followUpDialog = false">Annuler</v-btn>
                 <v-btn color="primary" variant="text" @click="saveFollowUpDate">Enregistrer</v-btn>
+            </v-card-actions>
+        </v-card>
+    </v-dialog>
+
+    <v-dialog v-model="addTrainingDialog" max-width="400px">
+        <v-card v-if="selectedTrainingEmployee">
+            <v-card-title class="bg-primary text-white">Validation - {{ selectedTrainingEmployee.name }}</v-card-title>
+            <v-card-text class="pt-4">
+                <v-select
+                    v-model="newValidatedTraining"
+                    :items="availableTrainingsToAdd"
+                    label="Formation"
+                    variant="outlined"
+                ></v-select>
+            </v-card-text>
+            <v-card-actions>
+                <v-spacer></v-spacer>
+                <v-btn color="grey" variant="text" @click="addTrainingDialog = false">Annuler</v-btn>
+                <v-btn color="primary" variant="text" @click="saveValidatedTraining" :disabled="!newValidatedTraining">Ajouter</v-btn>
             </v-card-actions>
         </v-card>
     </v-dialog>
@@ -822,6 +844,58 @@
             </v-card-text>
         </v-card>
     </v-dialog>
+
+    <v-dialog v-model="allValidationsDialog" max-width="1000px" scrollable>
+        <v-card>
+            <v-card-title class="bg-blue text-white d-flex align-center">
+                <v-icon start>mdi-account-group</v-icon>
+                Validations
+                <v-spacer></v-spacer>
+                <v-btn icon="mdi-close" variant="text" @click="allValidationsDialog = false"></v-btn>
+            </v-card-title>
+            <v-card-text class="pa-4" style="max-height: 70vh;">
+                <v-text-field
+                    v-model="allValidationsSearch"
+                    prepend-inner-icon="mdi-magnify"
+                    label="Rechercher un membre"
+                    variant="outlined"
+                    density="compact"
+                    class="mb-4"
+                    hide-details
+                ></v-text-field>
+                <v-data-table
+                    :headers="allValidationsHeaders"
+                    :items="employees"
+                    :search="allValidationsSearch"
+                    :sort-by="[{ key: 'role', order: 'asc' }]"
+                    density="compact"
+                >
+                    <template v-slot:item.role="{ item }">
+                        <v-chip :color="getRoleColor(item.role)" size="small">{{ item.role }}</v-chip>
+                    </template>
+                    <template v-slot:item.validatedTrainings="{ item }">
+                        <div class="d-flex align-center justify-center gap-1">
+                            <v-chip 
+                                v-for="training in (item.validatedTrainings || [])" 
+                                :key="training" 
+                                :color="getTrainingColor(training)" 
+                                size="small"
+                                variant="flat"
+                                class="cursor-pointer"
+                                @click="removeValidatedTraining(item, training)"
+                            >
+                                {{ getTrainingShortName(training) }}
+                                <v-tooltip activator="parent" location="top">
+                                    {{ training }} (Cliquer pour retirer)
+                                </v-tooltip>
+                            </v-chip>
+                            <v-btn icon="mdi-plus" size="x-small" variant="text" color="primary" @click="openAddTrainingDialog(item)"></v-btn>
+                        </div>
+                    </template>
+                </v-data-table>
+            </v-card-text>
+        </v-card>
+    </v-dialog>
     
     <v-card class="flex-grow-1" v-if="!isRestrictedTrainer">
       <v-data-table
@@ -930,6 +1004,7 @@ export default {
     userStore: useUserStore(),
     search: '',
     employees: [],
+    showAllEmployees: false,
     specialties: [],
     guides: [],
     unsub: [],
@@ -970,6 +1045,10 @@ export default {
     selectedFollowUpEmployee: null,
     newFollowUpDate: null,
 
+    addTrainingDialog: false,
+    selectedTrainingEmployee: null,
+    newValidatedTraining: null,
+
     // Guides logic
     guideDialog: false,
     currentGuide: null,
@@ -999,6 +1078,22 @@ export default {
 
     simulationHistoryDialog: false,
     historyEmployee: null,
+
+    allValidationsDialog: false,
+    allValidationsSearch: '',
+
+    allValidationsHeaders: [
+      { title: 'Nom', key: 'name' },
+      { 
+        title: 'Rôle', 
+        key: 'role',
+        sort: (a, b) => {
+          const roleOrder = ['Directeur', 'Directeur Adjoint', 'Assistant RH', 'Responsable de Service', 'Spécialiste', 'Titulaire', 'Résident', 'Interne']
+          return roleOrder.indexOf(a) - roleOrder.indexOf(b)
+        }
+      },
+      { title: 'Formations Validées', key: 'validatedTrainings', sortable: false, align: 'center' }
+    ]
   }),
 
   computed: {
@@ -1140,6 +1235,13 @@ export default {
         const allTrainings = TRAININGS_CONFIG.map(t => t.title)
         if (!emp.trainingRequests) return allTrainings
         return allTrainings.filter(t => !emp.trainingRequests.includes(t))
+    },
+    availableTrainingsToAdd() {
+        if (!this.selectedTrainingEmployee) return []
+        const emp = this.selectedTrainingEmployee
+        const allowedTrainings = ['Formation Grenouille', 'Formation Conduite']
+        if (!emp.validatedTrainings) return allowedTrainings
+        return allowedTrainings.filter(t => !emp.validatedTrainings.includes(t))
     },
   },
 
@@ -1513,26 +1615,125 @@ export default {
 
     async removeRequest(req) {
         try {
+            const result = await Swal.fire({
+                title: 'Traiter la demande',
+                text: `Voulez-vous valider la formation "${req.training}" pour ${req.name} ou simplement la supprimer ?`,
+                icon: 'question',
+                showCancelButton: true,
+                showDenyButton: true,
+                confirmButtonText: 'Valider',
+                denyButtonText: 'Refuser / Supprimer',
+                cancelButtonText: 'Annuler'
+            })
+
+            if (result.isDismissed) return;
+
             const emp = req.employeeObj
             emp.trainingRequests = emp.trainingRequests.filter(r => r !== req.training)
+
+            if (result.isConfirmed) {
+                if (!emp.validatedTrainings) emp.validatedTrainings = []
+                if (!emp.validatedTrainings.includes(req.training)) {
+                    emp.validatedTrainings.push(req.training)
+                }
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Formation validée',
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 3000
+                })
+                logger.log(this.userStore.profile.id, 'FORMATION', `Validation de la formation "${req.training}" pour ${req.name}`)
+            } else if (result.isDenied) {
+                 Swal.fire({
+                    icon: 'info',
+                    title: 'Demande supprimée',
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 3000
+                })
+                logger.log(this.userStore.profile.id, 'FORMATION', `Suppression de la formation "${req.training}" pour ${req.name}`)
+            }
             await emp.save()
-             Swal.fire({
-                icon: 'success',
-                title: 'Demande supprimée',
-                toast: true,
-                position: 'top-end',
-                showConfirmButton: false,
-                timer: 3000
-            })
-            logger.log(this.userStore.profile.id, 'FORMATION', `Suppression de la formation "${req.training}" pour ${req.name}`)
         } catch (e) {
             console.error(e)
         }
     },
 
+    getRoleColor(role) {
+      if (['Directeur', 'Directeur Adjoint'].includes(role)) return 'red'
+      if (['Responsable de Service'].includes(role)) return 'purple'
+      if (['Assistant RH'].includes(role)) return 'orange'
+      if (['Résident', 'Titulaire', 'Spécialiste'].includes(role)) return 'blue'
+      return 'green'
+    },
+
     getTrainingColor(training) {
         const config = TRAININGS_CONFIG.find(t => t.title === training)
         return config ? config.color : 'primary'
+    },
+    getTrainingShortName(training) {
+        if (training === 'Formation Grenouille') return '🐸'
+        if (training === 'Formation Conduite') return '🚗'
+        if (training === 'Formation Off Road') return '⛰️'
+        if (training === 'Formation Médicoptère') return '🚁'
+        return training
+    },
+
+    openAddTrainingDialog(employee) {
+        this.selectedTrainingEmployee = employee
+        this.newValidatedTraining = null
+        this.addTrainingDialog = true
+    },
+
+    async saveValidatedTraining() {
+        if (!this.selectedTrainingEmployee || !this.newValidatedTraining) return
+
+        if (!this.selectedTrainingEmployee.validatedTrainings) {
+            this.selectedTrainingEmployee.validatedTrainings = []
+        }
+        
+        if (!this.selectedTrainingEmployee.validatedTrainings.includes(this.newValidatedTraining)) {
+            this.selectedTrainingEmployee.validatedTrainings.push(this.newValidatedTraining)
+            await this.selectedTrainingEmployee.save()
+        }
+
+        this.addTrainingDialog = false
+        Swal.fire({
+            icon: 'success',
+            title: 'Formation ajoutée',
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 2000
+        })
+    },
+
+    async removeValidatedTraining(employee, training) {
+        const result = await Swal.fire({
+            title: 'Retirer la formation ?',
+            text: `Voulez-vous retirer "${training}" à ${employee.name} ?`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Oui, retirer',
+            cancelButtonText: 'Annuler',
+            confirmButtonColor: '#d33'
+        })
+
+        if (result.isConfirmed) {
+            employee.validatedTrainings = employee.validatedTrainings.filter(t => t !== training)
+            await employee.save()
+            Swal.fire({
+                icon: 'success',
+                title: 'Formation retirée',
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 2000
+            })
+        }
     },
     getNextRole(currentRole) {
         const roles = ['Interne', 'Résident', 'Titulaire', 'Spécialiste', 'Responsable de Service', 'Assistant RH', 'Directeur Adjoint', 'Directeur']
