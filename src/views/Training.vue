@@ -868,6 +868,7 @@
                     :items="employees"
                     :search="allValidationsSearch"
                     :sort-by="[{ key: 'role', order: 'asc' }]"
+                    :items-per-page="40"
                     density="compact"
                 >
                     <template v-slot:item.role="{ item }">
@@ -1695,8 +1696,19 @@ export default {
             this.selectedTrainingEmployee.validatedTrainings = []
         }
         
+        let needsSave = false
+
         if (!this.selectedTrainingEmployee.validatedTrainings.includes(this.newValidatedTraining)) {
             this.selectedTrainingEmployee.validatedTrainings.push(this.newValidatedTraining)
+            needsSave = true
+        }
+
+        if (this.selectedTrainingEmployee.trainingRequests && this.selectedTrainingEmployee.trainingRequests.includes(this.newValidatedTraining)) {
+            this.selectedTrainingEmployee.trainingRequests = this.selectedTrainingEmployee.trainingRequests.filter(r => r !== this.newValidatedTraining)
+            needsSave = true
+        }
+
+        if (needsSave) {
             await this.selectedTrainingEmployee.save()
         }
 
