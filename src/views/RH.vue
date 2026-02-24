@@ -442,14 +442,23 @@
                 <v-btn color="primary" icon="mdi-plus" @click="addSpecialty"></v-btn>
               </v-col>
             </v-row>
+            <v-row>
+              <v-col cols="12">
+                <v-checkbox v-model="newSpecialty.canTakeAppointments" label="Peut prendre des RDV" density="compact" hide-details></v-checkbox>
+              </v-col>
+            </v-row>
             <v-divider class="my-4"></v-divider>
             <v-list density="compact">
               <v-list-item v-for="spec in specialties" :key="spec.id">
                 <template v-slot:prepend>
                   <span class="text-h6 mr-4">{{ spec.icon }}</span>
                 </template>
-                <v-list-item-title>{{ spec.name }}</v-list-item-title>
+                <v-list-item-title>
+                  {{ spec.name }}
+                  <v-chip v-if="spec.canTakeAppointments" size="x-small" color="success" class="ml-2">Gère RDV</v-chip>
+                </v-list-item-title>
                 <template v-slot:append>
+                  <v-btn icon="mdi-calendar-check" size="small" variant="text" :color="spec.canTakeAppointments ? 'success' : 'grey'" class="mr-2" @click="toggleSpecialtyAppointments(spec)" title="Activer/Désactiver RDV"></v-btn>
                   <v-btn icon="mdi-delete" size="small" variant="text" color="error" @click="removeSpecialty(spec)"></v-btn>
                 </template>
               </v-list-item>
@@ -1672,12 +1681,22 @@ export default {
     async addSpecialty() {
       if (!this.newSpecialty.name || !this.newSpecialty.icon) return
       try {
-        const spec = new Specialty(null, this.newSpecialty.name, this.newSpecialty.icon)
+        const spec = new Specialty(null, this.newSpecialty.name, this.newSpecialty.icon, null, this.newSpecialty.canTakeAppointments)
         await spec.save()
-        this.newSpecialty = { name: '', icon: '' }
+        this.newSpecialty = { name: '', icon: '', canTakeAppointments: false }
       } catch (e) {
         console.error(e)
         Swal.fire({ icon: 'error', title: 'Erreur', text: "Erreur lors de l'ajout" })
+      }
+    },
+
+    async toggleSpecialtyAppointments(spec) {
+      try {
+        const updatedSpec = new Specialty(spec.id, spec.name, spec.icon, spec.value, !spec.canTakeAppointments)
+        await updatedSpec.save()
+      } catch (e) {
+        console.error(e)
+        Swal.fire({ icon: 'error', title: 'Erreur', text: "Erreur lors de la modification" })
       }
     },
 

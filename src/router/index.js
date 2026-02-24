@@ -174,6 +174,16 @@ const routes = [
       permissions: []
     }
   },
+  {
+    name: 'Rendez-vous',
+    path: '/appointments',
+    component: () => import("@/views/Appointments.vue"),
+    meta: {
+      needAccount: true,
+      showNav: true,
+      permissions: []
+    }
+  },
 ]
 
 const router = createRouter({

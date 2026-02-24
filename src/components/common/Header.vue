@@ -70,6 +70,8 @@ import navItems from '@/config/navItems.js'
 import { initNotifManager, stopNotifManager, notifState, storagesOutdated, garageNotif, alerts, rhNotif } from '@/functions/nofifManager.js'
 
 import logger from '../../functions/logger'
+import Employee from '@/classes/Employee.js'
+import Specialty from '@/classes/Specialty.js'
 
 export default {
   data() {
@@ -81,7 +83,19 @@ export default {
       oldPassword: '',
       newPasswordA: '',
       newPasswordB: '',
+      employees: [],
+      specialties: [],
+      unsubEmployee: null,
+      unsubSpecialties: null,
     }
+  },
+  mounted() {
+    this.unsubEmployee = Employee.listenAll(data => {
+      this.employees = data
+    })
+    this.unsubSpecialties = Specialty.listenAll(data => {
+      this.specialties = data
+    })
   },
   created() {
     initNotifManager()
@@ -128,6 +142,21 @@ export default {
           if(tmp_item.permissions.length <= 0) hasAccess = true
           else if(userPerms && userPerms.some(p => ['dev', 'admin'].includes(p))) hasAccess = true
           else if(userPerms && tmp_item.permissions.every(p => userPerms.includes(p))) hasAccess = true
+
+          if (tmp_item.link == '/appointments' && hasAccess && (!userPerms || !userPerms.some(p => ['dev', 'admin'].includes(p)))) {
+            const currentEmployee = this.employees.find(e => e.name === this.userStore.profile?.name)
+            if (currentEmployee && ['Directeur', 'Directeur Adjoint'].includes(currentEmployee.role)) {
+              // Access granted
+            } else if (currentEmployee && currentEmployee.specialties) {
+              const hasAuthSpecialty = currentEmployee.specialties.some(s => {
+                 const spec = this.specialties.find(sp => sp.value === s || sp.name === s)
+                 return spec && spec.canTakeAppointments
+              })
+              if (!hasAuthSpecialty) hasAccess = false
+            } else {
+              hasAccess = false
+            }
+          }
 
           if(hasAccess && tmp_item.link != this.$route.path) {
             if(tmp_item.link == '/users') {
@@ -236,6 +265,8 @@ export default {
   },
   beforeUnmount() {
     stopNotifManager()
+    if (this.unsubEmployee) this.unsubEmployee()
+    if (this.unsubSpecialties) this.unsubSpecialties()
   },
 }
 </script>

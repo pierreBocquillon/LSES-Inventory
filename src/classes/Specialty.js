@@ -5,15 +5,16 @@ let collectionName = "specialties"
 
 function docToInstance(document) {
     let data = document.data()
-    return data ? new Specialty(document.id, data.name, data.icon, data.value) : null
+    return data ? new Specialty(document.id, data.name, data.icon, data.value, data.canTakeAppointments) : null
 }
 
 class Specialty {
-    constructor(id, name, icon, value) {
+    constructor(id, name, icon, value, canTakeAppointments) {
         this.id = id
         this.name = name
         this.icon = icon
         this.value = value
+        this.canTakeAppointments = canTakeAppointments || false
     }
 
     static listenAll(callback) {
@@ -30,7 +31,8 @@ class Specialty {
         const new_doc = {
             name: this.name,
             icon: this.icon,
-            value: this.value
+            value: this.value,
+            canTakeAppointments: this.canTakeAppointments || false
         }
 
         if (this.id) {
