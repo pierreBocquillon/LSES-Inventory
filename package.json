@@ -10,6 +10,11 @@
     "deploy-functions": "vue-cli-service build && firebase deploy --only functions"
   },
   "dependencies": {
+    "@fullcalendar/core": "^6.1.20",
+    "@fullcalendar/daygrid": "^6.1.20",
+    "@fullcalendar/interaction": "^6.1.20",
+    "@fullcalendar/timegrid": "^6.1.20",
+    "@fullcalendar/vue3": "^6.1.20",
     "@mdi/font": "7.4.47",
     "chart.js": "^4.5.1",
     "core-js": "^3.6.5",
