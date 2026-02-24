@@ -14,7 +14,7 @@ export async function fetchFormResponses() {
         const rawSpecialty = row['Vous avez besoin de quel spécialiste ?'] || ''
 
         return {
-            _rowIndex: index,
+            _sheetRowNumber: row['_sheetRowNumber'],
             createdAt,
             horodateur: horodateur || '',
             patientName: (row['Votre nom et prénom'] || '').trim(),
@@ -26,4 +26,17 @@ export async function fetchFormResponses() {
             sheetComment: (row['sans couleur - Rendez-vous à effectuer\nJaune - Rendez-vous planifié\nVert - Rendez-vous effectué\nRouge - Rendez-vous annulé\n\n✏️ - Commentaire'] || '').trim()
         }
     })
+}
+
+export async function markRowAsImported(rowNumber) {
+    if (!rowNumber) return
+    try {
+        await fetch(SCRIPT_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain' },
+            body: JSON.stringify({ action: 'markImported', rowNumber: rowNumber })
+        })
+    } catch (e) {
+        console.warn('Impossible de marquer la ligne comme importée dans Google Sheets', e)
+    }
 }

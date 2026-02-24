@@ -397,7 +397,7 @@ import Specialty from '@/classes/Specialty.js'
 import Employee from '@/classes/Employee.js'
 import { useUserStore } from '@/store/user.js'
 import Swal from 'sweetalert2/dist/sweetalert2.js'
-import { fetchFormResponses } from '@/functions/googleFormService.js'
+import { fetchFormResponses, markRowAsImported } from '@/functions/googleFormService.js'
 
 import FullCalendar from '@fullcalendar/vue3'
 import dayGridPlugin from '@fullcalendar/daygrid'
@@ -757,6 +757,10 @@ export default {
         )
         
         await app.save()
+
+        if (this.currentAppointment._sheetRowNumber) {
+          markRowAsImported(this.currentAppointment._sheetRowNumber)
+        }
         
         Swal.fire('Succès', 'Le rendez-vous a été enregistré.', 'success')
         this.closeModal()
@@ -767,6 +771,7 @@ export default {
         this.isSaving = false
       }
     },
+
     
     confirmDelete(appointment) {
       Swal.fire({
@@ -837,7 +842,8 @@ export default {
         duration: 30,
         notes: request.notes || '',
         availability: request.availability,
-        createdAt: request.createdAt
+        createdAt: request.createdAt,
+        _sheetRowNumber: request._sheetRowNumber
       }
       this.isModalOpen = true
     },
