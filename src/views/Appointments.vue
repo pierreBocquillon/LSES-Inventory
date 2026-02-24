@@ -525,17 +525,21 @@ export default {
     hasAccess() {
       let userPerms = this.userStore.profile?.permissions
       if(userPerms && userPerms.some(p => ['dev', 'admin'].includes(p))) return true
-      
-      const currentEmployee = this.employees.find(e => e.name === this.userStore.profile?.name)
-      if (currentEmployee && ['Directeur', 'Directeur Adjoint'].includes(currentEmployee.role)) return true
-        
-      if (currentEmployee && currentEmployee.specialties) {
-        return currentEmployee.specialties.some(s => {
-           const spec = this.specialties.find(sp => sp.value === s || sp.name === s)
-           return spec && spec.canTakeAppointments
-        })
-      }
-      return false
+
+      const profileName = this.userStore.profile?.name?.toLowerCase().trim()
+      const currentEmployee = this.employees.find(e => e.name?.toLowerCase().trim() === profileName)
+      if (!currentEmployee) return false
+
+      if (['Directeur', 'Directeur Adjoint'].includes(currentEmployee.role)) return true
+
+      const allSpecs = [
+        ...(currentEmployee.specialties || []),
+        ...(currentEmployee.chiefSpecialties || [])
+      ]
+      return allSpecs.some(s => {
+        const spec = this.specialties.find(sp => sp.value === s || sp.name === s)
+        return spec && spec.canTakeAppointments
+      })
     },
     specialtiesList() {
       return this.specialties.filter(s => s.canTakeAppointments)
@@ -564,14 +568,25 @@ export default {
     filteredAppointments() {
       let appointments = this.appointments
       
-      const currentEmployee = this.employees.find(e => e.name === this.userStore.profile?.name)
+      const profileName = this.userStore.profile?.name?.toLowerCase().trim()
+      const currentEmployee = this.employees.find(e => e.name?.toLowerCase().trim() === profileName)
       let userPerms = this.userStore.profile?.permissions
       
       const isGlobalAdmin = userPerms && userPerms.some(p => ['dev', 'admin'].includes(p))
       const isDirector = currentEmployee && ['Directeur', 'Directeur Adjoint'].includes(currentEmployee.role)
       
-      if (!isGlobalAdmin && !isDirector && currentEmployee && currentEmployee.specialties) {
-         appointments = appointments.filter(app => currentEmployee.specialties.includes(app.specialty))
+      if (!isGlobalAdmin && !isDirector && currentEmployee) {
+        // Filtre sur specialties + chiefSpecialties
+        const allSpecs = [
+          ...(currentEmployee.specialties || []),
+          ...(currentEmployee.chiefSpecialties || [])
+        ]
+        if (allSpecs.length > 0) {
+          const specNames = this.specialties
+            .filter(sp => allSpecs.includes(sp.value) || allSpecs.includes(sp.name))
+            .map(sp => sp.name)
+          appointments = appointments.filter(app => specNames.includes(app.specialty))
+        }
       }
 
       return appointments.filter(app => {
