@@ -262,6 +262,26 @@ export default {
           else if(userPerms && userPerms.some(p => ['dev', 'admin'].includes(p))) hasAccess = true
           else if(userPerms && tmp_item.permissions.some(p => userPerms.includes(p))) hasAccess = true
 
+          if (tmp_item.link == '/appointments') {
+            const profileName = this.userStore.profile?.name?.toLowerCase().trim()
+            const currentEmployee = this.employees.find(e => e.name?.toLowerCase().trim() === profileName)
+
+            if (!currentEmployee) {
+              hasAccess = false
+            } else if (['Directeur', 'Directeur Adjoint'].includes(currentEmployee.role)) {
+              hasAccess = true
+            } else {
+              const allSpecs = [
+                ...(currentEmployee.specialties || []),
+                ...(currentEmployee.chiefSpecialties || [])
+              ]
+              hasAccess = allSpecs.some(s => {
+                const spec = this.specialties.find(sp => sp.value === s || sp.name === s)
+                return spec && spec.canTakeAppointments
+              })
+            }
+          }
+
           if(hasAccess && tmp_item.link != this.$route.path) {
             if(tmp_item.link == '/users') {
               tmp_item.notif = this.waitingUsers.length

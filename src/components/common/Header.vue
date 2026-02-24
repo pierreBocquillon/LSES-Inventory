@@ -143,23 +143,23 @@ export default {
           else if(userPerms && userPerms.some(p => ['dev', 'admin'].includes(p))) hasAccess = true
           else if(userPerms && tmp_item.permissions.every(p => userPerms.includes(p))) hasAccess = true
 
-          if (tmp_item.link == '/appointments' && hasAccess && (!userPerms || !userPerms.some(p => ['dev', 'admin'].includes(p)))) {
+          if (tmp_item.link == '/appointments') {
             const profileName = this.userStore.profile?.name?.toLowerCase().trim()
             const currentEmployee = this.employees.find(e => e.name?.toLowerCase().trim() === profileName)
+
             if (!currentEmployee) {
               hasAccess = false
             } else if (['Directeur', 'Directeur Adjoint'].includes(currentEmployee.role)) {
-              // Access granted
+              hasAccess = true
             } else {
               const allSpecs = [
                 ...(currentEmployee.specialties || []),
                 ...(currentEmployee.chiefSpecialties || [])
               ]
-              const hasAuthSpecialty = allSpecs.some(s => {
+              hasAccess = allSpecs.some(s => {
                 const spec = this.specialties.find(sp => sp.value === s || sp.name === s)
                 return spec && spec.canTakeAppointments
               })
-              if (!hasAuthSpecialty) hasAccess = false
             }
           }
 
