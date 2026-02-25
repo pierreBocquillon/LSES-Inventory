@@ -13,6 +13,7 @@
                         :key="req.id + req.training"
                         :color="getTrainingColor(req.training)"
                         closable
+                        :model-value="true"
                         size="small"
                         @click:close="removeRequest(req)"
                     >
@@ -1616,16 +1617,33 @@ export default {
 
     async removeRequest(req) {
         try {
-            const result = await Swal.fire({
-                title: 'Traiter la demande',
-                text: `Voulez-vous valider la formation "${req.training}" pour ${req.name} ou simplement la supprimer ?`,
-                icon: 'question',
-                showCancelButton: true,
-                showDenyButton: true,
-                confirmButtonText: 'Valider',
-                denyButtonText: 'Refuser / Supprimer',
-                cancelButtonText: 'Annuler'
-            })
+            const validableTrainings = ['Formation Grenouille', 'Formation Conduite']
+            const isValidable = validableTrainings.includes(req.training)
+
+            let result
+            if (isValidable) {
+                result = await Swal.fire({
+                    title: 'Traiter la demande',
+                    text: `Voulez-vous valider la formation "${req.training}" pour ${req.name} ou simplement la supprimer ?`,
+                    icon: 'question',
+                    showCancelButton: true,
+                    showDenyButton: true,
+                    confirmButtonText: 'Valider',
+                    denyButtonText: 'Refuser / Supprimer',
+                    cancelButtonText: 'Annuler'
+                })
+            } else {
+                result = await Swal.fire({
+                    title: 'Supprimer la demande ?',
+                    text: `Voulez-vous supprimer la demande de formation "${req.training}" pour ${req.name} ?`,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Supprimer',
+                    cancelButtonText: 'Annuler',
+                    confirmButtonColor: '#d33',
+                })
+                if (result.isConfirmed) result = { ...result, isConfirmed: false, isDenied: true }
+            }
 
             if (result.isDismissed) return;
 
