@@ -16,12 +16,16 @@
             Demandes
             <v-badge v-if="newRequestsCount > 0" :content="newRequestsCount" color="error" floating />
           </v-btn>
+          <v-btn v-if="hasPsyAccess" value="demandesPsy" prepend-icon="mdi-brain">
+            Psy
+            <v-badge v-if="newPsyRequestsCount > 0" :content="newPsyRequestsCount" color="error" floating />
+          </v-btn>
         </v-btn-toggle>
-        <v-btn color="primary" @click="openAddModal" prepend-icon="mdi-plus" v-if="viewMode !== 'demandes'">Nouveau RDV</v-btn>
+        <v-btn color="primary" @click="openAddModal" prepend-icon="mdi-plus" v-if="viewMode !== 'demandes' && viewMode !== 'demandesPsy'">Nouveau RDV</v-btn>
       </div>
     </div>
 
-    <v-card class="mb-4 rounded-xl" theme="dark" v-if="viewMode !== 'demandes'">
+    <v-card class="mb-4 rounded-xl" theme="dark" v-if="viewMode !== 'demandes' && viewMode !== 'demandesPsy'">
       <v-card-text>
         <v-row>
           <v-col cols="12" sm="4">
@@ -156,6 +160,67 @@
             variant="tonal"
             prepend-icon="mdi-plus"
             @click="importRequest(item)"
+          >
+            Créer RDV
+          </v-btn>
+          <v-chip v-else size="small" color="success" variant="tonal" prepend-icon="mdi-check">
+            Importé
+          </v-chip>
+        </template>
+      </v-data-table>
+    </v-card>
+
+    <v-card class="rounded-xl" theme="dark" v-else-if="viewMode === 'demandesPsy'">
+      <v-card-title class="d-flex align-center pa-4">
+        <v-icon class="mr-2">mdi-brain</v-icon>
+        Demandes Psy Google Forms
+        <v-spacer></v-spacer>
+        <v-btn
+          variant="text"
+          icon="mdi-refresh"
+          :loading="isLoadingPsyRequests"
+          @click="loadPsyRequests"
+          color="primary"
+        ></v-btn>
+      </v-card-title>
+      <v-card-text v-if="isLoadingPsyRequests" class="text-center pa-8">
+        <v-progress-circular indeterminate color="primary" size="48"></v-progress-circular>
+        <div class="mt-4 text-grey">Chargement des demandes Psy...</div>
+      </v-card-text>
+      <v-card-text v-else-if="psyRequestsError" class="text-center pa-8">
+        <v-icon color="error" size="48" class="mb-2">mdi-alert-circle</v-icon>
+        <div class="text-error">{{ psyRequestsError }}</div>
+        <v-btn color="primary" variant="text" class="mt-2" @click="loadPsyRequests">Réessayer</v-btn>
+      </v-card-text>
+      <v-data-table
+        v-else
+        v-model:sort-by="requestSortBy"
+        :headers="psyRequestHeaders"
+        :items="psyRequests"
+        class="elevation-0 transparent"
+        hover
+        items-per-page="15"
+      >
+        <template v-slot:item.createdAt="{ item }">
+          <span class="text-caption">{{ formatTimestamp(item.horodateur) }}</span>
+        </template>
+        <template v-slot:item.patientName="{ item }">
+          <span :class="{ 'text-grey': isAlreadyImported(item) }">{{ item.patientName }}</span>
+        </template>
+        <template v-slot:item.availability="{ item }">
+          <span class="text-caption">{{ item.availability }}</span>
+        </template>
+        <template v-slot:item.reason="{ item }">
+          <span class="text-caption" :title="item.reason">{{ truncate(item.reason, 40) }}</span>
+        </template>
+        <template v-slot:item.actions="{ item }">
+          <v-btn
+            v-if="!isAlreadyImported(item)"
+            size="small"
+            color="primary"
+            variant="tonal"
+            prepend-icon="mdi-plus"
+            @click="importPsyRequest(item)"
           >
             Créer RDV
           </v-btn>
@@ -398,6 +463,7 @@ import Employee from '@/classes/Employee.js'
 import { useUserStore } from '@/store/user.js'
 import Swal from 'sweetalert2/dist/sweetalert2.js'
 import { fetchFormResponses, markRowAsImported } from '@/functions/googleFormService.js'
+import { fetchPsyFormResponses, markPsyRowAsImported } from '@/functions/googleFormPsyService.js'
 
 import FullCalendar from '@fullcalendar/vue3'
 import dayGridPlugin from '@fullcalendar/daygrid'
@@ -458,6 +524,10 @@ export default {
       formRequests: [],
       isLoadingRequests: false,
       formRequestsError: null,
+
+      psyRequests: [],
+      isLoadingPsyRequests: false,
+      psyRequestsError: null,
       
       currentAppointment: {
         id: null,
@@ -496,6 +566,17 @@ export default {
         { title: 'Divers', key: 'notes', sortable: false },
         { title: 'Commentaire', key: 'sheetComment', sortable: false },
         { title: '', key: 'actions', sortable: false, align: 'end' }
+      ],
+
+      psyRequestHeaders: [
+        { title: 'Date demande', key: 'createdAt', sortable: true },
+        { title: 'Patient', key: 'patientName', sortable: true },
+        { title: 'Téléphone', key: 'patientPhone', sortable: false },
+        { title: 'Catégorie', key: 'category', sortable: true },
+        { title: 'Disponibilités', key: 'availability', sortable: false },
+        { title: 'Raison', key: 'reason', sortable: false },
+        { title: 'Divers', key: 'notes', sortable: false },
+        { title: '', key: 'actions', sortable: false, align: 'end' }
       ]
     }
   },
@@ -511,6 +592,9 @@ export default {
       if (val === 'demandes' && this.formRequests.length === 0) {
         this.loadFormRequests()
       }
+      if (val === 'demandesPsy' && this.psyRequests.length === 0) {
+        this.loadPsyRequests()
+      }
     }
   },
   
@@ -518,6 +602,10 @@ export default {
     newRequestsCount() {
       if (this.formRequests.length === 0) return 0
       return this.formRequests.filter(r => !this.isAlreadyImported(r)).length
+    },
+    newPsyRequestsCount() {
+      if (this.psyRequests.length === 0) return 0
+      return this.psyRequests.filter(r => !this.isAlreadyImported(r)).length
     },
     isLoaded() {
       return this.specialtiesLoaded && this.employeesLoaded
@@ -539,6 +627,25 @@ export default {
       return allSpecs.some(s => {
         const spec = this.specialties.find(sp => sp.value === s || sp.name === s)
         return spec && spec.canTakeAppointments
+      })
+    },
+    hasPsyAccess() {
+      let userPerms = this.userStore.profile?.permissions
+      if(userPerms && userPerms.some(p => ['dev', 'admin'].includes(p))) return true
+
+      const profileName = this.userStore.profile?.name?.toLowerCase().trim()
+      const currentEmployee = this.employees.find(e => e.name?.toLowerCase().trim() === profileName)
+      if (!currentEmployee) return false
+
+      if (['Directeur', 'Directeur Adjoint'].includes(currentEmployee.role)) return true
+
+      const allSpecs = [
+        ...(currentEmployee.specialties || []),
+        ...(currentEmployee.chiefSpecialties || [])
+      ]
+      return allSpecs.some(s => {
+        const spec = this.specialties.find(sp => sp.value === s || sp.name === s)
+        return spec && spec.name.toLowerCase().includes('psy')
       })
     },
     specialtiesList() {
@@ -759,7 +866,11 @@ export default {
         await app.save()
 
         if (this.currentAppointment._sheetRowNumber) {
-          markRowAsImported(this.currentAppointment._sheetRowNumber)
+          if (this.currentAppointment._isPsyRequest) {
+            markPsyRowAsImported(this.currentAppointment._sheetRowNumber)
+          } else {
+            markRowAsImported(this.currentAppointment._sheetRowNumber)
+          }
         }
         
         Swal.fire('Succès', 'Le rendez-vous a été enregistré.', 'success')
@@ -818,6 +929,19 @@ export default {
       )
     },
 
+    async loadPsyRequests() {
+      this.isLoadingPsyRequests = true
+      this.psyRequestsError = null
+      try {
+        this.psyRequests = await fetchPsyFormResponses()
+      } catch (err) {
+        console.error(err)
+        this.psyRequestsError = 'Impossible de charger les demandes Psy Google Forms.'
+      } finally {
+        this.isLoadingPsyRequests = false
+      }
+    },
+
     importRequest(request) {
       this.isEditing = false
       let matchedSpecialty = ''
@@ -844,6 +968,36 @@ export default {
         availability: request.availability,
         createdAt: request.createdAt,
         _sheetRowNumber: request._sheetRowNumber
+      }
+      this.isModalOpen = true
+    },
+
+    importPsyRequest(request) {
+      this.isEditing = false
+      
+      const psySpecialty = this.specialtiesList.find(s => s.name.toLowerCase().includes('psy'))
+      
+      let baseNotes = ''
+      if (request.category) baseNotes += `Catégorie: ${request.category}\n`
+      if (request.notes) baseNotes += `Divers: ${request.notes}`
+      
+      this.currentAppointment = {
+        id: null,
+        patientName: request.patientName,
+        patientPhone: request.patientPhone,
+        specialty: psySpecialty ? psySpecialty.name : 'Psychologue',
+        date: new Date().toISOString().split('T')[0],
+        time: '',
+        reason: request.reason || '',
+        status: 'En attente',
+        doctor: '',
+        companion: '',
+        duration: 30,
+        notes: baseNotes.trim(),
+        availability: request.availability,
+        createdAt: request.createdAt,
+        _sheetRowNumber: request._sheetRowNumber,
+        _isPsyRequest: true
       }
       this.isModalOpen = true
     },
