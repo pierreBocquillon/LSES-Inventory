@@ -974,6 +974,7 @@ import {
 } from 'chart.js'
 import { Pie, Bar } from 'vue-chartjs'
 import AnimatedCounter from '@/components/AnimatedCounter.vue'
+import { roleOrder as sharedRoleOrder, getRoleColor as sharedGetRoleColor } from '@/config/roles.js'
 
 ChartJS.register(...registerables)
 
@@ -1089,8 +1090,7 @@ export default {
         title: 'Rôle',
         key: 'role',
         sort: (a, b) => {
-          const roleOrder = ['Directeur', 'Directeur Adjoint', 'Assistant RH', 'Responsable de Service', 'Spécialiste', 'Titulaire', 'Résident', 'Interne']
-          return roleOrder.indexOf(a) - roleOrder.indexOf(b)
+          return sharedRoleOrder.indexOf(a) - sharedRoleOrder.indexOf(b)
         }
       },
       { title: 'Spécialités', key: 'specialties' },
@@ -1196,7 +1196,7 @@ export default {
       return this.candidatures.filter(c => c.status === 'Candidature reçue').length
     },
     sortedDirectoryEmployees() {
-      const roleOrder = ['Directeur', 'Directeur Adjoint', 'Assistant RH', 'Responsable de Service', 'Spécialiste', 'Titulaire', 'Résident', 'Interne']
+      const roleOrder = sharedRoleOrder
 
       return [...this.employees].sort((a, b) => {
         // 1. Sort by Role Priority
@@ -1377,11 +1377,7 @@ export default {
 
 
     getRoleColor(role) {
-      if (['Directeur', 'Directeur Adjoint'].includes(role)) return 'red'
-      if (['Responsable de Service'].includes(role)) return 'purple'
-      if (['Assistant RH'].includes(role)) return 'orange'
-      if (['Résident', 'Titulaire', 'Spécialiste'].includes(role)) return 'blue'
-      return 'green'
+      return sharedGetRoleColor(role)
     },
 
     isTaskOverdue(task, type) {
