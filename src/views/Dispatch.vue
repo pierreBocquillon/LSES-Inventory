@@ -43,7 +43,8 @@
           </v-list>
         </v-menu>
       </div>
-      <div class="th-cell th-right">😴 Hors service</div>
+      <div class="th-cell">😴 Hors service</div>
+      <div class="th-cell th-right">📻 Radios & Notes</div>
     </div>
 
         <div class="dispatch-body">
@@ -322,8 +323,69 @@
           </div>
         </div>
         <div v-if="!sortedUnassignedEmployees.length" class="text-center text-grey text-caption pa-3">Tous assignés</div>
+      </div>
 
-                <div class="notepad-wrapper mt-auto pa-2" style="border-top: 1px solid #334155; background: rgba(0,0,0,0.15)">
+      <div class="far-right-panel">
+
+                <div class="radios-wrapper mt-auto pa-2" style="border-top: 1px solid #334155; background: rgba(0,0,0,0.15)">
+          <div class="text-caption font-weight-bold text-grey-lighten-1 mb-2 d-flex align-center flex-shrink-0">
+            <v-icon size="14" class="mr-1">mdi-radio-handheld</v-icon> Stock Radios
+            <v-menu location="bottom end">
+              <template v-slot:activator="{ props }">
+                <v-btn v-if="isDirection" v-bind="props" size="x-small" variant="plain" color="white" class="ml-auto" title="Ajouter une radio">
+                  <v-icon size="13">mdi-plus</v-icon>
+                </v-btn>
+              </template>
+              <v-list density="compact" style="min-width: 150px">
+                <v-list-item @click="addRadio('standard')">
+                  <template v-slot:prepend><v-icon size="14" class="mr-2">mdi-radio-handheld</v-icon></template>
+                  <v-list-item-title>Radio Standard</v-list-item-title>
+                </v-list-item>
+                <v-list-item @click="addRadio('direction')">
+                  <template v-slot:prepend><v-icon size="14" class="mr-2" color="amber">mdi-star</v-icon></template>
+                  <v-list-item-title>Radio Direction</v-list-item-title>
+                </v-list-item>
+              </v-list>
+            </v-menu>
+          </div>
+          <div class="mb-2 d-flex align-center bg-transparent flex-shrink-0" v-if="(dispatch?.radios||[]).length">
+             <span class="text-caption font-weight-bold text-grey-lighten-1 mr-2"><v-icon size="12" class="mr-1">mdi-weather-night</v-icon> Nuit:</span>
+             <select v-if="isDirection" v-model="dispatch.nuitRadioId" @change="dispatch.save()" class="location-input mx-1" style="border: 1px solid #334155; padding:2px; border-radius:4px; max-width:130px; font-weight:bold;">
+                <option :value="null" style="background:#1a1f35">-- Aucune --</option>
+                <option v-for="rad in dispatch?.radios||[]" :key="rad.id" :value="rad.id" style="background:#1a1f35">{{ rad.serial || rad.id.slice(0,4) }}</option>
+             </select>
+             <span v-else class="text-caption font-weight-bold text-amber-lighten-2 mx-1 px-2 py-1" style="border: 1px solid #334155; border-radius:4px;">
+                {{ (dispatch?.radios||[]).find(r => r.id === dispatch?.nuitRadioId)?.serial || 'Aucune' }}
+             </span>
+          </div>
+          <div class="radios-list" style="flex: 1; overflow-y: auto;">
+            <template v-for="group in [
+              { title: 'Direction', radios: directionRadios, color: 'text-amber-lighten-2' },
+              { title: 'Standard', radios: standardRadios, color: 'text-grey-lighten-1' }
+            ]" :key="group.title">
+              <template v-if="group.radios.length">
+                <div :class="['text-caption font-weight-bold mt-1 mb-1', group.color]" style="font-size: 0.65rem; letter-spacing: 0.05em;">{{ group.title.toUpperCase() }}</div>
+                <div v-for="radio in group.radios" :key="radio.id" class="radio-item d-flex align-center mb-1 pa-1" :style="['background: rgba(255,255,255,0.05); border-radius: 4px; border: 1px solid', radio.id === dispatch?.nuitRadioId ? '#f59e0b' : '#334155'].join(' ')">
+                  <input v-if="isDirection" v-model="radio.serial" @change="dispatch.save()" class="location-input" style="width:50px; font-weight:bold" placeholder="# Série" />
+                  <span v-else class="text-caption font-weight-bold mx-1" style="width:50px; display:inline-block; color:#94a3b8; text-align:center;">{{ radio.serial || '---' }}</span>
+                  <select :value="radio.employeeId" @change="onRadioAssign(radio, $event.target.value)" class="location-input mx-1" style="border-left:1px solid #334155; padding-left:4px; max-width: 120px;">
+                    <option :value="''" style="background:#1a1f35">-- Assigné --</option>
+                    <option v-for="emp in employees" :key="emp.id" :value="emp.id" style="background:#1a1f35">{{ emp.name }}</option>
+                  </select>
+                  <v-btn size="x-small" :color="radio.status === 'on' ? 'success' : 'error'" variant="tonal" class="ml-auto px-1" style="min-width: 32px; height: 18px; font-size: 0.6rem;" @click="toggleRadioStatus(radio)">
+                    {{ radio.status === 'on' ? 'ON' : 'OFF' }}
+                  </v-btn>
+                  <v-btn v-if="isDirection" icon variant="plain" size="x-small" color="error" class="ml-1" @click="removeRadio(radio)" style="height:18px; width:18px">
+                    <v-icon size="12">mdi-close</v-icon>
+                  </v-btn>
+                </div>
+              </template>
+            </template>
+            <div v-if="!(dispatch?.radios||[]).length" class="text-center text-grey text-caption mt-2">Aucune radio.</div>
+          </div>
+        </div>
+
+        <div class="notepad-wrapper pa-2" style="border-top: 1px solid #334155; background: rgba(0,0,0,0.15)">
           <div class="text-caption font-weight-bold text-grey-lighten-1 mb-2 d-flex align-center">
             <v-icon size="14" class="mr-1">mdi-notebook</v-icon> Bloc-notes
           </div>
@@ -340,9 +402,8 @@
           </div>
         </div>
       </div>
-
     </div>
-        <div class="dispatch-bottom">
+    <div class="dispatch-bottom">
       <div
         v-for="cat in bottomCategories"
         :key="cat.value"
@@ -518,6 +579,8 @@ export default {
           return (a.name||'').localeCompare(b.name||'')
         })
     },
+    directionRadios() { return (this.dispatch?.radios||[]).filter(r => r.category === 'direction') },
+    standardRadios() { return (this.dispatch?.radios||[]).filter(r => r.category !== 'direction') },
     addDialogCategory()   { return this.allCategories.find(c => c.value === this.addDialogCategoryValue) || null },
   },
 
@@ -752,6 +815,47 @@ export default {
       await this.dispatch.save()
       this.quickAddDialog = false
     },
+
+    async addRadio(category = 'standard') {
+      if (!this.dispatch) return
+      this.dispatch.radios = [...(this.dispatch.radios||[]), {
+        id: Date.now().toString()+Math.random().toString(36).slice(2,6),
+        serial: '',
+        employeeId: null,
+        status: 'on',
+        category
+      }]
+      await this.dispatch.save()
+    },
+    async onRadioAssign(radio, newEmpId) {
+      if (!radio.employeeId && newEmpId) {
+        radio.status = 'on'
+      }
+      radio.employeeId = newEmpId || null
+      this.dispatch.radios = [...this.dispatch.radios]
+      await this.dispatch.save()
+    },
+    async removeRadio(radio) {
+      if (!this.dispatch) return
+      const r = await Swal.fire({ 
+        icon: 'warning', 
+        title: 'Supprimer cette radio ?',
+        text: `Es-tu sûr de vouloir supprimer la radio ${radio.serial || 'sans matricule'} ?`,
+        showCancelButton: true, 
+        confirmButtonText: 'Supprimer', 
+        cancelButtonText: 'Annuler',
+        confirmButtonColor: '#d33'
+      })
+      if (!r.isConfirmed) return
+
+      this.dispatch.radios = (this.dispatch.radios||[]).filter(r => r.id !== radio.id)
+      await this.dispatch.save()
+    },
+    async toggleRadioStatus(radio) {
+      radio.status = radio.status === 'on' ? 'off' : 'on'
+      this.dispatch.radios = [...this.dispatch.radios]
+      await this.dispatch.save()
+    },
   },
 }
 </script>
@@ -769,7 +873,7 @@ export default {
 
 .dispatch-top-headers {
   display: grid;
-  grid-template-columns: 230px 1fr 370px;
+  grid-template-columns: 230px 1fr 350px 220px;
   background: linear-gradient(90deg, #0f172a 0%, #1e293b 60%, #0f172a 100%);
   color: #e2e8f0;
   font-size: 0.73rem;
@@ -812,7 +916,7 @@ export default {
 
 .dispatch-body {
   display: grid;
-  grid-template-columns: 230px 1fr 370px;
+  grid-template-columns: 230px 1fr 350px 220px;
   flex: 1;
   overflow: hidden;
   border-bottom: 2px solid #334155;
@@ -874,7 +978,7 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 5px;
-  overflow-y: auto;
+  overflow: hidden;
 }
 .inter-slot { display: flex; flex-direction: column; gap: 2px; }
 .inter-type-row {
@@ -959,6 +1063,21 @@ export default {
   flex-direction: column;
 }
 
+.far-right-panel {
+  background: #1e293b;
+  border-left: 2px solid #334155;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.radios-wrapper {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
 .notepad-input {
   width: 100%;
   background: rgba(255,255,255,0.05);
@@ -1021,13 +1140,13 @@ export default {
 .pc-info { flex: 1; min-width: 0; }
 .pc-name { font-size: 0.7rem; font-weight: 700; color: #f8fafc; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pc-phone { font-size: 0.62rem; color: #cbd5e1; }
-.pc-specs { font-size: 0.82rem; line-height: 1.1; margin-top: 1px; }
+.pc-specs { font-size: 0.6rem; line-height: 1.1; margin-top: 1px; }
 .pc-role  { font-size: 0.58rem; font-weight: 700; margin-top: 1px; letter-spacing: 0.02em; }
 .spec-emoji { cursor: default; }
 
 .dispatch-bottom {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: repeat(4, 1fr);
   flex-shrink: 0;
   min-height: 180px;
   max-height: 300px;

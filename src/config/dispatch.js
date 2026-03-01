@@ -3,6 +3,7 @@ export const allCategories = [
     { value: 'astreinte', label: 'En astreinte', emoji: '⏰', icon: 'mdi-clock-alert', color: '#e65100' },
     { value: 'conges', label: 'En congés', emoji: '🏖️', icon: 'mdi-umbrella-beach', color: '#1565c0' },
     { value: 'fin_service', label: 'Fin de service', emoji: '🔴', icon: 'mdi-power', color: '#c62828' },
+    { value: 'sans_permis', label: 'Tout PT / Sans Permis', emoji: '🚶', icon: 'mdi-walk', color: '#455a64' },
 ]
 
 export const interventionTypes = [
@@ -34,6 +35,6 @@ export const centralRoles = [
 
 export const hospitalStatuses = [
     { value: 'gestion_normale', label: 'Gestion Normale', icon: 'mdi-hospital', color: '#2e7d32' },
-    { value: 'hopital_ferme', label: 'Hôpital Fermé', icon: 'mdi-hospital-off', color: '#c62828' },
+    { value: 'hopital_ferme', label: 'Hôpital Fermé', icon: 'mdi-close', color: '#c62828' },
     { value: 'coups_de_feu', label: 'Coups de feu à proximité', icon: 'mdi-alert', color: '#e65100' },
 ]

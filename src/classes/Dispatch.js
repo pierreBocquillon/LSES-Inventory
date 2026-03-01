@@ -12,7 +12,7 @@ function normalizeCentrale(c) {
 }
 
 class Dispatch {
-    constructor(centrale, patates, hospitalStatus, interventions, lsesRadio, communeRadio, notepad) {
+    constructor(centrale, patates, hospitalStatus, interventions, lsesRadio, communeRadio, notepad, radios, nuitRadioId) {
         this.centrale = normalizeCentrale(centrale)
         this.patates = patates || []
         this.hospitalStatus = hospitalStatus || 'gestion_normale'
@@ -20,12 +20,14 @@ class Dispatch {
         this.lsesRadio = lsesRadio || ''
         this.communeRadio = communeRadio || ''
         this.notepad = notepad || ''
+        this.radios = radios || []
+        this.nuitRadioId = nuitRadioId || null
     }
 
     static listenGlobal(callback) {
         return onSnapshot(doc(db, collectionName, GLOBAL_DOC_ID), snapshot => {
             const data = snapshot.data() || {}
-            callback(new Dispatch(data.centrale, data.patates, data.hospitalStatus, data.interventions, data.lsesRadio, data.communeRadio, data.notepad))
+            callback(new Dispatch(data.centrale, data.patates, data.hospitalStatus, data.interventions, data.lsesRadio, data.communeRadio, data.notepad, data.radios, data.nuitRadioId))
         })
     }
 
@@ -37,7 +39,9 @@ class Dispatch {
             interventions: this.interventions || [],
             lsesRadio: this.lsesRadio || '',
             communeRadio: this.communeRadio || '',
-            notepad: this.notepad || ''
+            notepad: this.notepad || '',
+            radios: this.radios || [],
+            nuitRadioId: this.nuitRadioId || null
         }, { merge: true })
     }
 }
