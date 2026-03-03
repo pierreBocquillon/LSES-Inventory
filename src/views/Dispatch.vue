@@ -505,6 +505,7 @@ import {
   hospitalStatuses
 } from '@/config/dispatch.js'
 import { roleOrder, getRoleColor as getRoleColorConfig } from '@/config/roles.js'
+import logger from '@/functions/logger.js'
 
 export default {
   data() {
@@ -828,12 +829,30 @@ export default {
       await this.dispatch.save()
     },
     async onRadioAssign(radio, newEmpId) {
+      const oldEmpId = radio.employeeId
       if (!radio.employeeId && newEmpId) {
         radio.status = 'on'
+      } else if (radio.employeeId && !newEmpId) {
+        radio.status = 'off'
       }
       radio.employeeId = newEmpId || null
       this.dispatch.radios = [...this.dispatch.radios]
       await this.dispatch.save()
+
+      if (oldEmpId !== newEmpId) {
+        const serialStr = radio.serial || 'sans matricule'
+        if (!oldEmpId && newEmpId) {
+          const emp = this.employees.find(e => e.id === newEmpId)
+          if (emp) logger.log(this.userStore.profile.id, 'RADIOS', `${emp.name} a pris la radio ${serialStr}`)
+        } else if (oldEmpId && !newEmpId) {
+          const emp = this.employees.find(e => e.id === oldEmpId)
+          if (emp) logger.log(this.userStore.profile.id, 'RADIOS', `${emp.name} a déposé la radio ${serialStr}`)
+        } else if (oldEmpId && newEmpId) {
+          const oldEmp = this.employees.find(e => e.id === oldEmpId)
+          const newEmp = this.employees.find(e => e.id === newEmpId)
+          if (oldEmp && newEmp) logger.log(this.userStore.profile.id, 'RADIOS', `${oldEmp.name} a transféré la radio ${serialStr} à ${newEmp.name}`)
+        }
+      }
     },
     async removeRadio(radio) {
       if (!this.dispatch) return
