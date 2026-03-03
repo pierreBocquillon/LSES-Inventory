@@ -109,9 +109,7 @@
               <div class="pc-name">{{ emp.name }}</div>
               <div class="pc-phone">{{ emp.phone }}</div>
               <div class="pc-specs">
-                <v-tooltip v-for="sv in (emp.allSpecialties||[])" :key="sv" :text="getSpecialtyName(sv)" location="top">
-                  <template v-slot:activator="{ props }"><span v-bind="props" class="spec-emoji">{{ getSpecialtyIcon(sv) }}</span></template>
-                </v-tooltip>
+                <span v-for="sv in (emp.allSpecialties||[])" :key="sv" class="spec-emoji" :title="getSpecialtyName(sv)">{{ getSpecialtyIcon(sv) }}</span>
               </div>
               <div class="pc-role" :style="`color:${getRoleColor(emp.role)}`">{{ emp.role }}</div>
                             <template v-if="(dispatch?.centrale?.employees||[]).indexOf(emp) > 0">
@@ -233,9 +231,7 @@
                   <div class="pc-name">{{ emp.name }}</div>
                   <div class="pc-phone">{{ emp.phone }}</div>
                   <div class="pc-specs">
-                    <v-tooltip v-for="sv in (emp.allSpecialties||[])" :key="sv" :text="getSpecialtyName(sv)" location="top">
-                      <template v-slot:activator="{ props }"><span v-bind="props" class="spec-emoji">{{ getSpecialtyIcon(sv) }}</span></template>
-                    </v-tooltip>
+                    <span v-for="sv in (emp.allSpecialties||[])" :key="sv" class="spec-emoji" :title="getSpecialtyName(sv)">{{ getSpecialtyIcon(sv) }}</span>
                   </div>
                   <div class="pc-role" :style="`color:${getRoleColor(emp.role)}`">{{ emp.role }}</div>
                 </div>
@@ -279,9 +275,7 @@
               <div class="pc-name">{{ p.name }}</div>
               <div class="pc-phone">{{ p.phone }}</div>
               <div class="pc-specs">
-                <v-tooltip v-for="sv in (p.allSpecialties||[])" :key="sv" :text="getSpecialtyName(sv)" location="top">
-                  <template v-slot:activator="{ props }"><span v-bind="props" class="spec-emoji">{{ getSpecialtyIcon(sv) }}</span></template>
-                </v-tooltip>
+                <span v-for="sv in (p.allSpecialties||[])" :key="sv" class="spec-emoji" :title="getSpecialtyName(sv)">{{ getSpecialtyIcon(sv) }}</span>
               </div>
               <div class="pc-role" :style="`color:${getRoleColor(p.role)}`">{{ p.role }}</div>
             </div>
@@ -314,9 +308,7 @@
               <div class="pc-name">{{ emp.name }}</div>
               <div class="pc-phone">{{ emp.phone }}</div>
               <div class="pc-specs">
-                <v-tooltip v-for="sv in (emp.allSpecialties||[])" :key="sv" :text="getSpecialtyName(sv)" location="top">
-                  <template v-slot:activator="{ props }"><span v-bind="props" class="spec-emoji">{{ getSpecialtyIcon(sv) }}</span></template>
-                </v-tooltip>
+                <span v-for="sv in (emp.allSpecialties||[])" :key="sv" class="spec-emoji" :title="getSpecialtyName(sv)">{{ getSpecialtyIcon(sv) }}</span>
               </div>
               <div class="pc-role" :style="`color:${getRoleColor(emp.role)}`">{{ emp.role }}</div>
             </div>
@@ -432,9 +424,7 @@
               <div class="pc-name">{{ p.name }}</div>
               <div class="pc-phone">{{ p.phone }}</div>
               <div class="pc-specs">
-                <v-tooltip v-for="sv in (p.allSpecialties||[])" :key="sv" :text="getSpecialtyName(sv)" location="top">
-                  <template v-slot:activator="{ props }"><span v-bind="props" class="spec-emoji">{{ getSpecialtyIcon(sv) }}</span></template>
-                </v-tooltip>
+                <span v-for="sv in (p.allSpecialties||[])" :key="sv" class="spec-emoji" :title="getSpecialtyName(sv)">{{ getSpecialtyIcon(sv) }}</span>
               </div>
               <div class="pc-role" :style="`color:${getRoleColor(p.role)}`">{{ p.role }}</div>
             </div>
@@ -555,7 +545,7 @@ export default {
         allEmployees() {
       return this.employees.map(e => ({
         id: e.id, name: e.name, phone: e.phone || '', role: e.role || '',
-        allSpecialties: [...(e.specialties||[])],
+        allSpecialties: e.specialties || [],
         displayLabel: e.phone ? `${e.name} — ${e.phone}` : e.name,
       }))
     },
@@ -793,7 +783,7 @@ export default {
         name: this.selectedEmployee.name,
         phone: this.selectedEmployee.phone || '',
         role: emp?.role || '',
-        allSpecialties: emp ? [...(emp.specialties||[])] : [],
+        allSpecialties: emp ? (emp.specialties || []) : [],
         category: this.addDialogCategoryValue,
       }]
       await this.dispatch.save()
@@ -810,7 +800,7 @@ export default {
         name: this.quickAddEmployee.name,
         phone: this.quickAddEmployee.phone || '',
         role: emp?.role || '',
-        allSpecialties: emp ? [...(emp.specialties||[])] : [],
+        allSpecialties: emp ? (emp.specialties || []) : [],
         category: categoryValue,
       }]
       await this.dispatch.save()
