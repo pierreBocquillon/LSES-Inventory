@@ -38,3 +38,19 @@ export const hospitalStatuses = [
     { value: 'hopital_ferme', label: 'Hôpital Fermé', icon: 'mdi-close', color: '#c62828' },
     { value: 'coups_de_feu', label: 'Coups de feu à proximité', icon: 'mdi-alert', color: '#e65100' },
 ]
+
+export const crisisMedicalStatuses = [
+    { value: 'reveil', label: 'Réveil après OP', color: '#10b981' },
+    { value: 'attente_sortie', label: 'Attente de sortie', color: '#3b82f6' },
+    { value: 'sorti', label: 'Sorti', color: '#6b7280' },
+]
+
+export const crisisAffiliations = [
+    { value: 'fdo', label: 'FDO', color: '#3b82f6' },
+    { value: 'ems', label: 'EMS', color: '#ef4444' },
+    { value: 'civil', label: 'Civil', color: '#10b981' },
+    { value: 'ballas', label: 'Ballas', color: '#9d10b9ff' },
+    { value: 'vagos', label: 'Vagos', color: '#dfdb14ff' },
+    { value: 'aztecas', label: 'Aztecas', color: '#4cb3e2ff' },
+    { value: 'autre', label: 'Autre', color: '#6b7280' },
+]

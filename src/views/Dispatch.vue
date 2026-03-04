@@ -427,10 +427,106 @@
                 <span v-for="sv in (p.allSpecialties||[])" :key="sv" class="spec-emoji" :title="getSpecialtyName(sv)">{{ getSpecialtyIcon(sv) }}</span>
               </div>
               <div class="pc-role" :style="`color:${getRoleColor(p.role)}`">{{ p.role }}</div>
-            </div>
           </div>
           <div v-if="draggingSource && !patatesForCategory(cat.value).find(p=>p.employeeId===draggingSource.employeeId)" class="drop-hint-sm">↓</div>
         </div>
+      </div>
+    </div>
+  </div>
+
+    <div class="crises-bottom-section" style="border-top: 2px solid #334155; background: #0f172a; padding: 10px; max-height: 250px; overflow-y: auto; width: 100%; box-sizing: border-box; flex-shrink: 0;">
+      <div class="slot-section-title" style="background: linear-gradient(90deg, #ef4444 0%, #b91c1c 100%);">
+        🚨 Dispatch de crises
+        <v-btn size="x-small" variant="plain" color="white" class="ml-auto" @click="addCrisisSlot">
+          <v-icon size="13">mdi-plus</v-icon>
+        </v-btn>
+      </div>
+
+      <div class="crises-list" style="margin-top: 10px;">
+        <table style="width: 100%; border-collapse: collapse; text-align: left;">
+          <thead>
+            <tr style="border-bottom: 1px solid #334155; color: #cbd5e1; font-size: 0.75rem;">
+              <th style="padding: 8px; font-weight: 500;">Nom de la victime</th>
+              <th style="padding: 8px; font-weight: 500;">Appartenance</th>
+              <th style="padding: 8px; font-weight: 500;">Raison</th>
+              <th style="padding: 8px; font-weight: 500;">Rapatrie</th>
+              <th style="padding: 8px; font-weight: 500;">Soigne</th>
+              <th style="padding: 8px; font-weight: 500;">Hôpital</th>
+              <th style="padding: 8px; font-weight: 500;">Statut médical</th>
+              <th style="padding: 8px; font-weight: 500;">Canal check centrale</th>
+              <th style="padding: 8px; width: 40px;"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="crisis in (dispatch?.crises||[])" :key="crisis.id" 
+              :style="[
+                { borderBottom: '1px solid #1e293b' },
+                crisis.id === nextCrisisIdToTreat 
+                  ? { background: 'rgba(239, 68, 68, 0.15)', borderLeft: '3px solid #ef4444' } 
+                  : { background: 'rgba(255,0,0,0.05)' }
+              ]">
+              
+              <td style="padding: 6px;">
+                <input v-model="crisis.name" @change="dispatch.save()" class="location-input font-weight-bold text-red-lighten-2" style="font-size: 0.8rem; width: 100%; border-bottom: 1px solid transparent;" placeholder="Nom" />
+              </td>
+
+              <td style="padding: 6px;">
+                <select v-model="crisis.affiliation" @change="onCrisisMetadataChange(crisis)" class="location-input font-weight-bold" style="border: 1px solid #334155; padding: 4px; border-radius: 4px; background: rgba(255,255,255,0.02); width: 100%;" :style="{ color: crisisAffiliations.find(a => a.value === crisis.affiliation)?.color || '#fff' }">
+                  <option v-for="aff in crisisAffiliations" :key="aff.value" :value="aff.value" style="background:#1a1f35" :style="{ color: aff.color || '#e2e8f0' }">{{ aff.label }}</option>
+                </select>
+              </td>
+
+              <td style="padding: 6px;">
+                <input v-model="crisis.reason" @change="dispatch.save()" class="location-input" placeholder="Raison" style="font-size: 0.75rem; background: rgba(0,0,0,0.2); padding: 5px 8px; border-radius: 4px; width: 100%; border: 1px solid #334155;" />
+              </td>
+              
+              <td style="padding: 6px;">
+                <select v-model="crisis.repatriatedBy" @change="dispatch.save()" class="location-input" style="border: 1px solid #334155; padding: 4px; border-radius: 4px; width: 100%; background: rgba(255,255,255,0.02)">
+                  <option :value="null" style="background:#1a1f35">-- Sélectionner --</option>
+                  <option v-for="emp in employees" :key="emp.id" :value="emp.id" style="background:#1a1f35">{{ emp.name }}</option>
+                </select>
+              </td>
+              
+              <td style="padding: 6px;">
+                <select v-model="crisis.treatedBy" @change="dispatch.save()" class="location-input" style="border: 1px solid #334155; padding: 4px; border-radius: 4px; width: 100%; background: rgba(255,255,255,0.02)">
+                  <option :value="null" style="background:#1a1f35">-- Sélectionner --</option>
+                  <option v-for="emp in employees" :key="emp.id" :value="emp.id" style="background:#1a1f35">{{ emp.name }}</option>
+                </select>
+              </td>
+
+              <td style="padding: 6px;">
+                <label class="d-flex align-center cursor-pointer">
+                  <input type="checkbox" v-model="crisis.arrivedAtHospital" @change="onCrisisArrivalChange(crisis)" class="mr-1" style="width: 14px; height: 14px;" />
+                  <span v-if="crisis.arrivedAtHospital" class="text-caption text-green ml-1 font-weight-bold">{{ formatTime(crisis.arrivalTime) }}</span>
+                </label>
+              </td>
+              
+              <td style="padding: 6px;">
+                <select v-model="crisis.medicalStatus" @change="dispatch.save()" class="location-input" style="border: 1px solid #334155; padding: 4px; border-radius: 4px; background: rgba(255,255,255,0.02); font-weight: 600;" :style="{ color: crisisMedicalStatuses.find(s => s.value === crisis.medicalStatus)?.color || '#fff' }">
+                  <option :value="null" style="background:#1a1f35; color: #fff;">-- Statut --</option>
+                  <option v-for="stat in crisisMedicalStatuses" :key="stat.value" :value="stat.value" style="background:#1a1f35" :style="{ color: stat.color || '#e2e8f0' }">{{ stat.label }}</option>
+                </select>
+              </td>
+              
+              <td style="padding: 6px;">
+                <label class="d-flex align-center cursor-pointer">
+                  <input type="checkbox" v-model="crisis.canalCheckCentrale" @change="dispatch.save()" class="mr-1" style="width: 14px; height: 14px;" />
+                </label>
+              </td>
+
+              <td style="padding: 6px; text-align: center;">
+                <v-btn icon variant="plain" size="small" color="error" @click="removeCrisisSlot(crisis.id)" title="Supprimer" style="height: 28px; width: 28px; background: rgba(255,0,0,0.1); border-radius: 4px;">
+                  <v-icon size="14">mdi-close</v-icon>
+                </v-btn>
+              </td>
+            </tr>
+            <tr v-if="!dispatch?.crises?.length">
+              <td colspan="7" class="text-caption text-grey pa-2" style="font-style: italic;">
+                Aucune patient à soigner. Cliquez sur le + pour ajouter une personne.
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
 
@@ -477,7 +573,6 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
-
   </div>
 </template>
 
@@ -492,7 +587,9 @@ import {
   interventionTypes,
   returnStatuses,
   centralRoles,
-  hospitalStatuses
+  hospitalStatuses,
+  crisisMedicalStatuses,
+  crisisAffiliations
 } from '@/config/dispatch.js'
 import { roleOrder, getRoleColor as getRoleColorConfig } from '@/config/roles.js'
 import logger from '@/functions/logger.js'
@@ -523,10 +620,18 @@ export default {
       returnStatuses,
       centralRoles,
       hospitalStatuses,
+      crisisMedicalStatuses,
+      crisisAffiliations,
     }
   },
 
   computed: {
+    nextCrisisIdToTreat() {
+      if (!this.dispatch || !this.dispatch.crises) return null
+      const untreated = this.dispatch.crises.filter(c => c.arrivedAtHospital && !c.medicalStatus && !c.treatedBy)
+      if (untreated.length === 0) return null
+      return untreated.sort((a,b) => a.arrivalTime - b.arrivalTime)[0].id
+    },
     isDirection() {
       const profileName = this.userStore.profile?.name?.toLowerCase().trim()
       const currentEmployee = this.employees.find(e => e.name?.toLowerCase().trim() === profileName)
@@ -769,6 +874,65 @@ export default {
       await this.dispatch.save()
     },
 
+    async addCrisisSlot() {
+      if (!this.dispatch) return
+      this.dispatch.crises = [...(this.dispatch.crises||[]), {
+        id: Date.now().toString()+Math.random().toString(36).slice(2,6),
+        name: '',
+        affiliation: 'civil',
+        reason: '',
+        repatriatedBy: null,
+        treatedBy: null,
+        arrivedAtHospital: false,
+        arrivalTime: null,
+        medicalStatus: null,
+        canalCheckCentrale: false
+      }]
+      await this.dispatch.save()
+    },
+
+    async removeCrisisSlot(slotId) {
+      this.dispatch.crises = this.dispatch.crises.filter(s=>s.id!==slotId)
+      await this.dispatch.save()
+    },
+
+    async onCrisisArrivalChange(crisis) {
+      if (crisis.arrivedAtHospital && !crisis.arrivalTime) {
+        crisis.arrivalTime = Date.now()
+      } else if (!crisis.arrivedAtHospital) {
+        crisis.arrivalTime = null
+      }
+      await this.onCrisisMetadataChange(crisis)
+    },
+
+    async onCrisisMetadataChange(crisis) {
+      if (!this.dispatch) return
+      this.dispatch.crises = [...this.dispatch.crises].sort((a, b) => {
+        const getAffIdx = (val) => {
+          const idx = this.crisisAffiliations.findIndex(aff => aff.value === val)
+          return idx === -1 ? 999 : idx
+        }
+        
+        const diffAff = getAffIdx(a.affiliation) - getAffIdx(b.affiliation)
+        if (diffAff !== 0) return diffAff
+        
+        if (a.arrivedAtHospital && b.arrivedAtHospital) return a.arrivalTime - b.arrivalTime
+        if (a.arrivedAtHospital) return -1
+        if (b.arrivedAtHospital) return 1
+        return 0
+      })
+      await this.dispatch.save()
+    },
+
+    formatTime(timestamp) {
+      if (!timestamp) return ''
+      const d = new Date(timestamp)
+      const hrs = d.getHours().toString().padStart(2, '0')
+      const mins = d.getMinutes().toString().padStart(2, '0')
+      const secs = d.getSeconds().toString().padStart(2, '0')
+      return `${hrs}:${mins}:${secs}`
+    },
+
     openAddDialog(categoryValue) {
       this.addDialogCategoryValue = categoryValue
       this.selectedEmployee = null
@@ -873,8 +1037,7 @@ export default {
 .dispatch-root {
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 80px);
-  overflow: hidden;
+  min-height: calc(100vh - 80px);
   font-family: 'Roboto', sans-serif;
   font-size: 0.8rem;
   background: #0f172a;
@@ -927,6 +1090,7 @@ export default {
   display: grid;
   grid-template-columns: 230px 1fr 350px 220px;
   flex: 1;
+  min-height: 60vh;
   overflow: hidden;
   border-bottom: 2px solid #334155;
 }
