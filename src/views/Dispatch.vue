@@ -513,9 +513,10 @@
               <th style="padding: 8px; font-weight: 500;">Appartenance</th>
               <th style="padding: 8px; font-weight: 500;">Raison</th>
               <th style="padding: 8px; font-weight: 500;">Qui rapatrie</th>
-              <th style="padding: 8px; font-weight: 500;">Qui soigne</th>
               <th style="padding: 8px; font-weight: 500;">Arrivée hôpital</th>
+              <th style="padding: 8px; font-weight: 500;">Qui soigne</th>
               <th style="padding: 8px; font-weight: 500;">Statut médical</th>
+              <th style="padding: 8px; font-weight: 500;">Lit</th>
               <th style="padding: 8px; font-weight: 500;">Canal check centrale</th>
               <th style="padding: 8px; width: 40px;"></th>
             </tr>
@@ -524,9 +525,17 @@
             <tr v-for="crisis in (dispatch?.crises||[])" :key="crisis.id" 
               :style="[
                 { borderBottom: '1px solid #1e293b' },
-                crisis.id === nextCrisisIdToTreat 
-                  ? { background: 'rgba(239, 68, 68, 0.15)', borderLeft: '3px solid #ef4444' } 
-                  : { background: 'rgba(255,0,0,0.05)' }
+                crisis.canalCheckCentrale 
+                  ? { background: 'rgba(128, 90, 213, 0.2)', borderLeft: '3px solid #9333ea' } 
+                  : crisis.medicalStatus
+                    ? { background: 'rgba(56, 189, 248, 0.15)', borderLeft: '3px solid #38bdf8' }
+                    : crisis.treatedBy 
+                      ? { background: 'rgba(16, 185, 129, 0.15)', borderLeft: '3px solid #10b981' }
+                      : crisis.isHeavyInjured 
+                        ? { background: 'rgba(239, 68, 68, 0.3)', borderLeft: '3px solid #ef4444' } 
+                        : crisis.isComa 
+                          ? { background: 'rgba(249, 115, 22, 0.2)', borderLeft: '3px solid #f97316' } 
+                          : { background: 'rgba(255,0,0,0.05)' }
               ]">
               
               <td style="padding: 6px; text-align: center;">
@@ -557,6 +566,13 @@
                   <option v-for="emp in employees" :key="emp.id" :value="emp.id" style="background:#1a1f35">{{ emp.name }}</option>
                 </select>
               </td>
+
+              <td style="padding: 6px;">
+                <label class="d-flex align-center cursor-pointer">
+                  <input type="checkbox" v-model="crisis.arrivedAtHospital" @change="onCrisisArrivalChange(crisis)" class="mr-1" style="width: 14px; height: 14px;" />
+                  <span v-if="crisis.arrivedAtHospital" class="text-caption ml-1 font-weight-bold" :class="crisis.id === nextCrisisIdToTreat ? 'text-red' : 'text-white'">{{ formatTime(crisis.arrivalTime) }}</span>
+                </label>
+              </td>
               
               <td style="padding: 6px;">
                 <select v-model="crisis.treatedBy" @change="dispatch.save()" class="location-input" style="border: 1px solid #334155; padding: 4px; border-radius: 4px; width: 100%; background: rgba(255,255,255,0.02); color: #fff; font-weight: 600;">
@@ -564,18 +580,18 @@
                   <option v-for="emp in employees" :key="emp.id" :value="emp.id" style="background:#1a1f35">{{ emp.name }}</option>
                 </select>
               </td>
-
-              <td style="padding: 6px;">
-                <label class="d-flex align-center cursor-pointer">
-                  <input type="checkbox" v-model="crisis.arrivedAtHospital" @change="onCrisisArrivalChange(crisis)" class="mr-1" style="width: 14px; height: 14px;" />
-                  <span v-if="crisis.arrivedAtHospital" class="text-caption text-green ml-1 font-weight-bold">{{ formatTime(crisis.arrivalTime) }}</span>
-                </label>
-              </td>
               
               <td style="padding: 6px;">
                 <select v-model="crisis.medicalStatus" @change="dispatch.save()" class="location-input" style="border: 1px solid #334155; padding: 4px; border-radius: 4px; background: rgba(255,255,255,0.02); font-weight: 600;" :style="{ color: crisisMedicalStatuses.find(s => s.value === crisis.medicalStatus)?.color || '#fff' }">
                   <option :value="null" style="background:#1a1f35; color: #fff;">-- Statut --</option>
                   <option v-for="stat in crisisMedicalStatuses" :key="stat.value" :value="stat.value" style="background:#1a1f35" :style="{ color: stat.color || '#e2e8f0' }">{{ stat.label }}</option>
+                </select>
+              </td>
+              
+              <td style="padding: 6px;">
+                <select v-model="crisis.bed" @change="dispatch.save()" class="location-input" style="border: 1px solid #334155; padding: 4px; border-radius: 4px; background: rgba(255,255,255,0.02); color: #fff; font-weight: 600;">
+                  <option :value="null" style="background:#1a1f35; color: #fff;">-- Lit --</option>
+                  <option v-for="bed in crisisBeds" :key="bed.value" :value="bed.value" style="background:#1a1f35">{{ bed.label }}</option>
                 </select>
               </td>
               
@@ -661,7 +677,8 @@ import {
   centralRoles,
   hospitalStatuses,
   crisisMedicalStatuses,
-  crisisAffiliations
+  crisisAffiliations,
+  crisisBeds
 } from '@/config/dispatch.js'
 import { trainingCompetencies } from '@/config/training_competencies.js'
 import { roleOrder, getRoleColor as getRoleColorConfig } from '@/config/roles.js'
@@ -697,6 +714,7 @@ export default {
       hospitalStatuses,
       crisisMedicalStatuses,
       crisisAffiliations,
+      crisisBeds,
     }
   },
 
@@ -1028,9 +1046,10 @@ export default {
         repatriatedBy: null,
         treatedBy: null,
         arrivedAtHospital: false,
-        arrivalTime: null,
         medicalStatus: null,
-        canalCheckCentrale: false
+        bed: null,
+        canalCheckCentrale: false,
+        arrivalTime: null,
       }]
       await this.dispatch.save()
     },
@@ -1056,14 +1075,7 @@ export default {
           const idx = this.crisisAffiliations.findIndex(aff => aff.value === val)
           return idx === -1 ? 999 : idx
         }
-        
-        const diffAff = getAffIdx(a.affiliation) - getAffIdx(b.affiliation)
-        if (diffAff !== 0) return diffAff
-        
-        if (a.arrivedAtHospital && b.arrivedAtHospital) return a.arrivalTime - b.arrivalTime
-        if (a.arrivedAtHospital) return -1
-        if (b.arrivedAtHospital) return 1
-        return 0
+        return getAffIdx(a.affiliation) - getAffIdx(b.affiliation)
       })
       await this.dispatch.save()
     },
