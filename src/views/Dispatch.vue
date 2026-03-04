@@ -1004,6 +1004,10 @@ export default {
 
     async addInterventionSlot() {
       if (!this.dispatch) return
+      if ((this.dispatch.interventions || []).length >= 25) {
+        Swal.fire({ title: 'Limite atteinte', text: 'Vous ne pouvez pas ajouter plus de 25 interventions.', icon: 'warning', background: '#1e293b', color: '#fff' })
+        return
+      }
       this.dispatch.interventions = [...(this.dispatch.interventions||[]), {
         id: Date.now().toString()+Math.random().toString(36).slice(2,6),
         type: 'intervention',
@@ -1045,6 +1049,10 @@ export default {
 
     async addCrisisSlot() {
       if (!this.dispatch) return
+      if ((this.dispatch.crises || []).length >= 50) {
+        Swal.fire({ title: 'Limite atteinte', text: 'Vous ne pouvez pas ajouter plus de 50 patients en crise.', icon: 'warning', background: '#1e293b', color: '#fff' })
+        return
+      }
       this.dispatch.crises = [...(this.dispatch.crises||[]), {
         id: Date.now().toString()+Math.random().toString(36).slice(2,6),
         name: '',
@@ -1138,6 +1146,10 @@ export default {
 
     async addRadio(category = 'standard') {
       if (!this.dispatch) return
+      if ((this.dispatch.radios || []).length >= 30) {
+        Swal.fire({ title: 'Limite atteinte', text: 'Vous ne pouvez pas ajouter plus de 30 radios.', icon: 'warning', background: '#1e293b', color: '#fff' })
+        return
+      }
       this.dispatch.radios = [...(this.dispatch.radios||[]), {
         id: Date.now().toString()+Math.random().toString(36).slice(2,6),
         serial: '',
