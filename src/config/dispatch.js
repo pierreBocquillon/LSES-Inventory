@@ -16,15 +16,18 @@ export const interventionTypes = [
     { value: 'bureau_admin', label: 'Bureau/Admin', emoji: '🖥️', color: '#37474f' },
     { value: 'formation', label: 'Formation', emoji: '📚', color: '#2e7d32' },
     { value: 'operation', label: 'Opération', emoji: '⚙️', color: '#e65100' },
+    { value: 'vm', label: 'VM', emoji: '🩺', color: '#1acb26ff' },
 ]
 
 export const returnStatuses = [
     { value: 'pat', label: 'PAT', emoji: '🦶', color: '#e65100' },
-    { value: 'retour_0', label: 'Retour avec 0', emoji: '✅', color: '#2e7d32' },
-    { value: 'retour_1', label: 'Retour avec 1', emoji: '🟡', color: '#f9a825' },
-    { value: 'retour_2', label: 'Retour avec 2', emoji: '🟠', color: '#e65100' },
+    { value: 'retour_0', label: 'Retour 0', emoji: '✅', color: '#2e7d32' },
+    { value: 'retour_1', label: 'Retour 1', emoji: '🟡', color: '#f9a825' },
+    { value: 'retour_2', label: 'Retour 2', emoji: '🟠', color: '#e65100' },
+    { value: 'retour_3', label: 'Retour 3', emoji: '🔴', color: '#c62828' },
     { value: 'bennys', label: "Benny's", emoji: '🔧', color: '#1565c0' },
     { value: 'zombie', label: 'Zombie Car', emoji: '🚗', color: '#6a1b9a' },
+    { value: 'airbag', label: 'Airbaged', emoji: '🛢️', color: '#e91010' },
 ]
 
 export const centralRoles = [
@@ -85,4 +88,22 @@ export const crisisBeds = [
     { value: 'middle_bed', label: 'Lit milieu' },
     { value: 'door_bed', label: 'Lit porte' },
     { value: 'treatment', label: 'Salle traitement' },
+]
+
+export const complements = [
+    { value: 'op_1', label: 'OP 1' },
+    { value: 'op_2', label: 'OP 2' },
+    { value: 'op_3', label: 'OP 3' },
+    { value: 'consult_1', label: 'Consulte 1' },
+    { value: 'consult_2', label: 'Consulte 2' },
+    { value: 'intensive_care', label: 'Soins Intensifs' },
+    { value: 'radio', label: 'Radio' },
+    { value: 'irm', label: 'IRM' },
+    { value: 'bces', label: 'BCES' },
+    { value: 'lspd', label: 'LSPD' },
+    { value: 'bcso', label: 'BCSO' },
+    { value: 'lsas', label: 'LSAS' },
+    { value: 'town_hall_south', label: 'Mairie sud' },
+    { value: 'town_hall_north', label: 'Mairie nord' },
+    { value: 'helicopter', label: 'FLAP-FLAP' },
 ]

@@ -5,10 +5,10 @@ const GLOBAL_DOC_ID = "global"
 const collectionName = "dispatches"
 
 function normalizeCentrale(c) {
-    if (!c) return { location: null, type: null, employees: [] }
+    if (!c) return { location: null, complement: null, type: null, returnStatus: null, employees: [] }
     if (c.employeeId)
-        return { location: null, type: null, employees: [{ employeeId: c.employeeId, name: c.name, phone: c.phone, allSpecialties: c.allSpecialties || [], centralRole: null }] }
-    return { location: c.location || null, type: c.type || null, employees: c.employees || [] }
+        return { location: null, complement: null, type: null, returnStatus: null, employees: [{ employeeId: c.employeeId, name: c.name, phone: c.phone, allSpecialties: c.allSpecialties || [], centralRole: null }] }
+    return { location: c.location || null, complement: c.complement || null, type: c.type || null, returnStatus: c.returnStatus || null, employees: c.employees || [] }
 }
 
 class Dispatch {

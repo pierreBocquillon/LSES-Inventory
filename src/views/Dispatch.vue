@@ -75,20 +75,56 @@
               </v-list-item>
             </v-list>
           </v-menu>
+          <v-menu location="bottom start" :close-on-content-click="true">
+            <template v-slot:activator="{ props }">
+              <span v-bind="props" class="return-badge"
+                :style="dispatch?.centrale?.returnStatus ? `background:${getReturnStatus(dispatch.centrale.returnStatus)?.color}22;border-color:${getReturnStatus(dispatch.centrale.returnStatus)?.color};color:${getReturnStatus(dispatch.centrale.returnStatus)?.color}` : ''"
+                @click.stop>
+                {{ dispatch?.centrale?.returnStatus ? (getReturnStatus(dispatch.centrale.returnStatus)?.emoji + ' ' + getReturnStatus(dispatch.centrale.returnStatus)?.label) : '＋ Statut' }}
+              </span>
+            </template>
+            <v-list density="compact" style="min-width:170px">
+              <v-list-subheader>Statut de la centrale</v-list-subheader>
+              <v-list-item v-for="rs in returnStatuses" :key="rs.value"
+                :active="dispatch?.centrale?.returnStatus===rs.value"
+                @click="setCentraleReturnStatus(rs.value)">
+                <template v-slot:prepend><span class="mr-1">{{ rs.emoji }}</span></template>
+                <v-list-item-title :style="`color:${rs.color}`">{{ rs.label }}</v-list-item-title>
+              </v-list-item>
+              <v-divider></v-divider>
+              <v-list-item v-if="dispatch?.centrale?.returnStatus" @click="setCentraleReturnStatus(null)">
+                <template v-slot:prepend><v-icon size="13" color="grey">mdi-close</v-icon></template>
+                <v-list-item-title class="text-grey">Effacer</v-list-item-title>
+              </v-list-item>
+            </v-list>
+          </v-menu>
           <v-btn icon variant="plain" size="x-small" color="error" class="ml-auto"
             @click="clearCentrale" title="Vider la centrale">
             <v-icon size="11">mdi-delete-sweep</v-icon>
           </v-btn>
         </div>
-                <div class="inter-location-row">
+        <div class="inter-location-row d-flex align-center">
           <v-icon size="11" color="#90a4ae" class="mr-1">mdi-map-marker</v-icon>
           <input
             class="location-input"
+            style="flex: 1;"
             :value="dispatch?.centrale?.location || ''"
-            placeholder="Position / Code ZIP"
+            placeholder="Code ZIP / Position"
             @change="setCentraleLocation($event.target.value)"
             @keyup.enter="$event.target.blur()"
           />
+          <select
+            v-if="dispatch?.centrale"
+            v-model="dispatch.centrale.complement"
+            @change="dispatch.save()"
+            class="location-input ml-2"
+            style="width: 85px; border-left: 2px solid #64748b; padding-left: 8px;"
+            :style="{ color: dispatch?.centrale?.complement ? (complements.find(c => c.value === dispatch?.centrale?.complement)?.color || '#fff') : '#64748b' }"
+            title="Complément"
+          >
+            <option :value="null" style="background:#1a1f35; color:#64748b">Complément</option>
+            <option v-for="c in complements" :key="c.value" :value="c.value" style="background:#1a1f35">{{ c.label }}</option>
+          </select>
         </div>
                 <div
           class="drop-slot drop-slot--inter"
@@ -203,15 +239,27 @@
                 <v-icon size="11">mdi-close</v-icon>
               </v-btn>
             </div>
-                        <div class="inter-location-row">
+            <div class="inter-location-row d-flex align-center">
               <v-icon size="11" color="#90a4ae" class="mr-1">mdi-map-marker</v-icon>
               <input
                 class="location-input"
+                style="flex: 1;"
                 :value="slot.location || ''"
                 placeholder="Code ZIP / Position"
                 @change="setInterSlotLocation(slot, $event.target.value)"
                 @keyup.enter="$event.target.blur()"
               />
+              <select
+                v-model="slot.complement"
+                @change="dispatch.save()"
+                class="location-input ml-2"
+                style="width: 85px; border-left: 2px solid #64748b; padding-left: 8px;"
+                :style="{ color: slot.complement ? (complements.find(c => c.value === slot.complement)?.color || '#fff') : '#64748b' }"
+                title="Complément"
+              >
+                <option :value="null" style="background:#1a1f35; color:#64748b">Complément</option>
+                <option v-for="c in complements" :key="c.value" :value="c.value" style="background:#1a1f35">{{ c.label }}</option>
+              </select>
             </div>
                         <div
               class="drop-slot drop-slot--inter"
@@ -683,7 +731,8 @@ import {
   hospitalStatuses,
   crisisMedicalStatuses,
   crisisAffiliations,
-  crisisBeds
+  crisisBeds,
+  complements
 } from '@/config/dispatch.js'
 import { trainingCompetencies } from '@/config/training_competencies.js'
 import { roleOrder, getRoleColor as getRoleColorConfig } from '@/config/roles.js'
@@ -720,6 +769,7 @@ export default {
       crisisMedicalStatuses,
       crisisAffiliations,
       crisisBeds,
+      complements,
     }
   },
 
@@ -902,7 +952,7 @@ export default {
       this._removeFromSource(src, emp.employeeId)
 
       if (targetKey === 'centrale') {
-        if (!this.dispatch.centrale) this.dispatch.centrale = { location: null, type: null, employees: [] }
+        if (!this.dispatch.centrale) this.dispatch.centrale = { location: null, complement: null, type: null, returnStatus: null, employees: [] }
         if (!this.dispatch.centrale.employees) this.dispatch.centrale.employees = []
         if (!this.dispatch.centrale.employees.find(e => e.employeeId === emp.employeeId)) {
           this.dispatch.centrale.employees.push({ employeeId: emp.employeeId, name: emp.name, phone: emp.phone, allSpecialties: emp.allSpecialties||[], role: emp.role||'', centralRole: null })
@@ -967,7 +1017,7 @@ export default {
       const r = await Swal.fire({ icon:'question', title:'Vider la centrale ?',
         showCancelButton:true, confirmButtonText:'Vider', cancelButtonText:'Annuler' })
       if (!r.isConfirmed) return
-      this.dispatch.centrale = { location: null, type: null, employees: [] }
+      this.dispatch.centrale = { location: null, complement: null, type: null, returnStatus: null, employees: [] }
       await this.dispatch.save()
     },
 
@@ -979,14 +1029,21 @@ export default {
 
     async setCentraleType(typeValue) {
       if (!this.dispatch) return
-      if (!this.dispatch.centrale) this.dispatch.centrale = { location: null, type: null, employees: [] }
+      if (!this.dispatch.centrale) this.dispatch.centrale = { location: null, complement: null, type: null, returnStatus: null, employees: [] }
       this.dispatch.centrale.type = typeValue
+      await this.dispatch.save()
+    },
+
+    async setCentraleReturnStatus(statusValue) {
+      if (!this.dispatch) return
+      if (!this.dispatch.centrale) this.dispatch.centrale = { location: null, complement: null, type: null, returnStatus: null, employees: [] }
+      this.dispatch.centrale.returnStatus = statusValue || null
       await this.dispatch.save()
     },
 
     async setCentraleLocation(loc) {
       if (!this.dispatch) return
-      if (!this.dispatch.centrale) this.dispatch.centrale = { location: null, type: null, employees: [] }
+      if (!this.dispatch.centrale) this.dispatch.centrale = { location: null, complement: null, type: null, returnStatus: null, employees: [] }
       this.dispatch.centrale.location = loc
       await this.dispatch.save()
     },
