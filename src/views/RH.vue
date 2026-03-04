@@ -304,8 +304,11 @@
               <v-col cols="12">
                 <v-text-field v-model="editedItem.email" label="Email (Gmail)" variant="outlined"></v-text-field>
               </v-col>
-              <v-col cols="12">
+              <v-col cols="12" md="6">
                 <v-text-field v-model="editedItem.phone" label="Téléphone" variant="outlined"></v-text-field>
+              </v-col>
+              <v-col cols="12" md="6">
+                <v-text-field v-model="editedItem.emoji" label="Emoji personnel" variant="outlined" :disabled="editedItem.role === 'Interne'" :hint="editedItem.role === 'Interne' ? 'Forcé à 🐣' : ''" persistent-hint></v-text-field>
               </v-col>
               <v-col cols="12">
                 <v-select v-model="editedItem.role" :items="['Interne', 'Résident', 'Titulaire', 'Spécialiste', 'Responsable de Service', 'Assistant RH', 'Directeur Adjoint', 'Directeur']" label="Rôle" variant="outlined" @update:model-value="onRoleChange"></v-select>
@@ -1528,7 +1531,10 @@ export default {
             this.editedItem.simpleFault,
             this.editedItem.suspension,
             this.editedItem.isTrainerTrainee,
-            this.editedItem.simulations
+            this.editedItem.simulations,
+            this.editedItem.isRHTrainee,
+            this.editedItem.validatedTrainings,
+            this.editedItem.emoji
           )
         } else {
           // Creating new
@@ -1549,8 +1555,19 @@ export default {
             this.editedItem.medicalDegreeDate,
             this.editedItem.helicopterTrainingDate,
             this.editedItem.helicopterTrainingReimbursed,
-            [], // new employee has no requests
-            null // new employee has no promotion request
+            [],
+            null,
+            null,
+            null,
+            {},
+            null,
+            null,
+            null,
+            false,
+            [],
+            false,
+            [],
+            ''
           )
         }
 
@@ -2069,7 +2086,20 @@ export default {
         today,
         null,
         null,
-        false
+        false,
+        [],
+        null,
+        null,
+        null,
+        {},
+        null,
+        null,
+        null,
+        false,
+        [],
+        false,
+        [],
+        ''
       )
 
       try {

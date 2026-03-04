@@ -143,7 +143,7 @@
             <div class="pc-grip">⠿</div>
             <div class="pc-info">
               <v-icon v-if="hasHelicopterTraining(emp.employeeId || emp.id)" size="12" class="pc-helico-icon" title="Médicoptère">mdi-helicopter</v-icon>
-              <div class="pc-name">{{ emp.name?.split(' ')[0] }}</div>
+              <div class="pc-name">{{ getEmployeeEmoji(emp.employeeId || emp.id) }} {{ emp.name?.split(' ')[0] }}</div>
               <div class="pc-phone">{{ emp.phone }}</div>
               <div class="pc-validations" v-if="getValidationBadges(emp.employeeId).length">
                 <span v-for="b in getValidationBadges(emp.employeeId)" :key="b.title" class="val-emoji" :title="b.title">{{ b.emoji }}</span>
@@ -281,7 +281,7 @@
                 <div class="pc-grip">⠿</div>
                 <div class="pc-info">
                   <v-icon v-if="hasHelicopterTraining(emp.employeeId || emp.id)" size="12" class="pc-helico-icon" title="Médicoptère">mdi-helicopter</v-icon>
-                  <div class="pc-name">{{ emp.name?.split(' ')[0] }}</div>
+                  <div class="pc-name">{{ getEmployeeEmoji(emp.employeeId || emp.id) }} {{ emp.name?.split(' ')[0] }}</div>
                   <div class="pc-phone">{{ emp.phone }}</div>
                   <div class="pc-validations" v-if="getValidationBadges(emp.employeeId).length">
                     <span v-for="b in getValidationBadges(emp.employeeId)" :key="b.title" class="val-emoji" :title="b.title">{{ b.emoji }}</span>
@@ -329,7 +329,7 @@
             <div class="pc-grip">⠿</div>
               <div class="pc-info">
               <v-icon v-if="hasHelicopterTraining(p.employeeId || p.id)" size="12" class="pc-helico-icon" title="Médicoptère">mdi-helicopter</v-icon>
-              <div class="pc-name">{{ p.name?.split(' ')[0] }}</div>
+              <div class="pc-name">{{ getEmployeeEmoji(p.employeeId || p.id) }} {{ p.name?.split(' ')[0] }}</div>
               <div class="pc-phone">{{ p.phone }}</div>
               <div class="pc-validations" v-if="getValidationBadges(p.employeeId).length">
                 <span v-for="b in getValidationBadges(p.employeeId)" :key="b.title" class="val-emoji" :title="b.title">{{ b.emoji }}</span>
@@ -366,7 +366,7 @@
           >
             <div class="pc-info">
               <v-icon v-if="hasHelicopterTraining(emp.id)" size="12" class="pc-helico-icon" title="Médicoptère">mdi-helicopter</v-icon>
-              <div class="pc-name">{{ emp.name?.split(' ')[0] }}</div>
+              <div class="pc-name">{{ getEmployeeEmoji(emp.employeeId || emp.id) }} {{ emp.name?.split(' ')[0] }}</div>
               <div class="pc-phone">{{ emp.phone }}</div>
               <div class="pc-validations" v-if="getValidationBadges(emp.id).length">
                 <span v-for="b in getValidationBadges(emp.id)" :key="b.title" class="val-emoji" :title="b.title">{{ b.emoji }}</span>
@@ -532,7 +532,7 @@
           >
               <div class="pc-info">
               <v-icon v-if="hasHelicopterTraining(p.employeeId || p.id)" size="12" class="pc-helico-icon" title="Médicoptère">mdi-helicopter</v-icon>
-              <div class="pc-name">{{ p.name?.split(' ')[0] }}</div>
+              <div class="pc-name">{{ getEmployeeEmoji(p.employeeId || p.id) }} {{ p.name?.split(' ')[0] }}</div>
               <div class="pc-phone">{{ p.phone }}</div>
               <div class="pc-specs">
                 <span v-for="sv in (p.allSpecialties||[])" :key="sv" class="spec-emoji" :title="getSpecialtyName(sv)">{{ getSpecialtyIcon(sv) }}</span>
@@ -1058,6 +1058,14 @@ export default {
     },
 
     getCentralRole(v) { return this.centralRoles.find(cr => cr.value === v) || null },
+
+    getEmployeeEmoji(empId) {
+      if (!empId) return '';
+      const emp = this.employees.find(e => e.id === empId);
+      if (!emp) return '';
+      if (emp.role === 'Interne') return '🐣';
+      return emp.emoji || '';
+    },
 
     async addInterventionSlot() {
       if (!this.dispatch) return
