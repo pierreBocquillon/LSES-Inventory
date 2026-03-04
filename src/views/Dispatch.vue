@@ -315,6 +315,51 @@
           </div>
         </div>
         <div v-if="!sortedUnassignedEmployees.length" class="text-center text-grey text-caption pa-3">Tous assignés</div>
+        
+        <div class="vehicles-info-wrapper mt-auto pa-2" style="border-top: 1px solid #334155; background: rgba(0,0,0,0.15)">
+          <div class="text-caption font-weight-bold text-grey-lighten-1 mb-1 d-flex align-center">
+            <v-icon size="14" class="mr-1">mdi-car-wrench</v-icon> État Flotte
+          </div>
+          <div class="text-caption text-grey-lighten-2 mb-2 ml-1" style="font-size: 0.65rem;">
+            Dernière répa flotte : <span class="text-white font-weight-bold">{{ lastRepairDateStr }}</span>
+          </div>
+          
+          <div v-if="guardVehicles?.length" class="mb-1">
+            <div class="text-caption font-weight-bold text-orange-lighten-2" style="font-size: 0.65rem;">🛡️ Gardiennage</div>
+            <div class="d-flex flex-wrap mt-1" style="gap: 4px;">
+              <span v-for="v in guardVehicles" :key="v.id" class="vehicle-badge" style="font-size: 0.55rem; padding: 1px 4px; border-color: #ffb74d; color: #ffb74d; background: rgba(255,183,77,0.1)">
+                {{ v.name }}
+              </span>
+            </div>
+          </div>
+          
+          <div v-if="fouriereVehicles?.length" class="mb-1">
+            <div class="text-caption font-weight-bold text-red-lighten-2 mt-1" style="font-size: 0.65rem;">⛔ Fourrière</div>
+            <div class="d-flex flex-wrap mt-1" style="gap: 4px;">
+              <span v-for="v in fouriereVehicles" :key="v.id" class="vehicle-badge" style="font-size: 0.55rem; padding: 1px 4px; border-color: #e57373; color: #e57373; background: rgba(229,115,115,0.1)">
+                {{ v.name }}
+              </span>
+            </div>
+          </div>
+          
+          <div v-if="insuranceVehicles?.length" class="mb-1">
+            <div class="text-caption font-weight-bold text-blue-lighten-2 mt-1" style="font-size: 0.65rem;">📄 Demande Assurance</div>
+            <div class="d-flex flex-wrap mt-1" style="gap: 4px;">
+              <span v-for="v in insuranceVehicles" :key="v.id" class="vehicle-badge" style="font-size: 0.55rem; padding: 1px 4px; border-color: #64b5f6; color: #64b5f6; background: rgba(100,181,246,0.1)">
+                {{ v.name }}
+              </span>
+            </div>
+          </div>
+          
+          <div v-if="needRepairVehicles?.length" class="mb-1">
+            <div class="text-caption font-weight-bold text-purple-lighten-2 mt-1" style="font-size: 0.65rem;">🔧 À Réparer</div>
+            <div class="d-flex flex-wrap mt-1" style="gap: 4px;">
+              <span v-for="v in needRepairVehicles" :key="v.id" class="vehicle-badge" style="font-size: 0.55rem; padding: 1px 4px; border-color: #ce93d8; color: #ce93d8; background: rgba(206,147,216,0.1)">
+                {{ v.name }}
+              </span>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div class="far-right-panel">
@@ -580,6 +625,7 @@
 import Dispatch from '@/classes/Dispatch.js'
 import Employee from '@/classes/Employee.js'
 import Specialty from '@/classes/Specialty.js'
+import Vehicle from '@/classes/Vehicle.js'
 import Swal from 'sweetalert2/dist/sweetalert2.js'
 import { useUserStore } from '@/store/user.js'
 import {
@@ -601,9 +647,11 @@ export default {
       dispatch: null,
       employees: [],
       specialties: [],
+      vehicles: [],
       unsub: null,
       unsubEmployees: null,
       unsubSpecialties: null,
+      unsubVehicles: null,
 
       draggingEmployee: null,
       draggingSource: null,   
@@ -678,6 +726,30 @@ export default {
     directionRadios() { return (this.dispatch?.radios||[]).filter(r => r.category === 'direction') },
     standardRadios() { return (this.dispatch?.radios||[]).filter(r => r.category !== 'direction') },
     addDialogCategory()   { return this.allCategories.find(c => c.value === this.addDialogCategoryValue) || null },
+    lastRepairDateStr() {
+      if (!this.vehicles || !this.vehicles.length) return 'Aucune'
+      const withDates = this.vehicles.filter(v => v.lastRepairDate)
+
+      if (!withDates || !withDates.length) return 'Aucune'
+      const latest = withDates.sort((a,b) => b.lastRepairDate - a.lastRepairDate)[0]
+
+      if (!latest || !latest.lastRepairDate) return 'Aucune'
+      const date = new Date(latest.lastRepairDate)
+
+      return date.toLocaleDateString('fr-FR') + ' à ' + date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+    },
+    fouriereVehicles() {
+      return (this.vehicles || []).filter(v => v.where === 'fouriere')
+    },
+    guardVehicles() {
+      return (this.vehicles || []).filter(v => v.underGuard)
+    },
+    insuranceVehicles() {
+      return (this.vehicles || []).filter(v => v.insurance)
+    },
+    needRepairVehicles() {
+      return (this.vehicles || []).filter(v => v.needRepair)
+    }
   },
 
   mounted() {
@@ -686,12 +758,14 @@ export default {
       this.employees = [...list].sort((a,b) => (a.name||'').localeCompare(b.name||''))
     })
     this.unsubSpecialties = Specialty.listenAll(list => { this.specialties = list })
+    Vehicle.listenAll(list => { this.vehicles = list }).then(unsub => { this.unsubVehicles = unsub })
   },
 
   beforeUnmount() {
     if (this.unsub) this.unsub()
     if (this.unsubEmployees) this.unsubEmployees()
     if (this.unsubSpecialties) this.unsubSpecialties()
+    if (this.unsubVehicles) this.unsubVehicles()
   },
 
   methods: {
@@ -1395,5 +1469,23 @@ export default {
   transition: opacity .15s;
 }
 .return-badge:hover { opacity: .8; }
+
+.vehicle-badge {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 3px;
+  padding: 1px 5px;
+  border-radius: 4px;
+  border: 1px solid #b0bec5;
+  font-size: 0.6rem;
+  font-weight: 700;
+  cursor: default;
+  color: #90a4ae;
+  background: #f5f5f5;
+  white-space: nowrap;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 </style>
 
