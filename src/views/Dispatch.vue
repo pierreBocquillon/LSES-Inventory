@@ -106,7 +106,8 @@
           >
             <div class="pc-grip">⠿</div>
             <div class="pc-info">
-              <div class="pc-name">{{ emp.name }}</div>
+              <v-icon v-if="hasHelicopterTraining(emp.employeeId || emp.id)" size="12" class="pc-helico-icon" title="Médicoptère">mdi-helicopter</v-icon>
+              <div class="pc-name">{{ emp.name?.split(' ')[0] }}</div>
               <div class="pc-phone">{{ emp.phone }}</div>
               <div class="pc-validations" v-if="getValidationBadges(emp.employeeId).length">
                 <span v-for="b in getValidationBadges(emp.employeeId)" :key="b.title" class="val-emoji" :title="b.title">{{ b.emoji }}</span>
@@ -231,7 +232,8 @@
               >
                 <div class="pc-grip">⠿</div>
                 <div class="pc-info">
-                  <div class="pc-name">{{ emp.name }}</div>
+                  <v-icon v-if="hasHelicopterTraining(emp.employeeId || emp.id)" size="12" class="pc-helico-icon" title="Médicoptère">mdi-helicopter</v-icon>
+                  <div class="pc-name">{{ emp.name?.split(' ')[0] }}</div>
                   <div class="pc-phone">{{ emp.phone }}</div>
                   <div class="pc-validations" v-if="getValidationBadges(emp.employeeId).length">
                     <span v-for="b in getValidationBadges(emp.employeeId)" :key="b.title" class="val-emoji" :title="b.title">{{ b.emoji }}</span>
@@ -278,7 +280,8 @@
           >
             <div class="pc-grip">⠿</div>
               <div class="pc-info">
-              <div class="pc-name">{{ p.name }}</div>
+              <v-icon v-if="hasHelicopterTraining(p.employeeId || p.id)" size="12" class="pc-helico-icon" title="Médicoptère">mdi-helicopter</v-icon>
+              <div class="pc-name">{{ p.name?.split(' ')[0] }}</div>
               <div class="pc-phone">{{ p.phone }}</div>
               <div class="pc-validations" v-if="getValidationBadges(p.employeeId).length">
                 <span v-for="b in getValidationBadges(p.employeeId)" :key="b.title" class="val-emoji" :title="b.title">{{ b.emoji }}</span>
@@ -314,7 +317,8 @@
             @click="quickAddFromHorsService(emp)"
           >
             <div class="pc-info">
-              <div class="pc-name">{{ emp.name }}</div>
+              <v-icon v-if="hasHelicopterTraining(emp.id)" size="12" class="pc-helico-icon" title="Médicoptère">mdi-helicopter</v-icon>
+              <div class="pc-name">{{ emp.name?.split(' ')[0] }}</div>
               <div class="pc-phone">{{ emp.phone }}</div>
               <div class="pc-validations" v-if="getValidationBadges(emp.id).length">
                 <span v-for="b in getValidationBadges(emp.id)" :key="b.title" class="val-emoji" :title="b.title">{{ b.emoji }}</span>
@@ -479,7 +483,8 @@
             @dragend="onDragEnd"
           >
               <div class="pc-info">
-              <div class="pc-name">{{ p.name }}</div>
+              <v-icon v-if="hasHelicopterTraining(p.employeeId || p.id)" size="12" class="pc-helico-icon" title="Médicoptère">mdi-helicopter</v-icon>
+              <div class="pc-name">{{ p.name?.split(' ')[0] }}</div>
               <div class="pc-phone">{{ p.phone }}</div>
               <div class="pc-specs">
                 <span v-for="sv in (p.allSpecialties||[])" :key="sv" class="spec-emoji" :title="getSpecialtyName(sv)">{{ getSpecialtyIcon(sv) }}</span>
@@ -822,6 +827,10 @@ export default {
   },
 
   methods: {
+    hasHelicopterTraining(empId) {
+      const e = this.employees.find(e => e.id === empId)
+      return e ? !!e.helicopterTrainingDate : false
+    },
     
     getSpecialtyIcon(v) { return this.specialties.find(s=>s.value===v||s.name===v)?.icon||'' },
     getSpecialtyName(v) { return this.specialties.find(s=>s.value===v||s.name===v)?.name||v },
@@ -1474,6 +1483,7 @@ export default {
 .pc-specs { font-size: 0.6rem; line-height: 1.1; margin-top: 1px; }
 .pc-role  { font-size: 0.58rem; font-weight: 700; margin-top: 1px; letter-spacing: 0.02em; }
 .spec-emoji { cursor: default; }
+.pc-helico-icon { position: absolute; top: 4px; right: 4px; color: #ffb74d; }
 
 .dispatch-bottom {
   display: grid;
