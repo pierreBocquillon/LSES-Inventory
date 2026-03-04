@@ -43,7 +43,7 @@
           </v-list>
         </v-menu>
       </div>
-      <div class="th-cell">😴 Hors service</div>
+      <div class="th-cell">😴 Hors service <span class="cnt ml-1">{{ sortedUnassignedEmployees.length }}</span></div>
       <div class="th-cell th-right">📻 Radios & Notes</div>
     </div>
 
@@ -367,6 +367,7 @@
                 <div class="radios-wrapper mt-auto pa-2" style="border-top: 1px solid #334155; background: rgba(0,0,0,0.15)">
           <div class="text-caption font-weight-bold text-grey-lighten-1 mb-2 d-flex align-center flex-shrink-0">
             <v-icon size="14" class="mr-1">mdi-radio-handheld</v-icon> Stock Radios
+            <span class="cnt ml-2" title="Radios standards prises / total">{{ standardRadios.filter(r => r.employeeId).length }} / {{ standardRadios.length }}</span>
             <v-menu location="bottom end">
               <template v-slot:activator="{ props }">
                 <v-btn v-if="isDirection" v-bind="props" size="x-small" variant="plain" color="white" class="ml-auto" title="Ajouter une radio">
@@ -406,7 +407,7 @@
                   <input v-if="isDirection" v-model="radio.serial" @change="dispatch.save()" class="location-input" style="width:50px; font-weight:bold" placeholder="# Série" />
                   <span v-else class="text-caption font-weight-bold mx-1" style="width:50px; display:inline-block; color:#94a3b8; text-align:center;">{{ radio.serial || '---' }}</span>
                   <select :value="radio.employeeId" @change="onRadioAssign(radio, $event.target.value)" class="location-input mx-1" style="border-left:1px solid #334155; padding-left:4px; max-width: 120px;">
-                    <option :value="''" style="background:#1a1f35">-- Assigné --</option>
+                    <option :value="''" style="background:#1a1f35">-- Assigner --</option>
                     <option v-for="emp in employees" :key="emp.id" :value="emp.id" style="background:#1a1f35">{{ emp.name }}</option>
                   </select>
                   <v-btn size="x-small" :color="radio.status === 'on' ? 'success' : 'error'" variant="tonal" class="ml-auto px-1" style="min-width: 32px; height: 18px; font-size: 0.6rem;" @click="toggleRadioStatus(radio)">
@@ -482,6 +483,9 @@
     <div class="crises-bottom-section" style="border-top: 2px solid #334155; background: #0f172a; padding: 10px; max-height: 250px; overflow-y: auto; width: 100%; box-sizing: border-box; flex-shrink: 0;">
       <div class="slot-section-title" style="background: linear-gradient(90deg, #ef4444 0%, #b91c1c 100%);">
         🚨 Dispatch de crises
+        <span class="cnt ml-2">
+          {{ treatedInjured }} / {{ totalInjured }}
+        </span>
         <v-btn size="x-small" variant="plain" color="white" class="ml-auto" @click="addCrisisSlot">
           <v-icon size="13">mdi-plus</v-icon>
         </v-btn>
@@ -491,12 +495,14 @@
         <table style="width: 100%; border-collapse: collapse; text-align: left;">
           <thead>
             <tr style="border-bottom: 1px solid #334155; color: #cbd5e1; font-size: 0.75rem;">
-              <th style="padding: 8px; font-weight: 500;">Nom de la victime</th>
+              <th style="padding: 8px; font-weight: 500; text-align: center; width: 40px;">Coma</th>
+              <th style="padding: 8px; font-weight: 500; text-align: center; width: 60px;">Lourd / Inconscient</th>
+              <th style="padding: 8px; font-weight: 500;">Nom du patient</th>
               <th style="padding: 8px; font-weight: 500;">Appartenance</th>
               <th style="padding: 8px; font-weight: 500;">Raison</th>
-              <th style="padding: 8px; font-weight: 500;">Rapatrie</th>
-              <th style="padding: 8px; font-weight: 500;">Soigne</th>
-              <th style="padding: 8px; font-weight: 500;">Hôpital</th>
+              <th style="padding: 8px; font-weight: 500;">Qui rapatrie</th>
+              <th style="padding: 8px; font-weight: 500;">Qui soigne</th>
+              <th style="padding: 8px; font-weight: 500;">Arrivée hôpital</th>
               <th style="padding: 8px; font-weight: 500;">Statut médical</th>
               <th style="padding: 8px; font-weight: 500;">Canal check centrale</th>
               <th style="padding: 8px; width: 40px;"></th>
@@ -511,6 +517,14 @@
                   : { background: 'rgba(255,0,0,0.05)' }
               ]">
               
+              <td style="padding: 6px; text-align: center;">
+                <input type="checkbox" v-model="crisis.isComa" @change="dispatch.save()" style="width: 16px; height: 16px; accent-color: #ef4444;" />
+              </td>
+
+              <td style="padding: 6px; text-align: center;">
+                <input type="checkbox" v-model="crisis.isHeavyInjured" @change="dispatch.save()" style="width: 16px; height: 16px; accent-color: #f97316;" />
+              </td>
+
               <td style="padding: 6px;">
                 <input v-model="crisis.name" @change="dispatch.save()" class="location-input font-weight-bold text-red-lighten-2" style="font-size: 0.8rem; width: 100%; border-bottom: 1px solid transparent;" placeholder="Nom" />
               </td>
@@ -526,15 +540,15 @@
               </td>
               
               <td style="padding: 6px;">
-                <select v-model="crisis.repatriatedBy" @change="dispatch.save()" class="location-input" style="border: 1px solid #334155; padding: 4px; border-radius: 4px; width: 100%; background: rgba(255,255,255,0.02)">
-                  <option :value="null" style="background:#1a1f35">-- Sélectionner --</option>
+                <select v-model="crisis.repatriatedBy" @change="dispatch.save()" class="location-input" style="border: 1px solid #334155; padding: 4px; border-radius: 4px; width: 100%; background: rgba(255,255,255,0.02); color: #fff; font-weight: 600;">
+                  <option :value="null" style="background:#1a1f35; color: #fff;">-- Sélectionner --</option>
                   <option v-for="emp in employees" :key="emp.id" :value="emp.id" style="background:#1a1f35">{{ emp.name }}</option>
                 </select>
               </td>
               
               <td style="padding: 6px;">
-                <select v-model="crisis.treatedBy" @change="dispatch.save()" class="location-input" style="border: 1px solid #334155; padding: 4px; border-radius: 4px; width: 100%; background: rgba(255,255,255,0.02)">
-                  <option :value="null" style="background:#1a1f35">-- Sélectionner --</option>
+                <select v-model="crisis.treatedBy" @change="dispatch.save()" class="location-input" style="border: 1px solid #334155; padding: 4px; border-radius: 4px; width: 100%; background: rgba(255,255,255,0.02); color: #fff; font-weight: 600;">
+                  <option :value="null" style="background:#1a1f35; color: #fff;">-- Sélectionner --</option>
                   <option v-for="emp in employees" :key="emp.id" :value="emp.id" style="background:#1a1f35">{{ emp.name }}</option>
                 </select>
               </td>
@@ -725,6 +739,14 @@ export default {
     },
     directionRadios() { return (this.dispatch?.radios||[]).filter(r => r.category === 'direction') },
     standardRadios() { return (this.dispatch?.radios||[]).filter(r => r.category !== 'direction') },
+    totalInjured() {
+      if (!this.dispatch || !this.dispatch.crises) return 0
+      return this.dispatch.crises.filter(c => c.name && c.name.trim() !== '').length
+    },
+    treatedInjured() {
+      if (!this.dispatch || !this.dispatch.crises) return 0
+      return this.dispatch.crises.filter(c => c.name && c.name.trim() !== '' && c.medicalStatus).length
+    },
     addDialogCategory()   { return this.allCategories.find(c => c.value === this.addDialogCategoryValue) || null },
     lastRepairDateStr() {
       if (!this.vehicles || !this.vehicles.length) return 'Aucune'
@@ -953,6 +975,8 @@ export default {
       this.dispatch.crises = [...(this.dispatch.crises||[]), {
         id: Date.now().toString()+Math.random().toString(36).slice(2,6),
         name: '',
+        isComa: false,
+        isHeavyInjured: false,
         affiliation: 'civil',
         reason: '',
         repatriatedBy: null,
