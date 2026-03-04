@@ -108,6 +108,9 @@
             <div class="pc-info">
               <div class="pc-name">{{ emp.name }}</div>
               <div class="pc-phone">{{ emp.phone }}</div>
+              <div class="pc-validations" v-if="getValidationBadges(emp.employeeId).length">
+                <span v-for="b in getValidationBadges(emp.employeeId)" :key="b.title" class="val-emoji" :title="b.title">{{ b.emoji }}</span>
+              </div>
               <div class="pc-specs">
                 <span v-for="sv in (emp.allSpecialties||[])" :key="sv" class="spec-emoji" :title="getSpecialtyName(sv)">{{ getSpecialtyIcon(sv) }}</span>
               </div>
@@ -230,6 +233,9 @@
                 <div class="pc-info">
                   <div class="pc-name">{{ emp.name }}</div>
                   <div class="pc-phone">{{ emp.phone }}</div>
+                  <div class="pc-validations" v-if="getValidationBadges(emp.employeeId).length">
+                    <span v-for="b in getValidationBadges(emp.employeeId)" :key="b.title" class="val-emoji" :title="b.title">{{ b.emoji }}</span>
+                  </div>
                   <div class="pc-specs">
                     <span v-for="sv in (emp.allSpecialties||[])" :key="sv" class="spec-emoji" :title="getSpecialtyName(sv)">{{ getSpecialtyIcon(sv) }}</span>
                   </div>
@@ -274,6 +280,9 @@
               <div class="pc-info">
               <div class="pc-name">{{ p.name }}</div>
               <div class="pc-phone">{{ p.phone }}</div>
+              <div class="pc-validations" v-if="getValidationBadges(p.employeeId).length">
+                <span v-for="b in getValidationBadges(p.employeeId)" :key="b.title" class="val-emoji" :title="b.title">{{ b.emoji }}</span>
+              </div>
               <div class="pc-specs">
                 <span v-for="sv in (p.allSpecialties||[])" :key="sv" class="spec-emoji" :title="getSpecialtyName(sv)">{{ getSpecialtyIcon(sv) }}</span>
               </div>
@@ -307,6 +316,9 @@
             <div class="pc-info">
               <div class="pc-name">{{ emp.name }}</div>
               <div class="pc-phone">{{ emp.phone }}</div>
+              <div class="pc-validations" v-if="getValidationBadges(emp.id).length">
+                <span v-for="b in getValidationBadges(emp.id)" :key="b.title" class="val-emoji" :title="b.title">{{ b.emoji }}</span>
+              </div>
               <div class="pc-specs">
                 <span v-for="sv in (emp.allSpecialties||[])" :key="sv" class="spec-emoji" :title="getSpecialtyName(sv)">{{ getSpecialtyIcon(sv) }}</span>
               </div>
@@ -651,6 +663,7 @@ import {
   crisisMedicalStatuses,
   crisisAffiliations
 } from '@/config/dispatch.js'
+import { trainingCompetencies } from '@/config/training_competencies.js'
 import { roleOrder, getRoleColor as getRoleColorConfig } from '@/config/roles.js'
 import logger from '@/functions/logger.js'
 
@@ -802,6 +815,39 @@ export default {
     getEmployeeEmojis(empId) {
       const e = this.employees.find(e=>e.id===empId)
       return e ? [...(e.specialties||[]),...(e.chiefSpecialties||[])].map(v=>this.getSpecialtyIcon(v)).filter(Boolean).join(' ') : ''
+    },
+    getValidationBadges(empId) {
+      const e = this.employees.find(e => e.id === empId)
+      if (!e || !e.competencyProgress || !e.role) return []
+      
+      const badges = []
+      const progress = e.competencyProgress
+      
+      const isIntern = e.role === 'Interne'
+      const isResident = e.role === 'Résident'
+      
+      if (!isIntern && !isResident) return []
+      
+      trainingCompetencies.forEach(cat => {
+        cat.competencies.forEach(comp => {
+          if (isIntern && ['dds', 'vc', 'vm', 'avp_airbag'].includes(comp.id)) {
+            const total = comp.subCompetencies.length
+            const validated = comp.subCompetencies.filter(sub => progress[sub.id] === 'validated').length
+            if (total > 0 && validated === total) {
+              badges.push({ emoji: comp.emoji || '✅', title: comp.title })
+            }
+          }
+          if (isResident && ['central', 'folder_writing'].includes(comp.id)) {
+            const total = comp.subCompetencies.length
+            const validated = comp.subCompetencies.filter(sub => progress[sub.id] === 'validated').length
+            if (total > 0 && validated === total) {
+              badges.push({ emoji: comp.emoji || '✅', title: comp.title })
+            }
+          }
+        })
+      })
+      
+      return badges
     },
 
     patatesForCategory(cat) { return this.dispatch?.patates.filter(p=>p.category===cat)||[] },
@@ -1411,6 +1457,8 @@ export default {
 .pc-info { flex: 1; min-width: 0; }
 .pc-name { font-size: 0.7rem; font-weight: 700; color: #f8fafc; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pc-phone { font-size: 0.62rem; color: #cbd5e1; }
+.pc-validations { margin-top: 1px; font-size: 11px; display: flex; flex-wrap: wrap; gap: 2px; }
+.val-emoji { cursor: default; }
 .pc-specs { font-size: 0.6rem; line-height: 1.1; margin-top: 1px; }
 .pc-role  { font-size: 0.58rem; font-weight: 700; margin-top: 1px; letter-spacing: 0.02em; }
 .spec-emoji { cursor: default; }
