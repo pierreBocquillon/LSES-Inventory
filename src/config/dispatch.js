@@ -40,6 +40,8 @@ export const hospitalStatuses = [
     { value: 'gestion_normale', label: 'Gestion Normale', icon: 'mdi-hospital', color: '#2e7d32' },
     { value: 'hopital_ferme', label: 'Hôpital Fermé', icon: 'mdi-close', color: '#c62828' },
     { value: 'coups_de_feu', label: 'Coups de feu à proximité', icon: 'mdi-alert', color: '#e65100' },
+    { value: 'gestion_bagarre', label: 'Gestion bagarre', icon: 'mdi-sword', color: '#0049e6ff' },
+    { value: 'gestion_fusillade', label: 'Gestion fusillade', icon: 'mdi-fire-extinguisher', color: '#e43d7dff' },
 ]
 
 export const crisisMedicalStatuses = [
@@ -88,6 +90,57 @@ export const crisisBeds = [
     { value: 'middle_bed', label: 'Lit milieu' },
     { value: 'door_bed', label: 'Lit porte' },
     { value: 'treatment', label: 'Salle traitement' },
+]
+
+export const crisisBedGroups = [
+    {
+        id: 'intensive_care',
+        label: 'SOINS INTENSIFS',
+        icon: '🚨',
+        color: '#3b82f6',
+        type: 'clockwise',
+        beds: ['bed_3', 'bed_4', 'bed_5', 'bed_6', 'bed_7', 'bed_8', 'bed_9', '', 'bed_1', 'bed_2']
+    },
+    {
+        id: 'op_room',
+        label: "SALLES D'OPÉRATIONS",
+        icon: '🥼',
+        color: '#3b82f6',
+        type: 'horizontal',
+        beds: ['op_1', 'op_2', 'op_3']
+    },
+    {
+        id: 'imaging',
+        label: "IMAGERIE MÉDICALE",
+        icon: '🩻',
+        color: '#3b82f6',
+        type: 'horizontal',
+        beds: ['irm', 'radio']
+    },
+    {
+        id: 'consultations',
+        label: "SALLES DE CONSULTATIONS",
+        icon: '🩺',
+        color: '#3b82f6',
+        type: 'horizontal',
+        beds: ['consult_1', 'consult_2', 'treatment']
+    },
+    {
+        id: 'private_rooms',
+        label: "CHAMBRE INDIVIDUELLES",
+        icon: '🛏️',
+        color: '#3b82f6',
+        type: 'horizontal',
+        beds: ['room_369', 'room_370', 'room_371']
+    },
+    {
+        id: 'common_room',
+        label: "CHAMBRE COMMUNE",
+        icon: '🛏️',
+        color: '#3b82f6',
+        type: 'horizontal',
+        beds: ['window_bed', 'middle_bed', 'door_bed']
+    }
 ]
 
 export const complements = [

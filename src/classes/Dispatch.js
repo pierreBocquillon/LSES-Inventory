@@ -12,7 +12,7 @@ function normalizeCentrale(c) {
 }
 
 class Dispatch {
-    constructor(centrale, patates, hospitalStatus, interventions, lsesRadio, communeRadio, notepad, radios, nuitRadioId, crises) {
+    constructor(centrale, patates, hospitalStatus, interventions, lsesRadio, communeRadio, notepad, radios, nuitRadioId, crises, beds) {
         this.centrale = normalizeCentrale(centrale)
         this.patates = patates || []
         this.hospitalStatus = hospitalStatus || 'gestion_normale'
@@ -23,12 +23,13 @@ class Dispatch {
         this.radios = radios || []
         this.nuitRadioId = nuitRadioId || null
         this.crises = crises || []
+        this.beds = beds || {}
     }
 
     static listenGlobal(callback) {
         return onSnapshot(doc(db, collectionName, GLOBAL_DOC_ID), snapshot => {
             const data = snapshot.data() || {}
-            callback(new Dispatch(data.centrale, data.patates, data.hospitalStatus, data.interventions, data.lsesRadio, data.communeRadio, data.notepad, data.radios, data.nuitRadioId, data.crises))
+            callback(new Dispatch(data.centrale, data.patates, data.hospitalStatus, data.interventions, data.lsesRadio, data.communeRadio, data.notepad, data.radios, data.nuitRadioId, data.crises, data.beds))
         })
     }
 
@@ -43,7 +44,8 @@ class Dispatch {
             notepad: this.notepad || '',
             radios: this.radios || [],
             nuitRadioId: this.nuitRadioId || null,
-            crises: this.crises || []
+            crises: this.crises || [],
+            beds: this.beds || {}
         }, { merge: true })
     }
 }
