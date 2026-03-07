@@ -45,9 +45,18 @@ export const hospitalStatuses = [
 ]
 
 export const crisisMedicalStatuses = [
-    { value: 'reveil', label: 'Réveil après OP', color: '#10b981' },
-    { value: 'attente_sortie', label: 'Attente de sortie', color: '#3b82f6' },
-    { value: 'sorti', label: 'Sorti', color: '#6b7280' },
+    { value: 'reveil', label: 'Réveil après OP', emoji: '🥱', color: '#10b981' },
+    { value: 'attente_sortie', label: 'Attente de sortie', emoji: '🚪', color: '#3b82f6' },
+    { value: 'sorti', label: 'Sorti', emoji: '✅', color: '#59AD4F' },
+    { value: 'en_observation', label: 'En observation', emoji: '👁️', color: '#AD4F87' },
+    { value: 'degrisement', label: 'Dégrisement', emoji: '🍺', color: '#658780' },
+    { value: 'attente_op', label: 'Attente d\'OP', emoji: '⏳', color: '#E36519' },
+    { value: 'coma_artificiel', label: 'Coma artificiel', emoji: '💤', color: '#E62C48' },
+    { value: 'equipe_nuit', label: 'Equipe de nuit / Finir soin', emoji: '🌙', color: '#263991' },
+    { value: 'nuit_chambre', label: 'Nuit en chambre', emoji: '🏨', color: '#482691' },
+    { value: 'inconscient', label: 'Inconscient', emoji: '😵', color: '#26BF96' },
+    { value: 'autopsie', label: 'Autopsie', emoji: '🩻', color: '#808080' },
+    { value: 'decede', label: 'Décédé', emoji: '⚰️', color: '#D9D9D9' },
 ]
 
 export const crisisAffiliations = [

@@ -42,6 +42,17 @@
             </v-list-item>
           </v-list>
         </v-menu>
+
+        <span v-if="safdStatus" class="hosp-btn ml-3" style="background: rgba(239, 68, 68, 0.15); border-color: rgba(239, 68, 68, 0.3); color: #fca5a5; pointer-events: none;">
+          <v-icon size="13" class="mr-1">mdi-fire-truck</v-icon>
+          Status SAFD : <strong :style="(safdStatus.toLowerCase().includes('dispo') && !safdStatus.toLowerCase().includes('indispo')) ? 'color: #34d399;' : 'color: #f87171;'">{{ safdStatus }}</strong>
+        </span>
+
+        <span class="hosp-btn ml-3" style="background: rgba(59, 130, 246, 0.15); border-color: rgba(59, 130, 246, 0.3); color: #93c5fd; pointer-events: none;">
+          <v-icon size="13" class="mr-1">mdi-shield-cross</v-icon>
+          Status BCES : <strong :style="((bcesStatus || '').toLowerCase().includes('dispo') && !(bcesStatus || '').toLowerCase().includes('indispo')) ? 'color: #34d399;' : ((bcesStatus || '').toLowerCase().includes('nuit') ? 'color: #60a5fa;' : 'color: #f87171;')">{{ bcesStatus || 'Inconnu' }}</strong>
+        </span>
+
       </div>
       <div class="th-cell">😴 Hors service <span class="cnt ml-1">{{ sortedUnassignedEmployees.length }}</span></div>
       <div class="th-cell th-right">📻 Radios & Notes</div>
@@ -637,7 +648,7 @@
               <td style="padding: 6px;">
                 <select v-model="crisis.medicalStatus" @change="dispatch.save()" class="location-input" style="border: 1px solid #334155; padding: 4px; border-radius: 4px; background: rgba(255,255,255,0.02); font-weight: 600;" :style="{ color: crisisMedicalStatuses.find(s => s.value === crisis.medicalStatus)?.color || '#fff' }">
                   <option :value="null" style="background:#1a1f35; color: #fff;">-- Statut --</option>
-                  <option v-for="stat in crisisMedicalStatuses" :key="stat.value" :value="stat.value" style="background:#1a1f35" :style="{ color: stat.color || '#e2e8f0' }">{{ stat.label }}</option>
+                  <option v-for="stat in crisisMedicalStatuses" :key="stat.value" :value="stat.value" style="background:#1a1f35" :style="{ color: stat.color || '#e2e8f0' }">{{ stat.emoji ? stat.emoji + ' ' : '' }}{{ stat.label }}</option>
                 </select>
               </td>
               
@@ -719,7 +730,7 @@
                       :style="{ color: crisisMedicalStatuses.find(s => s.value === getBedData(bedId).reason)?.color || '#fff' }"
                     >
                       <option value="" style="background:#1a1f35; color: #fff;"></option>
-                      <option v-for="stat in crisisMedicalStatuses" :key="stat.value" :value="stat.value" style="background:#1a1f35" :style="{ color: stat.color || '#e2e8f0' }">{{ stat.label }}</option>
+                      <option v-for="stat in crisisMedicalStatuses" :key="stat.value" :value="stat.value" style="background:#1a1f35" :style="{ color: stat.color || '#e2e8f0' }">{{ stat.emoji ? stat.emoji + ' ' : '' }}{{ stat.label }}</option>
                     </select>
                   </td>
                 </tr>
@@ -840,6 +851,10 @@ export default {
       userStore: useUserStore(),
       dispatch: null,
       employees: [],
+      safdStatus: null,
+      safdInterval: null,
+      bcesStatus: null,
+      bcesInterval: null,
       specialties: [],
       vehicles: [],
       unsub: null,
@@ -892,7 +907,7 @@ export default {
       return this.hospitalStatuses.find(s => s.value === this.dispatch.hospitalStatus) || this.hospitalStatuses[0]
     },
 
-        allEmployees() {
+    allEmployees() {
       return this.employees.map(e => ({
         id: e.id, name: e.name, phone: e.phone || '', role: e.role || '',
         allSpecialties: e.specialties || [],
@@ -900,7 +915,7 @@ export default {
       }))
     },
 
-        usedEmployeeIds() {
+    usedEmployeeIds() {
       if (!this.dispatch) return new Set()
       const ids = []
       
@@ -958,6 +973,12 @@ export default {
   },
 
   mounted() {
+    this.fetchSafdStatus()
+    this.safdInterval = setInterval(this.fetchSafdStatus, 60000)
+
+    this.fetchBcesStatus()
+    this.bcesInterval = setInterval(this.fetchBcesStatus, 60000)
+
     this.unsub = Dispatch.listenGlobal(data => { this.dispatch = data })
     this.unsubEmployees = Employee.listenAll(list => {
       this.employees = [...list].sort((a,b) => (a.name||'').localeCompare(b.name||''))
@@ -967,6 +988,8 @@ export default {
   },
 
   beforeUnmount() {
+    if (this.safdInterval) clearInterval(this.safdInterval)
+    if (this.bcesInterval) clearInterval(this.bcesInterval)
     if (this.unsub) this.unsub()
     if (this.unsubEmployees) this.unsubEmployees()
     if (this.unsubSpecialties) this.unsubSpecialties()
@@ -974,6 +997,44 @@ export default {
   },
 
   methods: {
+    fetchSafdStatus() {
+      fetch('https://docs.google.com/spreadsheets/d/1A1gxOho_roNwxTtcbiEpLGSWbD8JUasMDu4NL-zdcbw/export?format=csv&gid=0')
+        .then(res => res.text())
+        .then(text => {
+          const rows = text.split('\n')
+          if (rows.length >= 3) {
+            const cols = rows[2].split(',')
+            if (cols.length >= 4) {
+              this.safdStatus = cols[3].trim()
+            }
+          }
+        })
+        .catch(err => {
+          console.error("Erreur gsheet SAFD", err)
+        })
+    },
+    fetchBcesStatus() {
+      const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycby-YE2huHmXe9apJoz6jvkoZ3QY1e0LNPbrRr9EO6Yfgjo7z0klBo2Q-ok-SrFzk1tP/exec?action=bcesDispatchDoGet'
+      const script = document.createElement('script')
+      const callbackName = 'jsonpCallback_' + Math.round(100000 * Math.random())
+      
+      window[callbackName] = (data) => {
+        if (data && data.status) {
+          this.bcesStatus = data.status.replace(/['"]/g, '').trim()
+        }
+        delete window[callbackName]
+        document.body.removeChild(script)
+      }
+
+      script.src = `${WEB_APP_URL}&callback=${callbackName}`
+      script.onerror = () => {
+        console.error("Erreur Web App BCES (JSONP)")
+        delete window[callbackName]
+        document.body.removeChild(script)
+      }
+
+      document.body.appendChild(script)
+    },
     hasHelicopterTraining(empId) {
       const e = this.employees.find(e => e.id === empId)
       return e ? !!e.helicopterTrainingDate : false
