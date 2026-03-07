@@ -633,7 +633,7 @@
               <th style="padding: 8px; font-weight: 500; text-align: center; width: 60px;">Lourd / Inconscient</th>
               <th style="padding: 8px; font-weight: 500;">Nom du patient</th>
               <th style="padding: 8px; font-weight: 500;">Appartenance</th>
-              <th style="padding: 8px; font-weight: 500;">Raison</th>
+              <th style="padding: 8px; font-weight: 500;">Détails</th>
               <th style="padding: 8px; font-weight: 500;">Qui rapatrie</th>
               <th style="padding: 8px; font-weight: 500;">Arrivée hôpital</th>
               <th style="padding: 8px; font-weight: 500;">Qui soigne</th>
@@ -679,7 +679,7 @@
               </td>
 
               <td style="padding: 6px;">
-                <input v-model="crisis.reason" @change="dispatch.save()" class="location-input" placeholder="Raison" style="font-size: 0.75rem; background: rgba(0,0,0,0.2); padding: 5px 8px; border-radius: 4px; width: 100%; border: 1px solid #334155;" />
+                <input v-model="crisis.reason" @change="dispatch.save()" class="location-input" placeholder="Calibre // GPB // Blessures // ZIP" style="font-size: 0.75rem; background: rgba(0,0,0,0.2); padding: 5px 8px; border-radius: 4px; width: 100%; border: 1px solid #334155;" />
               </td>
               
               <td style="padding: 6px;">
