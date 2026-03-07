@@ -461,7 +461,7 @@
             draggable="true"
             @dragstart="startDrag({ employeeId: emp.id, name: emp.name, phone: emp.phone, allSpecialties: emp.allSpecialties, role: emp.role }, 'hs')"
             @dragend="onDragEnd"
-            @click="quickAddFromHorsService(emp)"
+            @click="emp.role !== 'Temporaire' && quickAddFromHorsService(emp)"
           >
             <div class="pc-info">
               <v-icon v-if="hasHelicopterTraining(emp.id)" size="12" class="pc-helico-icon" title="Médicoptère">mdi-helicopter</v-icon>
@@ -1045,8 +1045,8 @@ export default {
         let name = '';
         let phone = '';
         if (newVals && newVals.length > 0) {
-          name = newVals.map(e => e.name).join(' / ');
-          phone = newVals.map(e => e.phone).filter(Boolean).join(' / ');
+          name = newVals[0].name || '';
+          phone = newVals[0].phone || '';
         }
         
         try {
