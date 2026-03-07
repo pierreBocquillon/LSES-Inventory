@@ -1,5 +1,5 @@
 <template>
-  <div class="dispatch-root">
+  <div class="dispatch-root" :class="{ 'is-dragging': !!draggingEmployee }">
 
         <div class="dispatch-top-headers">
       <div class="th-cell th-left">
@@ -43,9 +43,9 @@
           </v-list>
         </v-menu>
 
-        <span v-if="safdStatus" class="hosp-btn ml-3" style="background: rgba(239, 68, 68, 0.15); border-color: rgba(239, 68, 68, 0.3); color: #fca5a5; pointer-events: none;">
+        <span class="hosp-btn ml-3" style="background: rgba(239, 68, 68, 0.15); border-color: rgba(239, 68, 68, 0.3); color: #fca5a5; pointer-events: none;">
           <v-icon size="13" class="mr-1">mdi-fire-truck</v-icon>
-          Status SAFD : <strong :style="(safdStatus.toLowerCase().includes('dispo') && !safdStatus.toLowerCase().includes('indispo')) ? 'color: #34d399;' : 'color: #f87171;'">{{ safdStatus }}</strong>
+          Status SAFD : <strong :style="((safdStatus || '').toLowerCase().includes('dispo') && !(safdStatus || '').toLowerCase().includes('indispo')) ? 'color: #34d399;' : 'color: #f87171;'">{{ safdStatus || 'Inconnu' }}</strong>
         </span>
 
         <span class="hosp-btn ml-3" style="background: rgba(59, 130, 246, 0.15); border-color: rgba(59, 130, 246, 0.3); color: #93c5fd; pointer-events: none;">
@@ -56,6 +56,9 @@
       </div>
       <div class="th-cell">
         😴 Hors service <span class="cnt ml-1">{{ sortedUnassignedEmployees.length }}</span>
+        <v-btn icon variant="plain" size="x-small" color="warning" class="ml-2" @click="promptAddTemporaryEmployee" title="Ajouter un médecin temporaire">
+          <v-icon size="14">mdi-account-plus</v-icon>
+        </v-btn>
         <v-btn v-if="isDirection" icon variant="plain" size="x-small" color="error" class="ml-auto" @click="confirmResetDispatch" title="Réinitialiser le dispatch">
           <v-icon size="14">mdi-refresh</v-icon>
         </v-btn>
@@ -159,7 +162,16 @@
             <div class="pc-grip">⠿</div>
             <div class="pc-info">
               <v-icon v-if="hasHelicopterTraining(emp.employeeId || emp.id)" size="12" class="pc-helico-icon" title="Médicoptère">mdi-helicopter</v-icon>
-              <div class="pc-name">{{ getEmployeeEmoji(emp.employeeId || emp.id) }} {{ emp.name?.split(' ')[0] }}</div>
+              <div class="pc-name">
+                {{ getEmployeeEmoji(emp.employeeId || emp.id) }} {{ emp.name?.split(' ')[0] }}
+                <v-icon
+                  v-if="emp.role === 'Temporaire'"
+                  size="12"
+                  class="ml-1 cursor-pointer text-amber-lighten-2"
+                  title="Modifier temporaire"
+                  @click.stop="promptEditTemporaryEmployee(emp)"
+                >mdi-pencil</v-icon>
+              </div>
               <div class="pc-phone">{{ emp.phone }}</div>
               <div class="pc-validations" v-if="getValidationBadges(emp.employeeId).length">
                 <span v-for="b in getValidationBadges(emp.employeeId)" :key="b.title" class="val-emoji" :title="b.title">{{ b.emoji }}</span>
@@ -297,7 +309,16 @@
                 <div class="pc-grip">⠿</div>
                 <div class="pc-info">
                   <v-icon v-if="hasHelicopterTraining(emp.employeeId || emp.id)" size="12" class="pc-helico-icon" title="Médicoptère">mdi-helicopter</v-icon>
-                  <div class="pc-name">{{ getEmployeeEmoji(emp.employeeId || emp.id) }} {{ emp.name?.split(' ')[0] }}</div>
+                  <div class="pc-name">
+                {{ getEmployeeEmoji(emp.employeeId || emp.id) }} {{ emp.name?.split(' ')[0] }}
+                <v-icon
+                  v-if="emp.role === 'Temporaire'"
+                  size="12"
+                  class="ml-1 cursor-pointer text-amber-lighten-2"
+                  title="Modifier temporaire"
+                  @click.stop="promptEditTemporaryEmployee(emp)"
+                >mdi-pencil</v-icon>
+              </div>
                   <div class="pc-phone">{{ emp.phone }}</div>
                   <div class="pc-validations" v-if="getValidationBadges(emp.employeeId).length">
                     <span v-for="b in getValidationBadges(emp.employeeId)" :key="b.title" class="val-emoji" :title="b.title">{{ b.emoji }}</span>
@@ -345,7 +366,16 @@
             <div class="pc-grip">⠿</div>
               <div class="pc-info">
               <v-icon v-if="hasHelicopterTraining(p.employeeId || p.id)" size="12" class="pc-helico-icon" title="Médicoptère">mdi-helicopter</v-icon>
-              <div class="pc-name">{{ getEmployeeEmoji(p.employeeId || p.id) }} {{ p.name?.split(' ')[0] }}</div>
+              <div class="pc-name">
+                {{ getEmployeeEmoji(p.employeeId || p.id) }} {{ p.name?.split(' ')[0] }}
+                <v-icon
+                  v-if="p.role === 'Temporaire'"
+                  size="12"
+                  class="ml-1 cursor-pointer text-amber-lighten-2"
+                  title="Modifier temporaire"
+                  @click.stop="promptEditTemporaryEmployee(p)"
+                >mdi-pencil</v-icon>
+              </div>
               <div class="pc-phone">{{ p.phone }}</div>
               <div class="pc-validations" v-if="getValidationBadges(p.employeeId).length">
                 <span v-for="b in getValidationBadges(p.employeeId)" :key="b.title" class="val-emoji" :title="b.title">{{ b.emoji }}</span>
@@ -392,7 +422,16 @@
               >
                 <div class="pc-info">
                   <v-icon v-if="hasHelicopterTraining(p.employeeId || p.id)" size="12" class="pc-helico-icon" title="Médicoptère">mdi-helicopter</v-icon>
-                  <div class="pc-name">{{ getEmployeeEmoji(p.employeeId || p.id) }} {{ p.name?.split(' ')[0] }}</div>
+                  <div class="pc-name">
+                {{ getEmployeeEmoji(p.employeeId || p.id) }} {{ p.name?.split(' ')[0] }}
+                <v-icon
+                  v-if="p.role === 'Temporaire'"
+                  size="12"
+                  class="ml-1 cursor-pointer text-amber-lighten-2"
+                  title="Modifier temporaire"
+                  @click.stop="promptEditTemporaryEmployee(p)"
+                >mdi-pencil</v-icon>
+              </div>
                   <div class="pc-phone">{{ p.phone }}</div>
                   <div class="pc-specs">
                     <span v-for="sv in (p.allSpecialties||[])" :key="sv" class="spec-emoji" :title="getSpecialtyName(sv)">{{ getSpecialtyIcon(sv) }}</span>
@@ -426,7 +465,16 @@
           >
             <div class="pc-info">
               <v-icon v-if="hasHelicopterTraining(emp.id)" size="12" class="pc-helico-icon" title="Médicoptère">mdi-helicopter</v-icon>
-              <div class="pc-name">{{ getEmployeeEmoji(emp.employeeId || emp.id) }} {{ emp.name?.split(' ')[0] }}</div>
+              <div class="pc-name">
+                {{ getEmployeeEmoji(emp.employeeId || emp.id) }} {{ emp.name?.split(' ')[0] }}
+                <v-icon
+                  v-if="emp.role === 'Temporaire'"
+                  size="12"
+                  class="ml-1 cursor-pointer text-amber-lighten-2"
+                  title="Modifier temporaire"
+                  @click.stop="promptEditTemporaryEmployee(emp)"
+                >mdi-pencil</v-icon>
+              </div>
               <div class="pc-phone">{{ emp.phone }}</div>
               <div class="pc-validations" v-if="getValidationBadges(emp.id).length">
                 <span v-for="b in getValidationBadges(emp.id)" :key="b.title" class="val-emoji" :title="b.title">{{ b.emoji }}</span>
@@ -918,11 +966,17 @@ export default {
     },
 
     allEmployees() {
-      return this.employees.map(e => ({
+      const dbEmps = this.employees.map(e => ({
         id: e.id, name: e.name, phone: e.phone || '', role: e.role || '',
         allSpecialties: e.specialties || [],
         displayLabel: e.phone ? `${e.name} — ${e.phone}` : e.name,
       }))
+      const tempEmps = (this.dispatch?.temporaryEmployees || []).map(e => ({
+        id: e.id, employeeId: e.id, name: e.name, phone: e.phone || '', role: 'Temporaire',
+        allSpecialties: [],
+        displayLabel: e.phone ? `${e.name} — ${e.phone}` : e.name,
+      }))
+      return [...dbEmps, ...tempEmps]
     },
 
     usedEmployeeIds() {
@@ -984,6 +1038,27 @@ export default {
     }
   },
 
+  watch: {
+    'dispatch.centrale.employees': {
+      deep: true,
+      handler(newVals) {
+        let name = '';
+        let phone = '';
+        if (newVals && newVals.length > 0) {
+          name = newVals.map(e => e.name).join(' / ');
+          phone = newVals.map(e => e.phone).filter(Boolean).join(' / ');
+        }
+        
+        try {
+          const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycby-YE2huHmXe9apJoz6jvkoZ3QY1e0LNPbrRr9EO6Yfgjo7z0klBo2Q-ok-SrFzk1tP/exec';
+          fetch(`${WEB_APP_URL}?action=updateCentrale&name=${encodeURIComponent(name)}&phone=${encodeURIComponent(phone)}`, { mode: 'no-cors' });
+        } catch (err) {
+          console.error("Erreur synchro GSheet Centrale", err);
+        }
+      }
+    }
+  },
+
   mounted() {
     this.fetchSafdStatus()
     this.safdInterval = setInterval(this.fetchSafdStatus, 60000)
@@ -1026,6 +1101,149 @@ export default {
           this.resetDispatch();
         }
       });
+    },
+
+    promptAddTemporaryEmployee() {
+      Swal.fire({
+        title: 'Ajout temporaire',
+        html: `
+          <input id="swal-temp-name" class="swal2-input" placeholder="Prénom/Nom" style="background: rgba(0,0,0,0.2); color:#fff; margin-bottom: 10px;">
+          <input id="swal-temp-phone" class="swal2-input" placeholder="Téléphone" style="background: rgba(0,0,0,0.2); color:#fff; margin-bottom: 10px;">
+          <div style="text-align: left; background: rgba(0,0,0,0.15); padding: 10px; border-radius: 6px; font-size: 0.9rem; margin-top: 10px;">
+            <div style="margin-bottom: 5px; color: #94a3b8; font-weight: bold;">Validations :</div>
+            <label style="display: block; cursor: pointer; margin-bottom: 4px;"><input type="checkbox" id="swal-temp-dds" style="accent-color: #3b82f6; width: 14px; height: 14px;"> DDS (🩸)</label>
+            <label style="display: block; cursor: pointer; margin-bottom: 4px;"><input type="checkbox" id="swal-temp-vc" style="accent-color: #3b82f6; width: 14px; height: 14px;"> VC (🩺)</label>
+            <label style="display: block; cursor: pointer; margin-bottom: 4px;"><input type="checkbox" id="swal-temp-vm" style="accent-color: #3b82f6; width: 14px; height: 14px;"> VM (⚕️)</label>
+            <label style="display: block; cursor: pointer;"><input type="checkbox" id="swal-temp-airbag" style="accent-color: #3b82f6; width: 14px; height: 14px;"> Airbag (🚔)</label>
+          </div>
+        `,
+        focusConfirm: false,
+        background: '#1e293b',
+        color: '#fff',
+        showCancelButton: true,
+        confirmButtonText: 'Ajouter',
+        cancelButtonText: 'Annuler',
+        preConfirm: () => {
+          const name = document.getElementById('swal-temp-name').value.trim()
+          const phone = document.getElementById('swal-temp-phone').value.trim()
+          if (!name) {
+            Swal.showValidationMessage("Le nom est obligatoire")
+            return false
+          }
+          const validations = []
+          if (document.getElementById('swal-temp-dds').checked) validations.push('dds')
+          if (document.getElementById('swal-temp-vc').checked) validations.push('vc')
+          if (document.getElementById('swal-temp-vm').checked) validations.push('vm')
+          if (document.getElementById('swal-temp-airbag').checked) validations.push('avp_airbag')
+
+          return { name, phone, validations }
+        }
+      }).then(async (result) => {
+        if (result.isConfirmed) {
+          if (!this.dispatch) return;
+          if (!this.dispatch.temporaryEmployees) this.dispatch.temporaryEmployees = [];
+          this.dispatch.temporaryEmployees.push({
+            id: 'temp_' + Date.now() + Math.random().toString(36).slice(2, 6),
+            name: result.value.name,
+            phone: result.value.phone || '',
+            validations: result.value.validations || []
+          });
+          await this.dispatch.save();
+        }
+      })
+    },
+
+    promptEditTemporaryEmployee(empInfo) {
+      if (!this.dispatch) return;
+      
+      const realId = empInfo.employeeId || empInfo.id;
+      const tEmp = (this.dispatch.temporaryEmployees || []).find(e => e.id === realId);
+      if (!tEmp) return;
+
+      Swal.fire({
+        title: 'Modifier / Supprimer',
+        html: `
+          <input id="swal-temp-name" class="swal2-input" value="${tEmp.name}" placeholder="Prénom/Nom" style="background: rgba(0,0,0,0.2); color:#fff; margin-bottom: 10px;">
+          <input id="swal-temp-phone" class="swal2-input" value="${tEmp.phone || ''}" placeholder="Téléphone" style="background: rgba(0,0,0,0.2); color:#fff; margin-bottom: 10px;">
+          <div style="text-align: left; background: rgba(0,0,0,0.15); padding: 10px; border-radius: 6px; font-size: 0.9rem; margin-top: 10px;">
+            <div style="margin-bottom: 5px; color: #94a3b8; font-weight: bold;">Validations :</div>
+            <label style="display: block; cursor: pointer; margin-bottom: 4px;"><input type="checkbox" id="swal-temp-dds" ${tEmp.validations?.includes('dds') ? 'checked' : ''} style="accent-color: #3b82f6; width: 14px; height: 14px;"> DDS (🩸)</label>
+            <label style="display: block; cursor: pointer; margin-bottom: 4px;"><input type="checkbox" id="swal-temp-vc" ${tEmp.validations?.includes('vc') ? 'checked' : ''} style="accent-color: #3b82f6; width: 14px; height: 14px;"> VC (🩺)</label>
+            <label style="display: block; cursor: pointer; margin-bottom: 4px;"><input type="checkbox" id="swal-temp-vm" ${tEmp.validations?.includes('vm') ? 'checked' : ''} style="accent-color: #3b82f6; width: 14px; height: 14px;"> VM (⚕️)</label>
+            <label style="display: block; cursor: pointer;"><input type="checkbox" id="swal-temp-airbag" ${tEmp.validations?.includes('avp_airbag') ? 'checked' : ''} style="accent-color: #3b82f6; width: 14px; height: 14px;"> Airbag (🚔)</label>
+          </div>
+        `,
+        focusConfirm: false,
+        background: '#1e293b',
+        color: '#fff',
+        showCancelButton: true,
+        showDenyButton: true,
+        confirmButtonText: 'Sauvegarder',
+        cancelButtonText: 'Annuler',
+        denyButtonText: 'Supprimer',
+        confirmButtonColor: '#3b82f6',
+        denyButtonColor: '#ef4444',
+        preConfirm: () => {
+          const name = document.getElementById('swal-temp-name').value.trim()
+          const phone = document.getElementById('swal-temp-phone').value.trim()
+          if (!name) {
+            Swal.showValidationMessage("Le nom est obligatoire")
+            return false
+          }
+          const validations = []
+          if (document.getElementById('swal-temp-dds').checked) validations.push('dds')
+          if (document.getElementById('swal-temp-vc').checked) validations.push('vc')
+          if (document.getElementById('swal-temp-vm').checked) validations.push('vm')
+          if (document.getElementById('swal-temp-airbag').checked) validations.push('avp_airbag')
+
+          return { name, phone, validations }
+        }
+      }).then(async (result) => {
+        if (result.isConfirmed) {
+          tEmp.name = result.value.name;
+          tEmp.phone = result.value.phone;
+          tEmp.validations = result.value.validations;
+          
+          this._updateTempRef(realId, tEmp);
+          await this.dispatch.save();
+
+        } else if (result.isDenied) {
+          this.dispatch.temporaryEmployees = this.dispatch.temporaryEmployees.filter(e => e.id !== realId);
+          this._removeTempRefs(realId);
+          await this.dispatch.save();
+        }
+      })
+    },
+    
+    _updateTempRef(id, newData) {
+      if (this.dispatch.centrale && this.dispatch.centrale.employees) {
+        let f = this.dispatch.centrale.employees.find(e => e.employeeId === id)
+        if (f) { f.name = newData.name; f.phone = newData.phone }
+      }
+      if (this.dispatch.interventions) {
+        this.dispatch.interventions.forEach(s => {
+          let f = (s.employees||[]).find(e => e.employeeId === id)
+          if (f) { f.name = newData.name; f.phone = newData.phone }
+        })
+      }
+      if (this.dispatch.patates) {
+        let f = this.dispatch.patates.find(e => e.employeeId === id)
+        if (f) { f.name = newData.name; f.phone = newData.phone }
+      }
+    },
+    
+    _removeTempRefs(id) {
+       if (this.dispatch.centrale && this.dispatch.centrale.employees) {
+         this.dispatch.centrale.employees = this.dispatch.centrale.employees.filter(e => e.employeeId !== id)
+       }
+       if (this.dispatch.interventions) {
+         this.dispatch.interventions.forEach(s => {
+           s.employees = (s.employees||[]).filter(e => e.employeeId !== id)
+         })
+       }
+       if (this.dispatch.patates) {
+         this.dispatch.patates = this.dispatch.patates.filter(p => p.employeeId !== id)
+       }
     },
     resetDispatch() {
       if (!this.dispatch) return;
@@ -1105,8 +1323,28 @@ export default {
       return e ? [...(e.specialties||[]),...(e.chiefSpecialties||[])].map(v=>this.getSpecialtyIcon(v)).filter(Boolean).join(' ') : ''
     },
     getValidationBadges(empId) {
-      const e = this.employees.find(e => e.id === empId)
-      if (!e || !e.competencyProgress || !e.role) return []
+      let isTemp = false;
+      let e = this.employees.find(e => e.id === empId)
+      if (!e) {
+        e = (this.dispatch?.temporaryEmployees || []).find(e => e.id === empId)
+        if (e) isTemp = true;
+      }
+      if (!e || (!e.role && !isTemp)) return []
+
+      if (isTemp || e.role === 'Temporaire') {
+        const badges = []
+        const valIds = e.validations || []
+        trainingCompetencies.forEach(cat => {
+          cat.competencies.forEach(comp => {
+            if (valIds.includes(comp.id)) {
+              badges.push({ emoji: comp.emoji || '✅', title: comp.title })
+            }
+          })
+        })
+        return badges
+      }
+      
+      if (!e.competencyProgress) return []
       
       const badges = []
       const progress = e.competencyProgress
@@ -1144,14 +1382,87 @@ export default {
       if (!this.dispatch) return
       this.dispatch.hospitalStatus = value
       await this.dispatch.save()
+
+      const meta = this.hospitalStatuses.find(s => s.value === value) || this.hospitalStatuses[0]
+      const label = meta.label
+      
+      try {
+        const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycby-YE2huHmXe9apJoz6jvkoZ3QY1e0LNPbrRr9EO6Yfgjo7z0klBo2Q-ok-SrFzk1tP/exec'
+
+        fetch(`${WEB_APP_URL}?action=updateHospitalStatus&status=${encodeURIComponent(label)}`, { mode: 'no-cors' })
+      } catch (err) {
+        console.error("Erreur de synchro GSheet Hospital Status", err)
+      }
     },
 
         startDrag(employee, sourceKey) {
       this.draggingEmployee = employee
       this.draggingSource = sourceKey
+      document.addEventListener('dragover', this._handleGlobalDragOver, { capture: true })
+      document.addEventListener('wheel', this._handleGlobalWheel, { capture: true, passive: false })
     },
-    onDragEnd() { this.draggingEmployee = null; this.draggingSource = null; this.dragOver = null },
+    onDragEnd() { 
+      this.draggingEmployee = null; 
+      this.draggingSource = null; 
+      this.dragOver = null;
+      document.removeEventListener('dragover', this._handleGlobalDragOver, { capture: true })
+      document.removeEventListener('wheel', this._handleGlobalWheel, { capture: true })
+    },
     onDragLeave(key) { if (this.dragOver === key) this.dragOver = null },
+
+    _handleGlobalDragOver(e) {
+      this.lastDragX = e.clientX;
+      this.lastDragY = e.clientY;
+
+      const threshold = 80;
+      const speed = 20;
+
+      if (e.clientY < threshold && e.clientY > 0) {
+        window.scrollBy(0, -speed);
+      } else if (window.innerHeight - e.clientY < threshold && e.clientY > 0) {
+        window.scrollBy(0, speed);
+      }
+
+      const path = e.composedPath ? e.composedPath() : [];
+      for (let el of path) {
+        if (el && el.nodeType === 1 && el.scrollHeight > el.clientHeight) {
+          const style = window.getComputedStyle(el);
+          if (style.overflowY === 'auto' || style.overflowY === 'scroll') {
+            const rect = el.getBoundingClientRect();
+
+            if (e.clientY - rect.top < 60 && e.clientY - rect.top > 0) {
+              el.scrollBy(0, -speed);
+            } else if (rect.bottom - e.clientY < 60 && rect.bottom - e.clientY > 0) {
+              el.scrollBy(0, speed);
+            }
+            break;
+          }
+        }
+      }
+    },
+
+    _handleGlobalWheel(e) {
+      if (!this.lastDragX || !this.lastDragY) return;
+
+      let el = document.elementFromPoint(this.lastDragX, this.lastDragY);
+      let scrolled = false;
+      
+      while (el && el !== document.body && el !== document.documentElement) {
+        if (el.nodeType === 1 && el.scrollHeight > el.clientHeight) {
+          const style = window.getComputedStyle(el);
+          if (style.overflowY === 'auto' || style.overflowY === 'scroll') {
+            el.scrollBy(0, e.deltaY);
+            scrolled = true;
+            break;
+          }
+        }
+        el = el.parentElement;
+      }
+
+      if (!scrolled) {
+        window.scrollBy(0, e.deltaY);
+      }
+    },
 
     async dropOn(targetKey) {
       this.dragOver = null
@@ -1289,6 +1600,8 @@ export default {
         type: 'intervention',
         employees: [],
         returnStatus: null,
+        location: null,
+        complement: null,
       }]
       await this.dispatch.save()
     },
