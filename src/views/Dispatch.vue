@@ -921,6 +921,8 @@ export default {
       
       ;(this.dispatch.interventions||[]).forEach(s => { (s.employees||[]).forEach(e => ids.push(e.employeeId)) })
       this.dispatch.patates.forEach(p => { if (p.employeeId) ids.push(p.employeeId) })
+      if (this.dispatch.centrale && this.dispatch.centrale.employees)
+        this.dispatch.centrale.employees.forEach(e => { if (e.employeeId) ids.push(e.employeeId) })
       return new Set(ids)
     },
 
