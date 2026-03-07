@@ -54,13 +54,18 @@
         </span>
 
       </div>
-      <div class="th-cell">😴 Hors service <span class="cnt ml-1">{{ sortedUnassignedEmployees.length }}</span></div>
+      <div class="th-cell">
+        😴 Hors service <span class="cnt ml-1">{{ sortedUnassignedEmployees.length }}</span>
+        <v-btn v-if="isDirection" icon variant="plain" size="x-small" color="error" class="ml-auto" @click="confirmResetDispatch" title="Réinitialiser le dispatch">
+          <v-icon size="14">mdi-refresh</v-icon>
+        </v-btn>
+      </div>
       <div class="th-cell th-right">📻 Radios & Notes</div>
     </div>
 
-        <div class="dispatch-body">
+        <div class="dispatch-body" style="height: 88vh; overflow: hidden; grid-template-rows: 1fr;">
 
-            <div class="left-panel">
+            <div class="left-panel" style="height: 0; min-height: 100%; overflow: hidden;">
 
                 <div class="slot-section-title">🎧 Centrale</div>
                 <div class="inter-type-row">
@@ -202,7 +207,7 @@
           </v-btn>
         </div>
 
-        <div class="interventions-list">
+        <div class="interventions-list" style="flex: 1; min-height: 0; overflow-y: auto;">
           <div v-for="slot in (dispatch?.interventions||[])" :key="slot.id" class="inter-slot">
                         <div class="inter-type-row">
                             <v-menu location="bottom start" :close-on-content-click="true">
@@ -353,6 +358,50 @@
           </div>
           <div v-if="draggingSource && !patatesForCategory('en_service').find(p=>p.employeeId===draggingSource.employeeId)" class="drop-hint-card">
             Déposer ici
+          </div>
+        </div>
+
+        <div class="inner-bottom-categories mt-auto" style="border-top: 1px solid #334155; padding-top: 6px; min-height:300px;"
+          @dragover.stop
+          @dragleave.stop
+          @drop.stop
+        >
+          <div
+            v-for="cat in bottomCategories"
+            :key="cat.value"
+            class="inner-bottom-panel"
+            :class="{ 'drop-over': dragOver===`cat:${cat.value}` }"
+            @dragover.stop.prevent="dragOver=`cat:${cat.value}`"
+            @dragleave.stop="onDragLeave(`cat:${cat.value}`)"
+            @drop.stop.prevent="dropOn(`cat:${cat.value}`)"
+          >
+            <div class="bottom-header" :style="`background:${cat.color}`">
+              {{ cat.emoji }} {{ cat.label }}
+              <span class="cnt ml-1">{{ patatesForCategory(cat.value).length }}</span>
+            </div>
+            <div class="bottom-cards">
+              <div
+                v-for="p in patatesForCategory(cat.value)"
+                :key="p.id"
+                class="person-card person-card--sm"
+                :class="{ dragging: draggingSource?.employeeId===p.employeeId }"
+                :style="`border-left:3px solid ${getRoleColor(p.role)};background:${getRoleColor(p.role)}15`"
+                draggable="true"
+                @dragstart="startDrag(p, `cat:${cat.value}`)"
+                @dragend="onDragEnd"
+              >
+                <div class="pc-info">
+                  <v-icon v-if="hasHelicopterTraining(p.employeeId || p.id)" size="12" class="pc-helico-icon" title="Médicoptère">mdi-helicopter</v-icon>
+                  <div class="pc-name">{{ getEmployeeEmoji(p.employeeId || p.id) }} {{ p.name?.split(' ')[0] }}</div>
+                  <div class="pc-phone">{{ p.phone }}</div>
+                  <div class="pc-specs">
+                    <span v-for="sv in (p.allSpecialties||[])" :key="sv" class="spec-emoji" :title="getSpecialtyName(sv)">{{ getSpecialtyIcon(sv) }}</span>
+                  </div>
+                  <div class="pc-role" :style="`color:${getRoleColor(p.role)}`">{{ p.role }}</div>
+                </div>
+                <div v-if="draggingSource && !patatesForCategory(cat.value).find(pp=>pp.employeeId===draggingSource.employeeId)" class="drop-hint-sm">↓</div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -516,47 +565,8 @@
         </div>
       </div>
     </div>
-    <div class="dispatch-bottom">
-      <div
-        v-for="cat in bottomCategories"
-        :key="cat.value"
-        class="bottom-panel"
-        :class="{ 'drop-over': dragOver===`cat:${cat.value}` }"
-        @dragover.prevent="dragOver=`cat:${cat.value}`"
-        @dragleave="onDragLeave(`cat:${cat.value}`)"
-        @drop.prevent="dropOn(`cat:${cat.value}`)"
-      >
-        <div class="bottom-header" :style="`background:${cat.color}`">
-          {{ cat.emoji }} {{ cat.label }}
-          <span class="cnt ml-1">{{ patatesForCategory(cat.value).length }}</span>
-        </div>
-        <div class="bottom-cards">
-          <div
-            v-for="p in patatesForCategory(cat.value)"
-            :key="p.id"
-            class="person-card person-card--sm"
-            :class="{ dragging: draggingSource?.employeeId===p.employeeId }"
-            :style="`border-left:3px solid ${getRoleColor(p.role)};background:${getRoleColor(p.role)}15`"
-            draggable="true"
-            @dragstart="startDrag(p, `cat:${cat.value}`)"
-            @dragend="onDragEnd"
-          >
-              <div class="pc-info">
-              <v-icon v-if="hasHelicopterTraining(p.employeeId || p.id)" size="12" class="pc-helico-icon" title="Médicoptère">mdi-helicopter</v-icon>
-              <div class="pc-name">{{ getEmployeeEmoji(p.employeeId || p.id) }} {{ p.name?.split(' ')[0] }}</div>
-              <div class="pc-phone">{{ p.phone }}</div>
-              <div class="pc-specs">
-                <span v-for="sv in (p.allSpecialties||[])" :key="sv" class="spec-emoji" :title="getSpecialtyName(sv)">{{ getSpecialtyIcon(sv) }}</span>
-              </div>
-              <div class="pc-role" :style="`color:${getRoleColor(p.role)}`">{{ p.role }}</div>
-          </div>
-          <div v-if="draggingSource && !patatesForCategory(cat.value).find(p=>p.employeeId===draggingSource.employeeId)" class="drop-hint-sm">↓</div>
-        </div>
-      </div>
-    </div>
-  </div>
 
-    <div class="crises-bottom-section" style="border-top: 2px solid #334155; background: #0f172a; padding: 10px; max-height: 250px; overflow-y: auto; width: 100%; box-sizing: border-box; flex-shrink: 0;">
+    <div class="crises-bottom-section" style="border-top: 2px solid #334155; background: #0f172a; padding: 10px; width: 100%; box-sizing: border-box; flex-shrink: 0;">
       <div class="slot-section-title" style="background: linear-gradient(90deg, #ef4444 0%, #b91c1c 100%);">
         🚨 Dispatch de crises
         <span class="cnt ml-2">
@@ -741,12 +751,12 @@
                   </td>
                   <td v-for="(bedId, i) in bedSubarray" :key="bedId + '-fdo-' + i" style="padding: 0; border: 1px solid #1e293b; height: 32px;" :style="bedId === '' ? 'background: rgba(0,0,0,0.3); pointer-events: none;' : 'background: rgba(0,0,0,0.2);'">
                     <div v-if="bedId !== ''" class="d-flex w-100 h-100">
-                      <label class="d-flex align-center justify-center flex-1-1 cursor-pointer" style="border-right: 1px solid #1e293b;" :style="getBedData(bedId).fdoNotified ? 'background: rgba(59, 130, 246, 0.15)' : ''">
+                      <label class="d-flex align-center justify-center flex-1-1 cursor-pointer" style="border-right: 1px solid #1e293b;" :style="getBedData(bedId).fdoNotified ? 'background: rgba(239, 68, 68, 0.15)' : ''">
                         <input 
                           type="checkbox" 
                           :checked="getBedData(bedId).fdoNotified" 
                           @change="updateBedFdo(bedId, $event.target.checked)"
-                          style="width: 14px; height: 14px; accent-color: #3b82f6; cursor: pointer;" 
+                          style="width: 14px; height: 14px; accent-color: #ef4444; cursor: pointer;" 
                         />
                       </label>
                       <label class="d-flex align-center justify-center flex-1-1 cursor-pointer" :style="getBedData(bedId).emergencyContactsNotified ? 'background: rgba(245, 158, 11, 0.15)' : ''">
@@ -999,6 +1009,47 @@ export default {
   },
 
   methods: {
+    confirmResetDispatch() {
+      Swal.fire({
+        title: 'Réinitialiser le dispatch ?',
+        text: 'Tout le monde sera mis en "Hors service", les interventions seront vidées, et toutes les radios seront éteintes.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Oui, réinitialiser',
+        cancelButtonText: 'Annuler',
+        background: '#1e293b',
+        color: '#fff'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          this.resetDispatch();
+        }
+      });
+    },
+    resetDispatch() {
+      if (!this.dispatch) return;
+      
+      this.dispatch.patates = [];
+      
+      if (this.dispatch.centrale) {
+        this.dispatch.centrale.employees = [];
+      }
+      
+      if (this.dispatch.interventions) {
+        this.dispatch.interventions.forEach(slot => {
+          slot.employees = [];
+        });
+      }
+      
+      if (this.dispatch.radios) {
+        this.dispatch.radios.forEach(radio => {
+          radio.status = 'off';
+        });
+      }
+      
+      this.dispatch.save();
+    },
     fetchSafdStatus() {
       fetch('https://docs.google.com/spreadsheets/d/1A1gxOho_roNwxTtcbiEpLGSWbD8JUasMDu4NL-zdcbw/export?format=csv&gid=0')
         .then(res => res.text())
@@ -1515,7 +1566,7 @@ export default {
 .dispatch-root {
   display: flex;
   flex-direction: column;
-  min-height: calc(100vh - 80px);
+  min-height: calc(100vh - 64px);
   font-family: 'Roboto', sans-serif;
   font-size: 0.8rem;
   background: #0f172a;
@@ -1523,7 +1574,7 @@ export default {
 
 .dispatch-top-headers {
   display: grid;
-  grid-template-columns: 230px 1fr 350px 220px;
+  grid-template-columns: 230px 1fr 350px 280px;
   background: linear-gradient(90deg, #0f172a 0%, #1e293b 60%, #0f172a 100%);
   color: #e2e8f0;
   font-size: 0.73rem;
@@ -1566,9 +1617,7 @@ export default {
 
 .dispatch-body {
   display: grid;
-  grid-template-columns: 230px 1fr 350px 220px;
-  flex: 1;
-  min-height: 60vh;
+  grid-template-columns: 230px 1fr 350px 280px;
   overflow: hidden;
   border-bottom: 2px solid #334155;
 }
@@ -1578,7 +1627,7 @@ export default {
   border-right: 2px solid #334155;
   display: flex;
   flex-direction: column;
-  overflow-y: auto;
+  overflow: hidden;
   padding: 6px;
   gap: 4px;
 }
@@ -1629,7 +1678,9 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 5px;
-  overflow: hidden;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
 }
 .inter-slot { display: flex; flex-direction: column; gap: 2px; }
 .inter-type-row {
@@ -1807,6 +1858,25 @@ export default {
   border-top: 2px solid #334155;
   background: #0f172a;
 }
+
+.inner-bottom-categories {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  flex-shrink: 0;
+  border-top: 1px solid #334155;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.inner-bottom-panel {
+  border-right: 1px solid #334155;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: background .15s;
+}
+.inner-bottom-panel:nth-child(2n) { border-right: none; }
+.inner-bottom-panel:nth-child(n+3) { border-top: 1px solid #334155; }
+.inner-bottom-panel.drop-over { filter: brightness(1.1); }
 .bottom-panel {
   border-right: 2px solid #334155;
   display: flex;
