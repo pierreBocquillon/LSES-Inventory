@@ -2450,6 +2450,7 @@ export default {
   min-width: 0;
   white-space: nowrap;
   overflow: hidden;
+  text-overflow: ellipsis;
 }
 .inter-type-badge:hover { opacity: .8; }
 
@@ -2676,17 +2677,17 @@ export default {
 .return-badge {
   display: inline-flex;
   align-items: center;
-  margin-top: 3px;
   padding: 1px 5px;
   border-radius: 4px;
   border: 1px solid #b0bec5;
-  font-size: 0.6rem;
+  font-size: 0.63rem;
   font-weight: 700;
   cursor: pointer;
   color: #90a4ae;
   background: #f5f5f5;
   white-space: nowrap;
-  max-width: 100%;
+  flex: 1;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   transition: opacity .15s;
