@@ -578,7 +578,7 @@
                 <div v-for="radio in group.radios" :key="radio.id" class="radio-item d-flex align-center mb-1 pa-1" :style="['background: rgba(255,255,255,0.05); border-radius: 4px; border: 1px solid', radio.id === dispatch?.nuitRadioId ? '#f59e0b' : '#334155'].join(' ')">
                   <input v-if="isDirection" v-model="radio.serial" @change="dispatch.save()" class="location-input" style="width:50px; font-weight:bold" placeholder="# Série" />
                   <span v-else class="text-caption font-weight-bold mx-1" style="width:50px; display:inline-block; color:#94a3b8; text-align:center;">{{ radio.serial || '---' }}</span>
-                   <select :value="radio.employeeId" @change="onRadioAssign(radio, $event.target.value)" class="location-input mx-1" style="border-left:1px solid #334155; padding-left:4px; max-width: 120px;">
+                   <select :disabled="radio.category === 'direction' && !isDirection" :value="radio.employeeId" @change="onRadioAssign(radio, $event.target.value)" class="location-input mx-1" style="border-left:1px solid #334155; padding-left:4px; max-width: 120px;">
                      <option :value="''" style="background:#1a1f35">-- Assigner --</option>
                      <option v-for="emp in getRadioEmployeeOptions(radio)" :key="emp.id" :value="emp.id" style="background:#1a1f35">{{ emp.name }}</option>
                    </select>
@@ -2212,6 +2212,10 @@ export default {
       await this.dispatch.save()
     },
     async onRadioAssign(radio, newEmpId) {
+      if (radio.category === 'direction' && !this.isDirection) {
+        Swal.fire({ title: 'Accès refusé', text: 'Seules les personnes de la Direction peuvent modifier ces radios.', icon: 'error', background: '#1e293b', color: '#fff' })
+        return
+      }
       const oldEmpId = radio.employeeId
       if (!radio.employeeId && newEmpId) {
         radio.status = 'on'
