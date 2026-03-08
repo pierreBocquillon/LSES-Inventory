@@ -12,7 +12,7 @@ function normalizeCentrale(c) {
 }
 
 class Dispatch {
-    constructor(centrale, patates, hospitalStatus, interventions, lsesRadio, communeRadio, notepad, radios, nuitRadioId, crises, beds, temporaryEmployees) {
+    constructor(centrale, patates, hospitalStatus, interventions, lsesRadio, communeRadio, notepad, radios, nuitRadioId, crises, beds, temporaryEmployees, morgue) {
         this.centrale = normalizeCentrale(centrale)
         this.patates = patates || []
         this.hospitalStatus = hospitalStatus || 'gestion_normale'
@@ -25,12 +25,13 @@ class Dispatch {
         this.crises = crises || []
         this.beds = beds || {}
         this.temporaryEmployees = temporaryEmployees || []
+        this.morgue = morgue || { lockers: {}, urnShelves: {}, burials: {} }
     }
 
     static listenGlobal(callback) {
         return onSnapshot(doc(db, collectionName, GLOBAL_DOC_ID), snapshot => {
             const data = snapshot.data() || {}
-            callback(new Dispatch(data.centrale, data.patates, data.hospitalStatus, data.interventions, data.lsesRadio, data.communeRadio, data.notepad, data.radios, data.nuitRadioId, data.crises, data.beds, data.temporaryEmployees))
+            callback(new Dispatch(data.centrale, data.patates, data.hospitalStatus, data.interventions, data.lsesRadio, data.communeRadio, data.notepad, data.radios, data.nuitRadioId, data.crises, data.beds, data.temporaryEmployees, data.morgue))
         })
     }
 
@@ -47,7 +48,8 @@ class Dispatch {
             nuitRadioId: this.nuitRadioId || null,
             crises: this.crises || [],
             beds: this.beds || {},
-            temporaryEmployees: this.temporaryEmployees || []
+            temporaryEmployees: this.temporaryEmployees || [],
+            morgue: this.morgue || { lockers: {}, urnShelves: {}, burials: {} }
         }, { merge: true })
     }
 }

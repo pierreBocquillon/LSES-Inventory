@@ -152,6 +152,13 @@ export const crisisBedGroups = [
     }
 ]
 
+export const morgueConfig = {
+    lockerCount: 12,
+    urnShelfCount: 12,
+    burialSlotCount: 4,
+    maxPerRow: 6,
+}
+
 export const complements = [
     { value: 'op_1', label: 'OP 1' },
     { value: 'op_2', label: 'OP 2' },
