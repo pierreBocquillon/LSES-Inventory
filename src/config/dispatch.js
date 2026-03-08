@@ -13,6 +13,7 @@ export const interventionTypes = [
     { value: 'event', label: 'Event', emoji: '🎪', color: '#6a1b9a' },
     { value: 'rdv', label: 'Rendez-Vous', emoji: '📅', color: '#00695c' },
     { value: 'psy', label: 'Psy', emoji: '🧠', color: '#ad1457' },
+    { value: 'otage', label: 'Banque/Bijouterie', emoji: '💰', color: '#f9a825' },
     { value: 'bureau_admin', label: 'Bureau/Admin', emoji: '🖥️', color: '#37474f' },
     { value: 'formation', label: 'Formation', emoji: '📚', color: '#2e7d32' },
     { value: 'operation', label: 'Opération', emoji: '⚙️', color: '#e65100' },
