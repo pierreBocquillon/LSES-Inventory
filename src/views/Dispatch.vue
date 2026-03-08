@@ -1399,7 +1399,7 @@ export default {
   methods: {
     syncCentraleGSheet() {
       if (!this.dispatch?.centrale?.employees) return
-      
+
       const employees = this.dispatch.centrale.employees
       let name = '';
       let phone = '';
@@ -1578,15 +1578,17 @@ export default {
           tEmp.phone = result.value.phone;
           tEmp.validations = result.value.validations;
           
+          const wasInCentrale = this.dispatch.centrale?.employees?.some(e => e.employeeId === realId);
           this._updateTempRef(realId, tEmp);
           await this.dispatch.save();
-          this.syncCentraleGSheet();
+          if (wasInCentrale) this.syncCentraleGSheet();
 
         } else if (result.isDenied) {
+          const wasInCentrale = this.dispatch.centrale?.employees?.some(e => e.employeeId === realId);
           this.dispatch.temporaryEmployees = this.dispatch.temporaryEmployees.filter(e => e.id !== realId);
           this._removeTempRefs(realId);
           await this.dispatch.save();
-          this.syncCentraleGSheet();
+          if (wasInCentrale) this.syncCentraleGSheet();
         }
       })
     },
@@ -1881,7 +1883,9 @@ export default {
 
       this.dispatch.patates = [...this.dispatch.patates]
       await this.dispatch.save()
-      this.syncCentraleGSheet()
+      if (targetKey === 'centrale' || src === 'centrale') {
+        this.syncCentraleGSheet()
+      }
     },
 
         _removeFromSource(sourceKey, employeeId) {
@@ -1901,7 +1905,9 @@ export default {
         async removeFromDispatch(employeeId) {
       if (!this.dispatch) return
       
+      let wasInCentrale = false
       if (this.dispatch.centrale?.employees) {
+        wasInCentrale = this.dispatch.centrale.employees.some(e => e.employeeId === employeeId)
         this.dispatch.centrale.employees = this.dispatch.centrale.employees.filter(e => e.employeeId !== employeeId)
       }
       
@@ -1911,7 +1917,7 @@ export default {
       
       this.dispatch.patates = this.dispatch.patates.filter(p=>p.employeeId!==employeeId)
       await this.dispatch.save()
-      this.syncCentraleGSheet()
+      if (wasInCentrale) this.syncCentraleGSheet()
     },
 
     async clearCentrale() {
@@ -1957,7 +1963,6 @@ export default {
       if (found) {
         found.centralRole = roleValue
         await this.dispatch.save()
-        this.syncCentraleGSheet()
       }
     },
 
