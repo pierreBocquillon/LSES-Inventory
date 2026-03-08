@@ -578,10 +578,10 @@
                 <div v-for="radio in group.radios" :key="radio.id" class="radio-item d-flex align-center mb-1 pa-1" :style="['background: rgba(255,255,255,0.05); border-radius: 4px; border: 1px solid', radio.id === dispatch?.nuitRadioId ? '#f59e0b' : '#334155'].join(' ')">
                   <input v-if="isDirection" v-model="radio.serial" @change="dispatch.save()" class="location-input" style="width:50px; font-weight:bold" placeholder="# Série" />
                   <span v-else class="text-caption font-weight-bold mx-1" style="width:50px; display:inline-block; color:#94a3b8; text-align:center;">{{ radio.serial || '---' }}</span>
-                  <select :value="radio.employeeId" @change="onRadioAssign(radio, $event.target.value)" class="location-input mx-1" style="border-left:1px solid #334155; padding-left:4px; max-width: 120px;">
-                    <option :value="''" style="background:#1a1f35">-- Assigner --</option>
-                    <option v-for="emp in employees" :key="emp.id" :value="emp.id" style="background:#1a1f35">{{ emp.name }}</option>
-                  </select>
+                   <select :value="radio.employeeId" @change="onRadioAssign(radio, $event.target.value)" class="location-input mx-1" style="border-left:1px solid #334155; padding-left:4px; max-width: 120px;">
+                     <option :value="''" style="background:#1a1f35">-- Assigner --</option>
+                     <option v-for="emp in getRadioEmployeeOptions(radio)" :key="emp.id" :value="emp.id" style="background:#1a1f35">{{ emp.name }}</option>
+                   </select>
                   <v-btn size="x-small" :color="radio.status === 'on' ? 'success' : 'error'" variant="tonal" class="ml-auto px-1" style="min-width: 32px; height: 18px; font-size: 0.6rem;" @click="toggleRadioStatus(radio)">
                     {{ radio.status === 'on' ? 'ON' : 'OFF' }}
                   </v-btn>
@@ -685,7 +685,7 @@
               <td style="padding: 6px;">
                 <select v-model="crisis.repatriatedBy" @change="dispatch.save()" class="location-input" style="border: 1px solid #334155; padding: 4px; border-radius: 4px; width: 100%; background: rgba(255,255,255,0.02); color: #fff; font-weight: 600;">
                   <option :value="null" style="background:#1a1f35; color: #fff;">-- Sélectionner --</option>
-                  <option v-for="emp in employees" :key="emp.id" :value="emp.id" style="background:#1a1f35">{{ emp.name }}</option>
+                  <option v-for="emp in getCrisisEmployeeOptions(crisis.repatriatedBy)" :key="emp.id" :value="emp.id" style="background:#1a1f35">{{ emp.name }}</option>
                 </select>
               </td>
 
@@ -699,7 +699,7 @@
               <td style="padding: 6px;">
                 <select v-model="crisis.treatedBy" @change="dispatch.save()" class="location-input" style="border: 1px solid #334155; padding: 4px; border-radius: 4px; width: 100%; background: rgba(255,255,255,0.02); color: #fff; font-weight: 600;">
                   <option :value="null" style="background:#1a1f35; color: #fff;">-- Sélectionner --</option>
-                  <option v-for="emp in employees" :key="emp.id" :value="emp.id" style="background:#1a1f35">{{ emp.name }}</option>
+                  <option v-for="emp in getCrisisEmployeeOptions(crisis.treatedBy)" :key="emp.id" :value="emp.id" style="background:#1a1f35">{{ emp.name }}</option>
                 </select>
               </td>
               
@@ -1035,7 +1035,11 @@ export default {
     },
     needRepairVehicles() {
       return (this.vehicles || []).filter(v => v.needRepair)
-    }
+    },
+
+    directionEmployeesForRadio() {
+      return this.employees.filter(e => ['Directeur', 'Directeur Adjoint'].includes(e.role))
+    },
   },
 
   watch: {
@@ -1084,6 +1088,48 @@ export default {
   },
 
   methods: {
+    getCrisisEmployeeOptions(currentId) {
+      if (!this.dispatch) return []
+      const ids = new Set()
+      if (this.dispatch.centrale?.employees)
+        this.dispatch.centrale.employees.forEach(e => ids.add(e.employeeId))
+      ;(this.dispatch.interventions || []).forEach(s => (s.employees || []).forEach(e => ids.add(e.employeeId)))
+      ;(this.dispatch.patates || []).forEach(p => { if (p.employeeId) ids.add(p.employeeId) })
+      const actives = this.allEmployees.filter(e => ids.has(e.id))
+      if (currentId && !actives.find(e => e.id === currentId)) {
+        const current = this.allEmployees.find(e => e.id === currentId)
+        if (current) return [...actives, current]
+      }
+      return actives
+    },
+
+    getRadioEmployeeOptions(radio) {
+      if (!this.dispatch) return []
+
+      if (radio.category === 'direction') {
+        const dirEmps = this.employees.filter(e => ['Directeur', 'Directeur Adjoint'].includes(e.role))
+        if (radio.employeeId && !dirEmps.find(e => e.id === radio.employeeId)) {
+          const current = this.allEmployees.find(e => e.id === radio.employeeId)
+          if (current) return [...dirEmps, current]
+        }
+        return dirEmps
+      }
+
+      const ids = new Set()
+      if (this.dispatch.centrale?.employees)
+        this.dispatch.centrale.employees.forEach(e => ids.add(e.employeeId))
+      ;(this.dispatch.interventions || []).forEach(s => (s.employees || []).forEach(e => ids.add(e.employeeId)))
+      ;(this.dispatch.patates || []).forEach(p => { if (p.employeeId) ids.add(p.employeeId) })
+
+      const inService = this.allEmployees.filter(e => ids.has(e.id))
+
+      if (radio.employeeId && !inService.find(e => e.id === radio.employeeId)) {
+        const current = this.allEmployees.find(e => e.id === radio.employeeId)
+        if (current) return [...inService, current]
+      }
+      return inService
+    },
+
     confirmResetDispatch() {
       Swal.fire({
         title: 'Réinitialiser le dispatch ?',
