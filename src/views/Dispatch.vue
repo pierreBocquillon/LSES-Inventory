@@ -739,7 +739,7 @@
       </div>
     </div>
 
-    <div class="beds-bottom-section" style="border-top: 2px solid #334155; background: #0f172a; padding: 10px; max-height: 800px; overflow-y: auto; width: 100%; box-sizing: border-box; flex-shrink: 0;">
+    <div class="beds-bottom-section" style="border-top: 2px solid #334155; background: #0f172a; padding: 10px; width: 100%; box-sizing: border-box; flex-shrink: 0;">
       <div v-for="group in crisisBedGroups" :key="group.id" style="margin-bottom: 24px; border: 1px solid #1e293b; background: rgba(0,0,0,0.15);">
         <div class="slot-section-title" :style="{ background: group.color }" style="justify-content: center; font-size: 0.8rem; padding: 8px; letter-spacing: 1px; color: #fff;">
           <span style="margin-right: 8px;">{{ group.icon }}</span> {{ group.label }}
@@ -1409,7 +1409,7 @@ export default {
       }
       
       try {
-        const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycby-YE2huHmXe9apJoz6jvkoZ3QY1e0LNPbrRr9EO6Yfgjo7z0klBo2Q-ok-SrFzk1tP/exec';
+        const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwDWdQakJgJ22wYz2-uo6LRheJSFX7_-kox8oGBSxe808QXr9ryMg74LNDc5ufgNgKp/exec';
         fetch(`${WEB_APP_URL}?action=updateCentrale&name=${encodeURIComponent(name)}&phone=${encodeURIComponent(phone)}`, { mode: 'no-cors' });
       } catch (err) {
         console.error("Erreur synchro GSheet Centrale", err);
@@ -1664,7 +1664,7 @@ export default {
         })
     },
     fetchBcesStatus() {
-      const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycby-YE2huHmXe9apJoz6jvkoZ3QY1e0LNPbrRr9EO6Yfgjo7z0klBo2Q-ok-SrFzk1tP/exec?action=bcesDispatchDoGet'
+      const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwDWdQakJgJ22wYz2-uo6LRheJSFX7_-kox8oGBSxe808QXr9ryMg74LNDc5ufgNgKp/exec?action=bcesDispatchDoGet'
       const script = document.createElement('script')
       const callbackName = 'jsonpCallback_' + Math.round(100000 * Math.random())
       
@@ -1766,7 +1766,7 @@ export default {
       const label = meta.label
       
       try {
-        const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycby-YE2huHmXe9apJoz6jvkoZ3QY1e0LNPbrRr9EO6Yfgjo7z0klBo2Q-ok-SrFzk1tP/exec'
+        const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwDWdQakJgJ22wYz2-uo6LRheJSFX7_-kox8oGBSxe808QXr9ryMg74LNDc5ufgNgKp/exec'
 
         fetch(`${WEB_APP_URL}?action=updateHospitalStatus&status=${encodeURIComponent(label)}`, { mode: 'no-cors' })
       } catch (err) {
@@ -2586,12 +2586,12 @@ export default {
 
 .pc-grip { color: #bdbdbd; font-size: 11px; flex-shrink: 0; margin-top: 2px; }
 .pc-info { flex: 1; min-width: 0; }
-.pc-name { font-size: 0.7rem; font-weight: 700; color: #f8fafc; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pc-name { font-size: 0.75rem; font-weight: 700; color: #f8fafc; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pc-phone { font-size: 0.62rem; color: #cbd5e1; }
 .pc-validations { margin-top: 1px; font-size: 11px; display: flex; flex-wrap: wrap; gap: 2px; }
 .val-emoji { cursor: default; }
 .pc-specs { font-size: 0.6rem; line-height: 1.1; margin-top: 1px; }
-.pc-role  { font-size: 0.58rem; font-weight: 700; margin-top: 1px; letter-spacing: 0.02em; }
+.pc-role  { font-size: 0.6rem; font-weight: 700; margin-top: 1px; letter-spacing: 0.02em; }
 .spec-emoji { cursor: default; }
 .pc-helico-icon { position: absolute; top: 4px; right: 4px; color: #ffb74d; }
 
