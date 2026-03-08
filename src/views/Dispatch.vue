@@ -1372,27 +1372,6 @@ export default {
     },
   },
 
-  watch: {
-    'dispatch.centrale.employees': {
-      deep: true,
-      handler(newVals) {
-        let name = '';
-        let phone = '';
-        if (newVals && newVals.length > 0) {
-          name = newVals[0].name || '';
-          phone = newVals[0].phone || '';
-        }
-        
-        try {
-          const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycby-YE2huHmXe9apJoz6jvkoZ3QY1e0LNPbrRr9EO6Yfgjo7z0klBo2Q-ok-SrFzk1tP/exec';
-          fetch(`${WEB_APP_URL}?action=updateCentrale&name=${encodeURIComponent(name)}&phone=${encodeURIComponent(phone)}`, { mode: 'no-cors' });
-        } catch (err) {
-          console.error("Erreur synchro GSheet Centrale", err);
-        }
-      }
-    }
-  },
-
   mounted() {
     this.fetchSafdStatus()
     this.safdInterval = setInterval(this.fetchSafdStatus, 60000)
@@ -1418,6 +1397,25 @@ export default {
   },
 
   methods: {
+    syncCentraleGSheet() {
+      if (!this.dispatch?.centrale?.employees) return
+      
+      const employees = this.dispatch.centrale.employees
+      let name = '';
+      let phone = '';
+      if (employees && employees.length > 0) {
+        name = employees[0].name || '';
+        phone = employees[0].phone || '';
+      }
+      
+      try {
+        const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycby-YE2huHmXe9apJoz6jvkoZ3QY1e0LNPbrRr9EO6Yfgjo7z0klBo2Q-ok-SrFzk1tP/exec';
+        fetch(`${WEB_APP_URL}?action=updateCentrale&name=${encodeURIComponent(name)}&phone=${encodeURIComponent(phone)}`, { mode: 'no-cors' });
+      } catch (err) {
+        console.error("Erreur synchro GSheet Centrale", err);
+      }
+    },
+
     getCrisisEmployeeOptions(currentId) {
       if (!this.dispatch) return []
       const ids = new Set()
@@ -1582,11 +1580,13 @@ export default {
           
           this._updateTempRef(realId, tEmp);
           await this.dispatch.save();
+          this.syncCentraleGSheet();
 
         } else if (result.isDenied) {
           this.dispatch.temporaryEmployees = this.dispatch.temporaryEmployees.filter(e => e.id !== realId);
           this._removeTempRefs(realId);
           await this.dispatch.save();
+          this.syncCentraleGSheet();
         }
       })
     },
@@ -1643,6 +1643,7 @@ export default {
       }
       
       this.dispatch.save();
+      this.syncCentraleGSheet();
     },
     fetchSafdStatus() {
       fetch('https://docs.google.com/spreadsheets/d/1A1gxOho_roNwxTtcbiEpLGSWbD8JUasMDu4NL-zdcbw/export?format=csv&gid=0')
@@ -1880,6 +1881,7 @@ export default {
 
       this.dispatch.patates = [...this.dispatch.patates]
       await this.dispatch.save()
+      this.syncCentraleGSheet()
     },
 
         _removeFromSource(sourceKey, employeeId) {
@@ -1909,6 +1911,7 @@ export default {
       
       this.dispatch.patates = this.dispatch.patates.filter(p=>p.employeeId!==employeeId)
       await this.dispatch.save()
+      this.syncCentraleGSheet()
     },
 
     async clearCentrale() {
@@ -1917,12 +1920,14 @@ export default {
       if (!r.isConfirmed) return
       this.dispatch.centrale = { location: null, complement: null, type: null, returnStatus: null, employees: [] }
       await this.dispatch.save()
+      this.syncCentraleGSheet()
     },
 
     async removeEmpFromCentrale(employeeId) {
       if (!this.dispatch?.centrale) return
       this.dispatch.centrale.employees = (this.dispatch.centrale.employees||[]).filter(e => e.employeeId !== employeeId)
       await this.dispatch.save()
+      this.syncCentraleGSheet()
     },
 
     async setCentraleType(typeValue) {
@@ -1952,6 +1957,7 @@ export default {
       if (found) {
         found.centralRole = roleValue
         await this.dispatch.save()
+        this.syncCentraleGSheet()
       }
     },
 
