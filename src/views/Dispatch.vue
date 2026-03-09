@@ -158,7 +158,7 @@
             draggable="true"
             @dragstart="startDrag(emp, 'centrale')"
             @dragend="onDragEnd"
-            @click="emp.role !== 'Temporaire' && openQuickMoveDialog(emp, 'centrale')"
+            @click="openQuickMoveDialog(emp, 'centrale')"
           >
             <div class="pc-grip">⠿</div>
             <div class="pc-info">
@@ -306,7 +306,7 @@
                 draggable="true"
                 @dragstart="startDrag(emp, `inter:${slot.id}`)"
                 @dragend="onDragEnd"
-                @click="emp.role !== 'Temporaire' && openQuickMoveDialog(emp, `inter:${slot.id}`)"
+                @click="openQuickMoveDialog(emp, `inter:${slot.id}`)"
               >
                 <div class="pc-grip">⠿</div>
                 <div class="pc-info">
@@ -365,7 +365,7 @@
               draggable="true"
               @dragstart="startDrag(p, `cat:en_service`)"
               @dragend="onDragEnd"
-              @click="p.role !== 'Temporaire' && openQuickMoveDialog(p, `cat:en_service`)"
+              @click="openQuickMoveDialog(p, `cat:en_service`)"
             >
               <div class="pc-grip">⠿</div>
                 <div class="pc-info">
@@ -424,7 +424,7 @@
                 draggable="true"
                 @dragstart="startDrag(p, `cat:${cat.value}`)"
                 @dragend="onDragEnd"
-                @click="p.role !== 'Temporaire' && openQuickMoveDialog(p, `cat:${cat.value}`)"
+                @click="openQuickMoveDialog(p, `cat:${cat.value}`)"
               >
                 <div class="pc-info">
                   <v-icon v-if="hasHelicopterTraining(p.employeeId || p.id)" size="12" class="pc-helico-icon" title="Médicoptère">mdi-helicopter</v-icon>
@@ -469,7 +469,7 @@
             draggable="true"
             @dragstart="startDrag({ employeeId: emp.id, name: emp.name, phone: emp.phone, allSpecialties: emp.allSpecialties, role: emp.role }, 'hs')"
             @dragend="onDragEnd"
-            @click="emp.role !== 'Temporaire' && openQuickMoveDialog(emp, 'hs')"
+            @click="openQuickMoveDialog(emp, 'hs')"
           >
             <div class="pc-info">
               <v-icon v-if="hasHelicopterTraining(emp.id)" size="12" class="pc-helico-icon" title="Médicoptère">mdi-helicopter</v-icon>
