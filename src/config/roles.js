@@ -10,12 +10,22 @@ export const roleOrder = [
     'Temporaire'
 ]
 
+const ROLES_CONFIG = {
+    'Directeur': { color: '#e53935', name: 'red' },
+    'Directeur Adjoint': { color: '#e53935', name: 'red' },
+    'Responsable de Service': { color: '#8e24aa', name: 'purple' },
+    'Assistant RH': { color: '#fb8c00', name: 'orange' },
+    'Spécialiste': { color: '#1ebde5', name: 'cyan' },
+    'Titulaire': { color: '#1ebde5', name: 'cyan' },
+    'Résident': { color: '#1e88e5', name: 'blue' },
+    'Interne': { color: '#43a047', name: 'green' },
+    'Temporaire': { color: '#ffd700', name: 'amber' }
+}
+
 export function getRoleColor(role) {
-    if (['Directeur', 'Directeur Adjoint'].includes(role)) return '#e53935'
-    if (['Responsable de Service'].includes(role)) return '#8e24aa'
-    if (['Assistant RH'].includes(role)) return '#fb8c00'
-    if (['Titulaire', 'Spécialiste'].includes(role)) return '#1ebde5'
-    if (['Résident'].includes(role)) return '#1e88e5'
-    if (['Temporaire'].includes(role)) return '#ffd700'
-    return '#43a047'
+    return ROLES_CONFIG[role]?.color || '#43a047'
+}
+
+export function getRoleColorName(role) {
+    return ROLES_CONFIG[role]?.name || 'green'
 }

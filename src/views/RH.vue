@@ -977,7 +977,7 @@ import {
 } from 'chart.js'
 import { Pie, Bar } from 'vue-chartjs'
 import AnimatedCounter from '@/components/AnimatedCounter.vue'
-import { roleOrder as sharedRoleOrder, getRoleColor as sharedGetRoleColor } from '@/config/roles.js'
+import { roleOrder, getRoleColor, getRoleColorName } from '@/config/roles.js'
 
 ChartJS.register(...registerables)
 
@@ -1379,9 +1379,8 @@ export default {
     },
 
 
-    getRoleColor(role) {
-      return sharedGetRoleColor(role)
-    },
+    getRoleColor,
+    getRoleColorName,
 
     isTaskOverdue(task, type) {
       if (!task.doneAt) return true
@@ -1828,8 +1827,8 @@ export default {
     },
 
     directoryRowProps({ item }) {
-      const color = this.getRoleColor(item.role)
-      return { class: `bg-${color}-lighten-4` }
+      const colorName = this.getRoleColorName(item.role)
+      return { class: `bg-${colorName}-lighten-4` }
     },
 
     async captureDirectoryImage() {
