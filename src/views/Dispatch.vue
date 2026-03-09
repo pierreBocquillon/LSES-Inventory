@@ -615,17 +615,18 @@
     </div>
 
     <div class="crises-bottom-section" style="border-top: 2px solid #334155; background: #0f172a; padding: 10px; width: 100%; box-sizing: border-box; flex-shrink: 0;">
-      <div class="slot-section-title" style="background: linear-gradient(90deg, #ef4444 0%, #b91c1c 100%);">
+      <div class="slot-section-title" style="background: #b91c1c; cursor: pointer;" @click="crisisExpanded = !crisisExpanded">
         🚨 Dispatch de crises
         <span class="cnt ml-2">
           {{ treatedInjured }} / {{ totalInjured }}
         </span>
-        <v-btn size="x-small" variant="plain" color="white" class="ml-auto" @click="addCrisisSlot">
+        <v-icon size="14" class="ml-auto">{{ crisisExpanded ? 'mdi-chevron-up' : 'mdi-chevron-down' }}</v-icon>
+        <v-btn size="x-small" variant="plain" color="white" class="ml-1" @click.stop="addCrisisSlot">
           <v-icon size="13">mdi-plus</v-icon>
         </v-btn>
       </div>
 
-      <div class="crises-list" style="margin-top: 10px;">
+      <div v-if="crisisExpanded" class="crises-list" style="margin-top: 10px;">
         <table style="width: 100%; border-collapse: collapse; text-align: left;">
           <thead>
             <tr style="border-bottom: 1px solid #334155; color: #cbd5e1; font-size: 0.75rem;">
@@ -740,7 +741,13 @@
     </div>
 
     <div class="beds-bottom-section" style="border-top: 2px solid #334155; background: #0f172a; padding: 10px; width: 100%; box-sizing: border-box; flex-shrink: 0;">
-      <div v-for="group in crisisBedGroups" :key="group.id" style="margin-bottom: 24px; border: 1px solid #1e293b; background: rgba(0,0,0,0.15);">
+      <div class="slot-section-title" style="background: #3b82f6; cursor: pointer;" @click="bedsExpanded = !bedsExpanded">
+        🛌 Chambres LSES
+        <v-icon size="14" class="ml-auto">{{ bedsExpanded ? 'mdi-chevron-up' : 'mdi-chevron-down' }}</v-icon>
+      </div>
+
+      <div v-if="bedsExpanded" :style="{ marginTop: '10px' }">
+        <div v-for="(group, gIdx) in crisisBedGroups" :key="group.id" :style="{ marginBottom: gIdx === crisisBedGroups.length - 1 ? '0' : '24px' }" style="border: 1px solid #1e293b; background: rgba(0,0,0,0.15);">
         <div class="slot-section-title" :style="{ background: group.color }" style="justify-content: center; font-size: 0.8rem; padding: 8px; letter-spacing: 1px; color: #fff;">
           <span style="margin-right: 8px;">{{ group.icon }}</span> {{ group.label }}
         </div>
@@ -830,6 +837,7 @@
               </tbody>
             </table>
           </template>
+        </div>
         </div>
       </div>
     </div>
@@ -1244,6 +1252,10 @@ export default {
       quickAddDialog: false,
       quickAddEmployee: null,
 
+      crisisExpanded: localStorage.getItem('dispatch_crisis_expanded') !== 'false',
+      bedsExpanded: localStorage.getItem('dispatch_beds_expanded') !== 'false',
+      morgueExpanded: localStorage.getItem('dispatch_morgue_expanded') === 'true',
+
       allCategories,
       interventionTypes,
       returnStatuses,
@@ -1255,8 +1267,6 @@ export default {
       crisisBedGroups,
       complements,
       morgueConfig,
-
-      morgueExpanded: false,
     }
   },
 
@@ -1370,6 +1380,12 @@ export default {
       if (!this.dispatch?.morgue?.burials) return 0
       return Object.values(this.dispatch.morgue.burials).filter(s => s?.name).length
     },
+  },
+
+  watch: {
+    crisisExpanded(val) { localStorage.setItem('dispatch_crisis_expanded', val) },
+    bedsExpanded(val) { localStorage.setItem('dispatch_beds_expanded', val) },
+    morgueExpanded(val) { localStorage.setItem('dispatch_morgue_expanded', val) },
   },
 
   mounted() {
