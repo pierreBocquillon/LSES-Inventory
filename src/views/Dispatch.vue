@@ -558,7 +558,7 @@
               </v-list>
             </v-menu>
           </div>
-          <div class="mb-2 d-flex align-center bg-transparent flex-shrink-0" v-if="(dispatch?.radios||[]).length">
+          <div class="mb-2 d-flex align-center bg-transparent flex-shrink-0" v-if="(dispatch?.radios||[]).length && isDirection">
              <span class="text-caption font-weight-bold text-grey-lighten-1 mr-2"><v-icon size="12" class="mr-1">mdi-weather-night</v-icon> Nuit:</span>
              <select v-if="isDirection" v-model="dispatch.nuitRadioId" @change="dispatch.save()" class="location-input mx-1" style="border: 1px solid #334155; padding:2px; border-radius:4px; max-width:130px; font-weight:bold;">
                 <option :value="null" style="background:#1a1f35">-- Aucune --</option>
