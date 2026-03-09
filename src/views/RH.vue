@@ -1093,7 +1093,7 @@ export default {
         title: 'Rôle',
         key: 'role',
         sort: (a, b) => {
-          return sharedRoleOrder.indexOf(a) - sharedRoleOrder.indexOf(b)
+          return roleOrder.indexOf(a) - roleOrder.indexOf(b)
         }
       },
       { title: 'Spécialités', key: 'specialties' },
@@ -1199,14 +1199,10 @@ export default {
       return this.candidatures.filter(c => c.status === 'Candidature reçue').length
     },
     sortedDirectoryEmployees() {
-      const roleOrder = sharedRoleOrder
-
       return [...this.employees].sort((a, b) => {
-        // 1. Sort by Role Priority
         const roleDiff = roleOrder.indexOf(a.role) - roleOrder.indexOf(b.role)
         if (roleDiff !== 0) return roleDiff
 
-        // 2. Sort by Seniority (Arrival Date) - Ascending (Earliest date = Most senior)
         if (!a.arrivalDate) return 1
         if (!b.arrivalDate) return -1
         return new Date(a.arrivalDate) - new Date(b.arrivalDate)

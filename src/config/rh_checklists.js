@@ -5,7 +5,7 @@ export const rhChecklists = [
         icon: 'mdi-account-plus',
         steps: [
             { header: 'Avant l\'embauche' },
-            'Ajouter la tuile du nouvel agent au dispatch',
+            'Valider la candidature de l\'agent',
 
             { header: 'Contrat' },
             'Récupérer l\'extrait de casier judiciaire vierge de la personne et le placer dans son dossier',
@@ -26,8 +26,9 @@ export const rhChecklists = [
 
             { header: 'Accès tous les Documents' },
             'Demander l\'adresse mail de la personne (format "gmail.com")',
-            { text: 'Aller dans "21-LSES-Interne-Résident-Médecin" et ajouter l\'adresse mail (accès dispatch).', link: { text: 'Groupes', url: 'https://groups.google.com/g/21-lses-interne-resident-medecin/members' } },
-            { text: 'Donner le lien du dispatch', link: { text: 'Dispatch', url: 'https://docs.google.com/spreadsheets/d/1Vho76MbebIo4d1RgpVL0wGFqbMjeK1e3HcirZV_C7Uk/edit?gid=180456797#gid=180456797' } },
+            { text: 'Faire créer un compte LSES-Inventory à l\'agent', link: { text: 'LSES-Inventory', url: 'https://lses-inventory.web.app/login' } },
+            { text: 'Aller dans "21-LSES-Interne-Résident-Médecin" et ajouter l\'adresse mail (accès ancien dispatch).', link: { text: 'Groupes', url: 'https://groups.google.com/g/21-lses-interne-resident-medecin/members' } },
+            { text: 'Donner le lien du dispatch', link: { text: 'Dispatch', url: 'https://lses-inventory.web.app/dispatch' } },
 
             { header: 'Mettre à jour tous les documents RH' },
             { link: { text: 'Trombinoscope', url: 'https://www.canva.com/design/DAGzQCSaqAY/ASNs1-k_xRGAXdlg_oL1xw/edit' } },
@@ -42,7 +43,6 @@ export const rhChecklists = [
             { header: 'Résident' },
             'Demander à un membre de la direction de lui mettre le grade discord et vérifier les accès',
             'Écrire le message de promotion',
-            'Mettre à jour la tuile sur le dispatch',
             'Mettre à jour le suivi effectif (ne pas oublier la date de signature du CDI)',
             { text: 'Modifier le trombinoscope et l\'envoyer dans LSES Infos', link: { text: 'Trombinoscope', url: 'https://www.canva.com/design/DAGzQCSaqAY/ASNs1-k_xRGAXdlg_oL1xw/edit' } },
             { text: 'Modifier l\'annuaire et l\'envoyer dans LSES Infos', link: { text: 'Annuaire', url: 'https://www.canva.com/design/DAGzivD6iCM/IAypIsutJJhUXMjhxitILw/edit' } },
@@ -50,13 +50,11 @@ export const rhChecklists = [
 
             { header: 'Titulaire' },
             'Écrire le message de promotion',
-            'Mettre à jour la tuile sur le dispatch',
             'Mettre à jour le suivi effectif',
             'Màj salaire intra 21',
 
             { header: 'Spécialiste' },
             'Écrire le message de promotion',
-            'Mettre à jour la tuile sur le dispatch',
             'Mettre à jour le suivi effectif',
             { text: 'Modifier le trombinoscope et l\'envoyer dans LSES Infos', link: { text: 'Trombinoscope', url: 'https://www.canva.com/design/DAGzQCSaqAY/ASNs1-k_xRGAXdlg_oL1xw/edit' } },
             { text: 'Modifier l\'annuaire et l\'envoyer dans LSES Infos', link: { text: 'Annuaire', url: 'https://www.canva.com/design/DAGzivD6iCM/IAypIsutJJhUXMjhxitILw/edit' } },
@@ -68,7 +66,6 @@ export const rhChecklists = [
             { header: 'Responsable de service' },
             'Expliquer le canal "Commission-médecins" et les attentes qu\'on a d\'un responsable de service',
             'Écrire le message de promotion',
-            'Mettre à jour la tuile sur le dispatch',
             'Mettre à jour le suivi effectif',
             { text: 'Modifier le trombinoscope et l\'envoyer dans LSES Infos', link: { text: 'Trombinoscope', url: 'https://www.canva.com/design/DAGzQCSaqAY/ASNs1-k_xRGAXdlg_oL1xw/edit' } },
             { text: 'Modifier l\'annuaire et l\'envoyer dans LSES Infos', link: { text: 'Annuaire', url: 'https://www.canva.com/design/DAGzivD6iCM/IAypIsutJJhUXMjhxitILw/edit' } },
@@ -105,7 +102,6 @@ export const rhChecklists = [
 
             { header: 'Dans tous les cas' },
             'Penser à mettre la lettre dans le fil agent',
-            'Mettre à jour le dispatch',
             { text: 'Mettre à jour les groupes', link: { text: 'Groupe Google', url: 'https://groups.google.com/g/21-lses-interne-resident-medecin/members' } },
             'Clôturer son fil de formation (si interne)',
             { text: 'Modifier le trombinoscope et l\'envoyer dans LSES Infos', link: { text: 'Trombinoscope', url: 'https://www.canva.com/design/DAGzQCSaqAY/ASNs1-k_xRGAXdlg_oL1xw/edit' } },
