@@ -158,6 +158,7 @@
             draggable="true"
             @dragstart="startDrag(emp, 'centrale')"
             @dragend="onDragEnd"
+            @click="emp.role !== 'Temporaire' && openQuickMoveDialog(emp, 'centrale')"
           >
             <div class="pc-grip">⠿</div>
             <div class="pc-info">
@@ -305,6 +306,7 @@
                 draggable="true"
                 @dragstart="startDrag(emp, `inter:${slot.id}`)"
                 @dragend="onDragEnd"
+                @click="emp.role !== 'Temporaire' && openQuickMoveDialog(emp, `inter:${slot.id}`)"
               >
                 <div class="pc-grip">⠿</div>
                 <div class="pc-info">
@@ -362,6 +364,7 @@
             draggable="true"
             @dragstart="startDrag(p, `cat:en_service`)"
             @dragend="onDragEnd"
+            @click="p.role !== 'Temporaire' && openQuickMoveDialog(p, `cat:en_service`)"
           >
             <div class="pc-grip">⠿</div>
               <div class="pc-info">
@@ -419,6 +422,7 @@
                 draggable="true"
                 @dragstart="startDrag(p, `cat:${cat.value}`)"
                 @dragend="onDragEnd"
+                @click="p.role !== 'Temporaire' && openQuickMoveDialog(p, `cat:${cat.value}`)"
               >
                 <div class="pc-info">
                   <v-icon v-if="hasHelicopterTraining(p.employeeId || p.id)" size="12" class="pc-helico-icon" title="Médicoptère">mdi-helicopter</v-icon>
@@ -461,7 +465,7 @@
             draggable="true"
             @dragstart="startDrag({ employeeId: emp.id, name: emp.name, phone: emp.phone, allSpecialties: emp.allSpecialties, role: emp.role }, 'hs')"
             @dragend="onDragEnd"
-            @click="emp.role !== 'Temporaire' && quickAddFromHorsService(emp)"
+            @click="emp.role !== 'Temporaire' && openQuickMoveDialog(emp, 'hs')"
           >
             <div class="pc-info">
               <v-icon v-if="hasHelicopterTraining(emp.id)" size="12" class="pc-helico-icon" title="Médicoptère">mdi-helicopter</v-icon>
@@ -1157,14 +1161,19 @@
 
     <v-dialog v-model="quickAddDialog" max-width="360">
       <v-card class="rounded-xl">
-        <v-card-title class="bg-primary text-white pa-4">Ajouter {{ quickAddEmployee?.name }}</v-card-title>
+        <v-card-title class="bg-primary text-white pa-4">Déplacer {{ quickAddEmployee?.name }}</v-card-title>
         <v-card-text class="pt-4">
-          <p class="text-body-2 mb-3">Choisir un statut :</p>
+          <p class="text-body-2 mb-3">Choisir un nouveau statut :</p>
           <div class="d-flex flex-wrap" style="gap:8px">
-            <v-btn v-for="cat in allCategories" :key="cat.value"
-              :color="cat.color" variant="tonal" size="small"
-              @click="confirmQuickAdd(cat.value)">
-              {{ cat.emoji }} {{ cat.label }}
+            <template v-for="cat in allCategories" :key="cat.value">
+              <v-btn v-if="quickMoveSourceKey !== 'cat:' + cat.value"
+                :color="cat.color" variant="tonal" size="small"
+                @click="confirmQuickAdd(cat.value)">
+                {{ cat.emoji }} {{ cat.label }}
+              </v-btn>
+            </template>
+            <v-btn v-if="quickMoveSourceKey !== 'hs'" color="error" variant="tonal" size="small" @click="confirmQuickAdd('hs')">
+              😴 Hors service
             </v-btn>
           </div>
         </v-card-text>
@@ -1251,6 +1260,7 @@ export default {
       selectedEmployee: null,
       quickAddDialog: false,
       quickAddEmployee: null,
+      quickMoveSourceKey: null,
 
       crisisExpanded: localStorage.getItem('dispatch_crisis_expanded') !== 'false',
       bedsExpanded: localStorage.getItem('dispatch_beds_expanded') !== 'false',
@@ -2195,20 +2205,36 @@ export default {
       this.addDialog = false
     },
 
-    quickAddFromHorsService(emp) { this.quickAddEmployee = emp; this.quickAddDialog = true },
+    openQuickMoveDialog(emp, sourceKey) { 
+      this.quickAddEmployee = emp; 
+      this.quickMoveSourceKey = sourceKey;
+      this.quickAddDialog = true 
+    },
     async confirmQuickAdd(categoryValue) {
       if (!this.quickAddEmployee || !this.dispatch) return
-      const emp = this.employees.find(e=>e.id===this.quickAddEmployee.id)
-      this.dispatch.patates = [...this.dispatch.patates, {
-        id: Date.now().toString()+Math.random().toString(36).slice(2,6),
-        employeeId: this.quickAddEmployee.id,
-        name: this.quickAddEmployee.name,
-        phone: this.quickAddEmployee.phone || '',
-        role: emp?.role || '',
-        allSpecialties: emp ? (emp.specialties || []) : [],
-        category: categoryValue,
-      }]
+      
+      const empId = this.quickAddEmployee.employeeId || this.quickAddEmployee.id
+      const src = this.quickMoveSourceKey
+
+      this._removeFromSource(src, empId)
+
+      if (categoryValue !== 'hs') {
+        const emp = this.employees.find(e=>e.id===empId)
+        this.dispatch.patates = [...this.dispatch.patates, {
+          id: Date.now().toString()+Math.random().toString(36).slice(2,6),
+          employeeId: empId,
+          name: this.quickAddEmployee.name,
+          phone: this.quickAddEmployee.phone || '',
+          role: emp?.role || '',
+          allSpecialties: emp ? (emp.specialties || []) : [],
+          category: categoryValue,
+        }]
+      }
+
       await this.dispatch.save()
+
+      if (src === 'centrale') this.syncCentraleGSheet()
+      
       this.quickAddDialog = false
     },
 
