@@ -43,6 +43,7 @@ export const hospitalStatuses = [
     { value: 'coups_de_feu', label: 'Coups de feu à proximité', icon: 'mdi-alert', color: '#e65100' },
     { value: 'gestion_bagarre', label: 'Gestion bagarre', icon: 'mdi-sword', color: '#0049e6ff' },
     { value: 'gestion_fusillade', label: 'Gestion fusillade', icon: 'mdi-fire-extinguisher', color: '#e43d7dff' },
+    { value: 'mode_nuit', label: 'Mode nuit', icon: 'mdi-moon-waning-crescent', color: '#6a3de4ff' },
 ]
 
 export const crisisMedicalStatuses = [
