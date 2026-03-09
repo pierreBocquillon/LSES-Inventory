@@ -343,58 +343,60 @@
         </div>
       </div>
 
-            <div
-        class="center-panel"
-        :class="{ 'drop-over': dragOver==='cat:en_service' }"
-        @dragover.prevent="dragOver='cat:en_service'"
-        @dragleave="onDragLeave('cat:en_service')"
-        @drop.prevent="dropOn('cat:en_service')"
-      >
-        <div class="section-title">
-          🥔 La Patate
-          <span class="cnt">{{ patatesForCategory('en_service').length }}</span>
-        </div>
-        <div class="cards-grid">
-          <div
-            v-for="p in patatesForCategory('en_service')"
-            :key="p.id"
-            class="person-card"
-            :class="{ dragging: draggingSource?.id===p.id }"
-            :style="`border-left:3px solid ${getRoleColor(p.role)};background:${getRoleColor(p.role)}15`"
-            draggable="true"
-            @dragstart="startDrag(p, `cat:en_service`)"
-            @dragend="onDragEnd"
-            @click="p.role !== 'Temporaire' && openQuickMoveDialog(p, `cat:en_service`)"
-          >
-            <div class="pc-grip">⠿</div>
-              <div class="pc-info">
-              <v-icon v-if="hasHelicopterTraining(p.employeeId || p.id)" size="12" class="pc-helico-icon" title="Médicoptère">mdi-helicopter</v-icon>
-              <div class="pc-name">
-                {{ getEmployeeEmoji(p.employeeId || p.id) }} {{ p.name?.split(' ')[0] }}
-                <v-icon
-                  v-if="p.role === 'Temporaire'"
-                  size="12"
-                  class="ml-1 cursor-pointer text-amber-lighten-2"
-                  title="Modifier temporaire"
-                  @click.stop="promptEditTemporaryEmployee(p)"
-                >mdi-pencil</v-icon>
-              </div>
-              <div class="pc-phone">{{ p.phone }}</div>
-              <div class="pc-validations" v-if="getValidationBadges(p.employeeId).length">
-                <span v-for="b in getValidationBadges(p.employeeId)" :key="b.title" class="val-emoji" :title="b.title">{{ b.emoji }}</span>
-              </div>
-              <div class="pc-specs">
-                <span v-for="sv in (p.allSpecialties||[])" :key="sv" class="spec-emoji" :title="getSpecialtyName(sv)">{{ getSpecialtyIcon(sv) }}</span>
-              </div>
-              <div class="pc-role" :style="`color:${getRoleColor(p.role)}`">{{ p.role }}</div>
-            </div>
+      <div class="center-panel">
+        <div 
+          class="patate-content-area" 
+          :class="{ 'drop-over': dragOver==='cat:en_service' }"
+          @dragover.prevent="dragOver='cat:en_service'"
+          @dragleave="onDragLeave('cat:en_service')"
+          @drop.prevent="dropOn('cat:en_service')"
+        >
+          <div class="section-title">
+            🥔 La Patate
+            <span class="cnt">{{ patatesForCategory('en_service').length }}</span>
           </div>
-          <div v-if="draggingSource && !patatesForCategory('en_service').find(p=>p.employeeId===draggingSource.employeeId)" class="drop-hint-card">
-            Déposer ici
+          <div class="cards-grid">
+            <div
+              v-for="p in patatesForCategory('en_service')"
+              :key="p.id"
+              class="person-card"
+              :class="{ dragging: draggingSource?.id===p.id }"
+              :style="`border-left:3px solid ${getRoleColor(p.role)};background:${getRoleColor(p.role)}15`"
+              draggable="true"
+              @dragstart="startDrag(p, `cat:en_service`)"
+              @dragend="onDragEnd"
+              @click="p.role !== 'Temporaire' && openQuickMoveDialog(p, `cat:en_service`)"
+            >
+              <div class="pc-grip">⠿</div>
+                <div class="pc-info">
+                <v-icon v-if="hasHelicopterTraining(p.employeeId || p.id)" size="12" class="pc-helico-icon" title="Médicoptère">mdi-helicopter</v-icon>
+                <div class="pc-name">
+                  {{ getEmployeeEmoji(p.employeeId || p.id) }} {{ p.name?.split(' ')[0] }}
+                  <v-icon
+                    v-if="p.role === 'Temporaire'"
+                    size="12"
+                    class="ml-1 cursor-pointer text-amber-lighten-2"
+                    title="Modifier temporaire"
+                    @click.stop="promptEditTemporaryEmployee(p)"
+                  >mdi-pencil</v-icon>
+                </div>
+                <div class="pc-phone">{{ p.phone }}</div>
+                <div class="pc-validations" v-if="getValidationBadges(p.employeeId).length">
+                  <span v-for="b in getValidationBadges(p.employeeId)" :key="b.title" class="val-emoji" :title="b.title">{{ b.emoji }}</span>
+                </div>
+                <div class="pc-specs">
+                  <span v-for="sv in (p.allSpecialties||[])" :key="sv" class="spec-emoji" :title="getSpecialtyName(sv)">{{ getSpecialtyIcon(sv) }}</span>
+                </div>
+                <div class="pc-role" :style="`color:${getRoleColor(p.role)}`">{{ p.role }}</div>
+              </div>
+            </div>
+            <div v-if="dragOver === 'cat:en_service' && draggingSource && !patatesForCategory('en_service').find(p=>p.employeeId===draggingSource.employeeId)" class="drop-hint-card">
+              Déposer ici
+            </div>
           </div>
         </div>
 
-        <div class="inner-bottom-categories mt-auto" style="border-top: 1px solid #334155; padding-top: 6px; min-height:300px;"
+        <div class="inner-bottom-categories mt-auto" style="border-top: 1px solid #334155; min-height:300px;"
           @dragover.stop
           @dragleave.stop
           @drop.stop
@@ -440,9 +442,11 @@
                   <div class="pc-specs">
                     <span v-for="sv in (p.allSpecialties||[])" :key="sv" class="spec-emoji" :title="getSpecialtyName(sv)">{{ getSpecialtyIcon(sv) }}</span>
                   </div>
-                  <div class="pc-role" :style="`color:${getRoleColor(p.role)}`">{{ p.role }}</div>
+                <div class="pc-role" :style="`color:${getRoleColor(p.role)}`">{{ p.role }}</div>
                 </div>
-                <div v-if="draggingSource && !patatesForCategory(cat.value).find(pp=>pp.employeeId===draggingSource.employeeId)" class="drop-hint-sm">↓</div>
+              </div>
+              <div v-if="dragOver === 'cat:' + cat.value && draggingSource && !patatesForCategory(cat.value).find(pp=>pp.employeeId===draggingSource.employeeId)" class="drop-hint-sm">
+                Déposer ici
               </div>
             </div>
           </div>
@@ -2501,9 +2505,16 @@ export default {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  transition: background .15s;
 }
-.center-panel.drop-over { background: #1a2f4a; }
+
+.patate-content-area {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  transition: background .15s;
+  overflow: hidden;
+}
+.patate-content-area.drop-over { background: #1a2f4a; }
 
 .section-title {
   background: linear-gradient(90deg, #14532d 0%, #166534 100%);
@@ -2665,7 +2676,7 @@ export default {
 }
 .inner-bottom-panel:nth-child(2n) { border-right: none; }
 .inner-bottom-panel:nth-child(n+3) { border-top: 1px solid #334155; }
-.inner-bottom-panel.drop-over { filter: brightness(1.1); }
+.inner-bottom-panel.drop-over { background: #1a2f4a; }
 .bottom-panel {
   border-right: 2px solid #334155;
   display: flex;
@@ -2694,7 +2705,16 @@ export default {
   align-content: flex-start;
   flex: 1;
 }
-.drop-hint-sm { color: #b0bec5; display: flex; align-items: center; padding: 3px; }
+.drop-hint-sm { 
+  border: 1px dashed #475569;
+  color: #94a3b8;
+  border-radius: 4px;
+  font-size: 0.65rem;
+  padding: 4px 8px;
+  display: flex;
+  align-items: center;
+  font-style: italic;
+}
 
 .inter-location-row {
   display: flex;
