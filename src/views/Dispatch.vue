@@ -264,8 +264,8 @@
                 </v-list>
               </v-menu>
                             <v-btn icon variant="plain" size="x-small" color="error" class="ml-auto"
-                @click="removeInterventionSlot(slot.id)" title="Supprimer ce slot">
-                <v-icon size="11">mdi-close</v-icon>
+                @click="removeInterventionSlot(slot.id)" :title="(slot.employees?.length || slot.location || slot.complement || slot.returnStatus || slot.type !== 'intervention') ? 'Réinitialiser ce slot' : 'Supprimer ce slot'">
+                <v-icon size="11">{{ (slot.employees?.length || slot.location || slot.complement || slot.returnStatus || slot.type !== 'intervention') ? 'mdi-refresh' : 'mdi-close' }}</v-icon>
               </v-btn>
             </div>
             <div class="inter-location-row d-flex align-center">
@@ -631,6 +631,9 @@
         <v-icon size="14" class="ml-auto">{{ crisisExpanded ? 'mdi-chevron-up' : 'mdi-chevron-down' }}</v-icon>
         <v-btn size="x-small" variant="plain" color="white" class="ml-1" @click.stop="addCrisisSlot">
           <v-icon size="13">mdi-plus</v-icon>
+        </v-btn>
+        <v-btn size="x-small" variant="plain" color="white" class="ml-1" @click.stop="confirmClearCrises" title="Réinitialiser le dispatch de crise">
+          <v-icon size="13">mdi-refresh</v-icon>
         </v-btn>
       </div>
 
@@ -1793,7 +1796,7 @@ export default {
       await this.dispatch.save()
 
       const meta = this.hospitalStatuses.find(s => s.value === value) || this.hospitalStatuses[0]
-      const label = meta.label
+      const label = meta.gsheet
       
       try {
         const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwDWdQakJgJ22wYz2-uo6LRheJSFX7_-kox8oGBSxe808QXr9ryMg74LNDc5ufgNgKp/exec'
@@ -1912,13 +1915,14 @@ export default {
       }
 
       this.dispatch.patates = [...this.dispatch.patates]
+      if (targetKey === 'hs')
+        this.autoTurnOffRadio(emp.employeeId)
       await this.dispatch.save()
-      if (targetKey === 'centrale' || src === 'centrale') {
+      if (targetKey === 'centrale' || src === 'centrale')
         this.syncCentraleGSheet()
-      }
     },
 
-        _removeFromSource(sourceKey, employeeId) {
+    _removeFromSource(sourceKey, employeeId) {
       if (!this.dispatch) return
       if (sourceKey === 'centrale') {
         this.dispatch.centrale.employees = (this.dispatch.centrale?.employees||[]).filter(e => e.employeeId !== employeeId)
@@ -1932,7 +1936,7 @@ export default {
       
     },
 
-        async removeFromDispatch(employeeId) {
+    async removeFromDispatch(employeeId) {
       if (!this.dispatch) return
       
       let wasInCentrale = false
@@ -1946,6 +1950,7 @@ export default {
       })
       
       this.dispatch.patates = this.dispatch.patates.filter(p=>p.employeeId!==employeeId)
+      this.autoTurnOffRadio(employeeId)
       await this.dispatch.save()
       if (wasInCentrale) this.syncCentraleGSheet()
     },
@@ -2049,7 +2054,31 @@ export default {
     },
 
     async removeInterventionSlot(slotId) {
-      this.dispatch.interventions = this.dispatch.interventions.filter(s=>s.id!==slotId)
+      const slot = this.dispatch.interventions.find(s=>s.id===slotId)
+      if (!slot) return
+
+      const isModified = slot.employees?.length > 0 || slot.location || slot.complement || slot.returnStatus || slot.type !== 'intervention'
+
+      if (isModified) {
+        slot.employees?.forEach(emp => {
+          this.dispatch.patates.push({
+            id: Date.now().toString()+Math.random().toString(36).slice(2,6),
+            employeeId: emp.employeeId,
+            name: emp.name,
+            phone: emp.phone,
+            role: emp.role || '',
+            allSpecialties: emp.allSpecialties||[],
+            category: 'en_service',
+          })
+        })
+        slot.employees = []
+        slot.location = null
+        slot.complement = null
+        slot.returnStatus = null
+        slot.type = 'intervention'
+        this.dispatch.interventions = [...this.dispatch.interventions]
+      } else
+        this.dispatch.interventions = this.dispatch.interventions.filter(s=>s.id!==slotId)
       await this.dispatch.save()
     },
 
@@ -2080,6 +2109,25 @@ export default {
     async removeCrisisSlot(slotId) {
       this.dispatch.crises = this.dispatch.crises.filter(s=>s.id!==slotId)
       await this.dispatch.save()
+    },
+    async confirmClearCrises() {
+      if (!this.dispatch) return
+      const r = await Swal.fire({
+        title: 'Vider le dispatch de crise ?',
+        text: 'Tous les patients seront supprimés.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Oui, vider',
+        cancelButtonText: 'Annuler',
+        background: '#1e293b',
+        color: '#fff'
+      })
+      if (r.isConfirmed) {
+        this.dispatch.crises = []
+        await this.dispatch.save()
+      }
     },
 
     async onCrisisArrivalChange(crisis) {
@@ -2233,6 +2281,8 @@ export default {
           allSpecialties: emp ? (emp.specialties || []) : [],
           category: categoryValue,
         }]
+      } else {
+        this.autoTurnOffRadio(empId)
       }
 
       await this.dispatch.save()
@@ -2302,6 +2352,14 @@ export default {
 
       this.dispatch.radios = (this.dispatch.radios||[]).filter(r => r.id !== radio.id)
       await this.dispatch.save()
+    },
+    autoTurnOffRadio(employeeId) {
+      if (!this.dispatch?.radios || !employeeId) return
+      const radio = this.dispatch.radios.find(r => r.employeeId === employeeId)
+      if (radio) {
+        radio.status = 'off'
+        this.dispatch.radios = [...this.dispatch.radios]
+      }
     },
     async toggleRadioStatus(radio) {
       radio.status = radio.status === 'on' ? 'off' : 'on'
