@@ -501,7 +501,7 @@
             <v-icon size="14" class="mr-1">mdi-car-wrench</v-icon> État Flotte
           </div>
           <div class="text-caption text-grey-lighten-2 mb-2 ml-1" style="font-size: 0.65rem;">
-            Dernière répa flotte : <span class="text-white font-weight-bold">{{ lastRepairDateStr }}</span>
+            Dernière répa flotte : <span :class="['font-weight-bold', lastRepairColorClass]">{{ lastRepairDateStr }}</span>
           </div>
           
           <div v-if="guardVehicles?.length" class="mb-1">
@@ -1367,6 +1367,21 @@ export default {
       const date = new Date(latest.lastRepairDate)
 
       return date.toLocaleDateString('fr-FR') + ' à ' + date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+    },
+    lastRepairColorClass() {
+      if (!this.vehicles || !this.vehicles.length) return 'text-white'
+      const withDates = this.vehicles.filter(v => v.lastRepairDate)
+      if (!withDates || !withDates.length) return 'text-white'
+
+      const latest = withDates.sort((a,b) => b.lastRepairDate - a.lastRepairDate)[0]
+      if (!latest || !latest.lastRepairDate) return 'text-white'
+
+      const diff = new Date().getTime() - latest.lastRepairDate
+      const hours = diff / (1000 * 60 * 60)
+
+      if (hours >= 48) return 'text-red-lighten-1'
+      if (hours >= 24) return 'text-orange-lighten-1'
+      return 'text-white'
     },
     fouriereVehicles() {
       return (this.vehicles || []).filter(v => v.where === 'fouriere')

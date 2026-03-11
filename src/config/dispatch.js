@@ -17,7 +17,8 @@ export const interventionTypes = [
     { value: 'bureau_admin', label: 'Bureau/Admin', emoji: '🖥️', color: '#37474f' },
     { value: 'formation', label: 'Formation', emoji: '📚', color: '#2e7d32' },
     { value: 'operation', label: 'Opération', emoji: '⚙️', color: '#e65100' },
-    { value: 'vm', label: 'VM', emoji: '🩺', color: '#1acb26ff' },
+    { value: 'vm', label: 'VM', emoji: '🩺', color: '#1acb26' },
+    { value: 'hopital', label: 'Dans l\'hopital', emoji: '🏥', color: '#1a52cb' },
 ]
 
 export const returnStatuses = [
