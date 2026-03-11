@@ -540,6 +540,15 @@
             </div>
           </div>
         </div>
+
+        <div class="stock-info-wrapper pa-2" style="border-top: 1px solid #334155; background: rgba(0,0,0,0.15)">
+          <div class="text-caption font-weight-bold text-grey-lighten-1 mb-1 d-flex align-center">
+            <v-icon size="14" class="mr-1">mdi-clipboard-text-outline</v-icon> TODO
+          </div>
+          <div v-for="storage in storageUpdates" :key="storage.id" class="text-caption text-grey-lighten-2 ml-1" style="font-size: 0.65rem; line-height: 1.2;">
+            Dernière MAJ {{ storage.name }} : <span :class="['font-weight-bold', storage.colorClass]">{{ storage.dateStr }}</span>
+          </div>
+        </div>
       </div>
 
       <div class="far-right-panel">
@@ -628,6 +637,16 @@
         <span class="cnt ml-2">
           {{ treatedInjured }} / {{ totalInjured }}
         </span>
+        <div v-if="dispatch" class="ml-4 d-flex align-center" @click.stop style="background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.4); border-radius: 4px; padding: 2px 8px; box-shadow: 0 0 5px rgba(0,0,0,0.5);">
+            <v-icon size="12" class="mr-1 text-white">mdi-map-marker</v-icon>
+            <input 
+                v-model="dispatch.crisisZip" 
+                @change="dispatch.save()" 
+                class="location-input" 
+                style="width: 70px; font-weight: 900; background: transparent; border: none; outline: none; color: #fff; text-align: center; text-transform: uppercase;" 
+                placeholder="ZIP" 
+            />
+        </div>
         <v-icon size="14" class="ml-auto">{{ crisisExpanded ? 'mdi-chevron-up' : 'mdi-chevron-down' }}</v-icon>
         <v-btn size="x-small" variant="plain" color="white" class="ml-1" @click.stop="addCrisisSlot">
           <v-icon size="13">mdi-plus</v-icon>
@@ -1240,6 +1259,7 @@ import {
 import { trainingCompetencies } from '@/config/training_competencies.js'
 import { roleOrder, getRoleColor as getRoleColorConfig } from '@/config/roles.js'
 import logger from '@/functions/logger.js'
+import { initNotifManager, stopNotifManager, notifState } from '@/functions/nofifManager.js'
 
 export default {
   data() {
@@ -1412,6 +1432,30 @@ export default {
       if (!this.dispatch?.morgue?.burials) return 0
       return Object.values(this.dispatch.morgue.burials).filter(s => s?.name).length
     },
+    storageUpdates() {
+      if (!notifState.storages || !notifState.saveDates) return []
+      return notifState.storages.map(storage => {
+        const saveDate = notifState.saveDates[storage.id]
+        const ts = saveDate ? saveDate.date : 0
+        let dateStr = 'Aucune'
+        let colorClass = 'text-white'
+
+        if (ts) {
+          const date = new Date(ts)
+          dateStr = date.toLocaleDateString('fr-FR') + ' à ' + date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+          const diff = new Date().getTime() - ts
+          const hours = diff / (1000 * 60 * 60)
+          if (hours >= 24) colorClass = 'text-red-lighten-1'
+        }
+
+        return {
+          id: storage.id,
+          name: (storage.icon ? storage.icon + ' ' : '') + storage.name,
+          dateStr,
+          colorClass
+        }
+      })
+    },
   },
 
   watch: {
@@ -1433,6 +1477,7 @@ export default {
     })
     this.unsubSpecialties = Specialty.listenAll(list => { this.specialties = list })
     Vehicle.listenAll(list => { this.vehicles = list }).then(unsub => { this.unsubVehicles = unsub })
+    initNotifManager()
   },
 
   beforeUnmount() {
@@ -1442,6 +1487,7 @@ export default {
     if (this.unsubEmployees) this.unsubEmployees()
     if (this.unsubSpecialties) this.unsubSpecialties()
     if (this.unsubVehicles) this.unsubVehicles()
+    stopNotifManager()
   },
 
   methods: {
@@ -2141,6 +2187,7 @@ export default {
       })
       if (r.isConfirmed) {
         this.dispatch.crises = []
+        this.dispatch.crisisZip = ''
         await this.dispatch.save()
       }
     },
