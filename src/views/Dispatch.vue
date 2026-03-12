@@ -1277,6 +1277,8 @@ export default {
       unsubEmployees: null,
       unsubSpecialties: null,
       unsubVehicles: null,
+      currentTime: Date.now(),
+      timeInterval: null,
 
       draggingEmployee: null,
       draggingSource: null,   
@@ -1396,7 +1398,7 @@ export default {
       const latest = withDates.sort((a,b) => b.lastRepairDate - a.lastRepairDate)[0]
       if (!latest || !latest.lastRepairDate) return 'text-white'
 
-      const diff = new Date().getTime() - latest.lastRepairDate
+      const diff = this.currentTime - latest.lastRepairDate
       const hours = diff / (1000 * 60 * 60)
 
       if (hours >= 48) return 'text-red-lighten-1'
@@ -1443,9 +1445,10 @@ export default {
         if (ts) {
           const date = new Date(ts)
           dateStr = date.toLocaleDateString('fr-FR') + ' à ' + date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
-          const diff = new Date().getTime() - ts
+          const diff = this.currentTime - ts
           const hours = diff / (1000 * 60 * 60)
           if (hours >= 24) colorClass = 'text-red-lighten-1'
+          else if (hours >= 12) colorClass = 'text-orange-lighten-1'
         }
 
         return {
@@ -1478,6 +1481,11 @@ export default {
     this.unsubSpecialties = Specialty.listenAll(list => { this.specialties = list })
     Vehicle.listenAll(list => { this.vehicles = list }).then(unsub => { this.unsubVehicles = unsub })
     initNotifManager()
+
+    this.currentTime = Date.now()
+    this.timeInterval = setInterval(() => {
+      this.currentTime = Date.now()
+    }, 60000)
   },
 
   beforeUnmount() {
@@ -1488,6 +1496,7 @@ export default {
     if (this.unsubSpecialties) this.unsubSpecialties()
     if (this.unsubVehicles) this.unsubVehicles()
     stopNotifManager()
+    if (this.timeInterval) clearInterval(this.timeInterval)
   },
 
   methods: {
