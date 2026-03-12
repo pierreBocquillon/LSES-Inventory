@@ -21,7 +21,7 @@ const routes = [
     meta: {
       needAccount: true,
       showNav: true,
-      permissions: []
+      permissions: ['lses']
     }
   },
   {
@@ -31,7 +31,7 @@ const routes = [
     meta: {
       needAccount: true,
       showNav: true,
-      permissions: []
+      permissions: ['lses']
     }
   },
   {
@@ -41,7 +41,7 @@ const routes = [
     meta: {
       needAccount: true,
       showNav: true,
-      permissions: []
+      permissions: ['lses']
     }
   },
   {
@@ -51,7 +51,7 @@ const routes = [
     meta: {
       needAccount: true,
       showNav: true,
-      permissions: []
+      permissions: ['lses']
     }
   },
   {
@@ -172,7 +172,7 @@ const routes = [
     meta: {
       needAccount: true,
       showNav: true,
-      permissions: []
+      permissions: ['lses']
     }
   },
   {

@@ -66,7 +66,7 @@
     </v-card>
 
     <!-- Actions rapides -->
-    <v-card class="mx-auto rounded-xl" max-width="1000px" elevation="2">
+    <v-card class="mx-auto rounded-xl" max-width="1000px" elevation="2" v-if="userStore.profile.permissions && ['lses', 'dev', 'admin'].some(p => userStore.profile.permissions.includes(p))">
       <v-card-title class="pa-5 pb-2 d-flex align-center justify-center text-subtitle-1 font-weight-bold text-medium-emphasis text-uppercase" style="letter-spacing: 1px;">
         <v-icon size="18" class="mr-2">mdi-cursor-default-click</v-icon>Actions
       </v-card-title>

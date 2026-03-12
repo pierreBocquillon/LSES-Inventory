@@ -1,5 +1,10 @@
 let permissions = [
   {
+    icon: '🛡️',
+    name: 'LSES',
+    value: 'lses'
+  },
+  {
     icon: '📦',
     name: 'Gestion des stocks',
     value: 'stock'

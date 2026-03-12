@@ -21,9 +21,9 @@
            </div>
         </div>
 
-        <v-menu location="bottom">
+        <v-menu location="bottom" :disabled="!hasLsesPerm">
           <template v-slot:activator="{ props }">
-            <span v-bind="props" class="hosp-btn" :style="hospitalStatusStyle">
+            <span v-bind="props" class="hosp-btn" :class="`hosp-${dispatch?.hospitalStatus||'gestion_normale'}`"  :style="[hospitalStatusStyle, !hasLsesPerm ? { cursor: 'default' } : {}]">
               <v-icon size="13" class="mr-1">mdi-hospital-building</v-icon>
               Status hôpital : <strong>{{ hospitalStatusMeta.label }}</strong>
               <v-icon size="13" class="ml-1">mdi-chevron-down</v-icon>
@@ -63,10 +63,10 @@
       </div>
       <div class="th-cell">
         😴 Hors service <span class="cnt ml-1">{{ sortedUnassignedEmployees.length }}</span>
-        <v-btn icon variant="plain" size="x-small" color="warning" class="ml-2" @click="promptAddTemporaryEmployee" title="Ajouter un médecin temporaire">
+        <v-btn v-if="hasLsesPerm" icon variant="plain" size="x-small" color="warning" class="ml-2" @click="promptAddTemporaryEmployee" title="Ajouter un médecin temporaire">
           <v-icon size="14">mdi-account-plus</v-icon>
         </v-btn>
-        <v-btn v-if="isDirection" icon variant="plain" size="x-small" color="error" class="ml-auto" @click="confirmResetDispatch" title="Réinitialiser le dispatch">
+        <v-btn v-if="isDirection && hasLsesPerm" icon variant="plain" size="x-small" color="error" class="ml-auto" @click="confirmResetDispatch" title="Réinitialiser le dispatch">
           <v-icon size="14">mdi-refresh</v-icon>
         </v-btn>
       </div>
@@ -106,7 +106,7 @@
               </v-list-item>
             </v-list>
           </v-menu>
-          <v-menu location="bottom start" :close-on-content-click="true">
+          <v-menu location="bottom start" :close-on-content-click="true" :disabled="!hasLsesPerm">
             <template v-slot:activator="{ props }">
               <span v-bind="props" class="return-badge"
                 :style="dispatch?.centrale?.returnStatus ? `background:${getReturnStatus(dispatch.centrale.returnStatus)?.color}22;border-color:${getReturnStatus(dispatch.centrale.returnStatus)?.color};color:${getReturnStatus(dispatch.centrale.returnStatus)?.color}` : ''"
@@ -129,7 +129,7 @@
               </v-list-item>
             </v-list>
           </v-menu>
-          <v-btn icon variant="plain" size="x-small" color="error" class="ml-auto"
+          <v-btn v-if="hasLsesPerm" icon variant="plain" size="x-small" color="error" class="ml-auto"
             @click="clearCentrale" title="Vider la centrale">
             <v-icon size="11">mdi-delete-sweep</v-icon>
           </v-btn>
@@ -141,6 +141,7 @@
             style="flex: 1;"
             :value="dispatch?.centrale?.location || ''"
             placeholder="Code ZIP / Position"
+            :disabled="!hasLsesPerm"
             @change="setCentraleLocation($event.target.value)"
             @keyup.enter="$event.target.blur()"
           />
@@ -151,6 +152,7 @@
             class="location-input ml-2"
             style="width: 85px; border-left: 2px solid #64748b; padding-left: 8px;"
             :style="{ color: dispatch?.centrale?.complement ? (complements.find(c => c.value === dispatch?.centrale?.complement)?.color || '#fff') : '#64748b' }"
+            :disabled="!hasLsesPerm"
             title="Complément"
           >
             <option :value="null" style="background:#1a1f35; color:#64748b">Complément</option>
@@ -167,7 +169,7 @@
           <div v-for="emp in (dispatch?.centrale?.employees||[])" :key="emp.employeeId" class="person-card"
             :class="{ dragging: draggingSource?.employeeId===emp.employeeId }"
             :style="`border-left:3px solid ${getRoleColor(emp.role)};background:${getRoleColor(emp.role)}15`"
-            draggable="true"
+            :draggable="hasLsesPerm"
             @dragstart="startDrag(emp, 'centrale')"
             @dragend="onDragEnd"
             @click="openQuickMoveDialog(emp, 'centrale')"
@@ -194,7 +196,7 @@
               </div>
               <div class="pc-role" :style="`color:${getRoleColor(emp.role)}`">{{ emp.role }}</div>
                             <template v-if="(dispatch?.centrale?.employees||[]).indexOf(emp) > 0">
-                <v-menu location="top start" :close-on-content-click="true">
+                <v-menu location="top start" :close-on-content-click="true" :disabled="!hasLsesPerm">
                   <template v-slot:activator="{ props }">
                     <span v-bind="props" class="return-badge"
                       :style="emp.centralRole ? `background:${getCentralRole(emp.centralRole)?.color}22;border-color:${getCentralRole(emp.centralRole)?.color};color:${getCentralRole(emp.centralRole)?.color}` : ''"
@@ -227,7 +229,7 @@
 
                 <div class="slot-section-title mt-2">
           🚑 Interventions
-          <v-btn size="x-small" variant="plain" color="white" class="ml-auto" @click="addInterventionSlot">
+          <v-btn v-if="hasLsesPerm" size="x-small" variant="plain" color="white" class="ml-auto" @click="addInterventionSlot">
             <v-icon size="13">mdi-plus</v-icon>
           </v-btn>
         </div>
@@ -235,7 +237,7 @@
         <div class="interventions-list" style="flex: 1; min-height: 0; overflow-y: auto;">
           <div v-for="slot in (dispatch?.interventions||[])" :key="slot.id" class="inter-slot">
                         <div class="inter-type-row">
-                            <v-menu location="bottom start" :close-on-content-click="true">
+                            <v-menu location="bottom start" :close-on-content-click="true" :disabled="!hasLsesPerm">
                 <template v-slot:activator="{ props }">
                   <span v-bind="props" class="inter-type-badge"
                     :style="slot.type ? `background:${getInterType(slot.type)?.color}22;border-color:${getInterType(slot.type)?.color};color:${getInterType(slot.type)?.color}` : ''">
@@ -252,7 +254,7 @@
                   </v-list-item>
                 </v-list>
               </v-menu>
-                            <v-menu location="bottom start" :close-on-content-click="true">
+                            <v-menu location="bottom start" :close-on-content-click="true" :disabled="!hasLsesPerm">
                 <template v-slot:activator="{ props }">
                   <span v-bind="props" class="return-badge"
                     :style="slot.returnStatus ? `background:${getReturnStatus(slot.returnStatus)?.color}22;border-color:${getReturnStatus(slot.returnStatus)?.color};color:${getReturnStatus(slot.returnStatus)?.color}` : ''"
@@ -275,7 +277,7 @@
                   </v-list-item>
                 </v-list>
               </v-menu>
-                            <v-btn icon variant="plain" size="x-small" color="error" class="ml-auto"
+                            <v-btn v-if="hasLsesPerm" icon variant="plain" size="x-small" color="error" class="ml-auto"
                 @click="removeInterventionSlot(slot.id)" :title="(slot.employees?.length || slot.location || slot.complement || slot.returnStatus || slot.type !== 'intervention') ? 'Réinitialiser ce slot' : 'Supprimer ce slot'">
                 <v-icon size="11">{{ (slot.employees?.length || slot.location || slot.complement || slot.returnStatus || slot.type !== 'intervention') ? 'mdi-refresh' : 'mdi-close' }}</v-icon>
               </v-btn>
@@ -287,6 +289,7 @@
                 style="flex: 1;"
                 :value="slot.location || ''"
                 placeholder="Code ZIP / Position"
+                :disabled="!hasLsesPerm"
                 @change="setInterSlotLocation(slot, $event.target.value)"
                 @keyup.enter="$event.target.blur()"
               />
@@ -296,6 +299,7 @@
                 class="location-input ml-2"
                 style="width: 85px; border-left: 2px solid #64748b; padding-left: 8px;"
                 :style="{ color: slot.complement ? (complements.find(c => c.value === slot.complement)?.color || '#fff') : '#64748b' }"
+                :disabled="!hasLsesPerm"
                 title="Complément"
               >
                 <option :value="null" style="background:#1a1f35; color:#64748b">Complément</option>
@@ -315,7 +319,7 @@
                 class="person-card"
                 :class="{ dragging: draggingSource?.employeeId===emp.employeeId }"
                 :style="`border-left:3px solid ${getRoleColor(emp.role)};background:${getRoleColor(emp.role)}15`"
-                draggable="true"
+                :draggable="hasLsesPerm"
                 @dragstart="startDrag(emp, `inter:${slot.id}`)"
                 @dragend="onDragEnd"
                 @click="openQuickMoveDialog(emp, `inter:${slot.id}`)"
@@ -374,7 +378,7 @@
               class="person-card"
               :class="{ dragging: draggingSource?.id===p.id }"
               :style="`border-left:3px solid ${getRoleColor(p.role)};background:${getRoleColor(p.role)}15`"
-              draggable="true"
+              :draggable="hasLsesPerm"
               @dragstart="startDrag(p, `cat:en_service`)"
               @dragend="onDragEnd"
               @click="openQuickMoveDialog(p, `cat:en_service`)"
@@ -433,7 +437,7 @@
                 class="person-card person-card--sm"
                 :class="{ dragging: draggingSource?.employeeId===p.employeeId }"
                 :style="`border-left:3px solid ${getRoleColor(p.role)};background:${getRoleColor(p.role)}15`"
-                draggable="true"
+                :draggable="hasLsesPerm"
                 @dragstart="startDrag(p, `cat:${cat.value}`)"
                 @dragend="onDragEnd"
                 @click="openQuickMoveDialog(p, `cat:${cat.value}`)"
@@ -478,7 +482,7 @@
             :key="emp.id"
             class="person-card person-card--hs"
             :style="`border-left: 3px solid ${getRoleColor(emp.role)}; background: ${getRoleColor(emp.role)}15`"
-            draggable="true"
+            :draggable="hasLsesPerm"
             @dragstart="startDrag({ employeeId: emp.id, name: emp.name, phone: emp.phone, allSpecialties: emp.allSpecialties, role: emp.role }, 'hs')"
             @dragend="onDragEnd"
             @click="openQuickMoveDialog(emp, 'hs')"
@@ -571,7 +575,7 @@
             <span class="cnt ml-2" title="Radios standards prises / total">{{ standardRadios.filter(r => r.employeeId).length }} / {{ standardRadios.length }}</span>
             <v-menu location="bottom end">
               <template v-slot:activator="{ props }">
-                <v-btn v-if="isDirection" v-bind="props" size="x-small" variant="plain" color="white" class="ml-auto" title="Ajouter une radio">
+                <v-btn v-if="isDirection && hasLsesPerm" v-bind="props" size="x-small" variant="plain" color="white" class="ml-auto" title="Ajouter une radio">
                   <v-icon size="13">mdi-plus</v-icon>
                 </v-btn>
               </template>
@@ -605,16 +609,16 @@
               <template v-if="group.radios.length">
                 <div :class="['text-caption font-weight-bold mt-1 mb-1', group.color]" style="font-size: 0.65rem; letter-spacing: 0.05em;">{{ group.title.toUpperCase() }}</div>
                 <div v-for="radio in group.radios" :key="radio.id" class="radio-item d-flex align-center mb-1 pa-1" :style="['background: rgba(255,255,255,0.05); border-radius: 4px; border: 1px solid', radio.id === dispatch?.nuitRadioId ? '#f59e0b' : '#334155'].join(' ')">
-                  <input v-if="isDirection" v-model="radio.serial" @change="dispatch.save()" class="location-input" style="width:50px; font-weight:bold" placeholder="# Série" />
+                  <input v-if="isDirection && hasLsesPerm" v-model="radio.serial" @change="dispatch.save()" class="location-input" style="width:50px; font-weight:bold" placeholder="# Série" />
                   <span v-else class="text-caption font-weight-bold mx-1" style="width:50px; display:inline-block; color:#94a3b8; text-align:center;">{{ radio.serial || '---' }}</span>
                    <select :disabled="radio.category === 'direction' && !isDirection" :value="radio.employeeId" @change="onRadioAssign(radio, $event.target.value)" class="location-input mx-1" style="border-left:1px solid #334155; padding-left:4px; max-width: 120px;">
                      <option :value="''" style="background:#1a1f35">-- Assigner --</option>
                      <option v-for="emp in getRadioEmployeeOptions(radio)" :key="emp.id" :value="emp.id" style="background:#1a1f35">{{ emp.name }}</option>
                    </select>
-                  <v-btn size="x-small" :color="radio.status === 'on' ? 'success' : 'error'" variant="tonal" class="ml-auto px-1" style="min-width: 32px; height: 18px; font-size: 0.6rem;" @click="toggleRadioStatus(radio)">
+                  <v-btn size="x-small" :color="radio.status === 'on' ? 'success' : 'error'" variant="tonal" class="ml-auto px-1" style="min-width: 32px; height: 18px; font-size: 0.6rem;" :style="!hasLsesPerm ? 'pointer-events: none;' : ''" @click="toggleRadioStatus(radio)">
                     {{ radio.status === 'on' ? 'ON' : 'OFF' }}
                   </v-btn>
-                  <v-btn v-if="isDirection" icon variant="plain" size="x-small" color="error" class="ml-1" @click="removeRadio(radio)" style="height:18px; width:18px">
+                  <v-btn v-if="isDirection && hasLsesPerm" icon variant="plain" size="x-small" color="error" class="ml-1" @click="removeRadio(radio)" style="height:18px; width:18px">
                     <v-icon size="12">mdi-close</v-icon>
                   </v-btn>
                 </div>
@@ -1341,6 +1345,10 @@ export default {
       return ['Directeur', 'Directeur Adjoint'].includes(currentEmployee.role)
     },
 
+    hasLsesPerm() {
+      return (this.userStore.profile?.permissions || []).some(p => ['lses', 'dev', 'admin'].includes(p))
+    },
+
     bottomCategories() { return this.allCategories.filter(c => c.value !== 'en_service') },
 
     hospitalStatusMeta() {
@@ -1632,6 +1640,7 @@ export default {
     },
 
     confirmResetDispatch() {
+      if (!this.hasLsesPerm) return
       Swal.fire({
         title: 'Réinitialiser le dispatch ?',
         text: 'Tout le monde sera mis en "Hors service", les interventions seront vidées, et toutes les radios seront éteintes.',
@@ -1651,6 +1660,7 @@ export default {
     },
 
     promptAddTemporaryEmployee() {
+      if (!this.hasLsesPerm) return
       Swal.fire({
         title: 'Ajout temporaire',
         html: `
@@ -1701,6 +1711,7 @@ export default {
     },
 
     promptEditTemporaryEmployee(empInfo) {
+      if (!this.hasLsesPerm) return
       if (!this.dispatch) return;
       
       const realId = empInfo.employeeId || empInfo.id;
@@ -1797,6 +1808,7 @@ export default {
        }
     },
     resetDispatch() {
+      if (!this.hasLsesPerm) return
       if (!this.dispatch) return;
       
       this.dispatch.patates = [];
@@ -1931,6 +1943,7 @@ export default {
     patatesForCategory(cat) { return this.dispatch?.patates.filter(p=>p.category===cat)||[] },
 
     async setHospitalStatus(value) {
+      if (!this.hasLsesPerm) return
       if (!this.dispatch) return
       this.dispatch.hospitalStatus = value
       await this.dispatch.save()
@@ -1948,6 +1961,7 @@ export default {
     },
 
         startDrag(employee, sourceKey) {
+      if (!this.hasLsesPerm) return
       this.draggingEmployee = employee
       this.draggingSource = sourceKey
       document.addEventListener('dragover', this._handleGlobalDragOver, { capture: true })
@@ -2017,6 +2031,7 @@ export default {
     },
 
     async dropOn(targetKey) {
+      if (!this.hasLsesPerm) return
       this.dragOver = null
       const emp = this.draggingEmployee
       const src = this.draggingSource
@@ -2077,6 +2092,7 @@ export default {
     },
 
     async removeFromDispatch(employeeId) {
+      if (!this.hasLsesPerm) return
       if (!this.dispatch) return
       
       let wasInCentrale = false
@@ -2096,6 +2112,7 @@ export default {
     },
 
     async clearCentrale() {
+      if (!this.hasLsesPerm) return
       const r = await Swal.fire({ icon:'question', title:'Vider la centrale ?',
         showCancelButton:true, confirmButtonText:'Vider', cancelButtonText:'Annuler' })
       if (!r.isConfirmed) return
@@ -2105,6 +2122,7 @@ export default {
     },
 
     async removeEmpFromCentrale(employeeId) {
+      if (!this.hasLsesPerm) return
       if (!this.dispatch?.centrale) return
       this.dispatch.centrale.employees = (this.dispatch.centrale.employees||[]).filter(e => e.employeeId !== employeeId)
       await this.dispatch.save()
@@ -2112,6 +2130,7 @@ export default {
     },
 
     async setCentraleType(typeValue) {
+      if (!this.hasLsesPerm) return
       if (!this.dispatch) return
       if (!this.dispatch.centrale) this.dispatch.centrale = { location: null, complement: null, type: null, returnStatus: null, employees: [] }
       this.dispatch.centrale.type = typeValue
@@ -2119,6 +2138,7 @@ export default {
     },
 
     async setCentraleReturnStatus(statusValue) {
+      if (!this.hasLsesPerm) return
       if (!this.dispatch) return
       if (!this.dispatch.centrale) this.dispatch.centrale = { location: null, complement: null, type: null, returnStatus: null, employees: [] }
       this.dispatch.centrale.returnStatus = statusValue || null
@@ -2126,6 +2146,7 @@ export default {
     },
 
     async setCentraleLocation(loc) {
+      if (!this.hasLsesPerm) return
       if (!this.dispatch) return
       if (!this.dispatch.centrale) this.dispatch.centrale = { location: null, complement: null, type: null, returnStatus: null, employees: [] }
       this.dispatch.centrale.location = loc
@@ -2133,6 +2154,7 @@ export default {
     },
 
     async setCentraleEmpRole(emp, roleValue) {
+      if (!this.hasLsesPerm) return
       if (!this.dispatch?.centrale?.employees) return
       const found = this.dispatch.centrale.employees.find(e => e.employeeId === emp.employeeId)
       if (found) {
@@ -2152,6 +2174,7 @@ export default {
     },
 
     async addInterventionSlot() {
+      if (!this.hasLsesPerm) return
       if (!this.dispatch) return
       if ((this.dispatch.interventions || []).length >= 25) {
         Swal.fire({ title: 'Limite atteinte', text: 'Vous ne pouvez pas ajouter plus de 25 interventions.', icon: 'warning', background: '#1e293b', color: '#fff' })
@@ -2169,18 +2192,21 @@ export default {
     },
 
     async setInterSlotType(slot, typeValue) {
+      if (!this.hasLsesPerm) return
       slot.type = typeValue
       this.dispatch.interventions = [...this.dispatch.interventions]
       await this.dispatch.save()
     },
 
     async setInterSlotLocation(slot, value) {
+      if (!this.hasLsesPerm) return
       slot.location = value.trim() || null
       this.dispatch.interventions = [...this.dispatch.interventions]
       await this.dispatch.save()
     },
 
     async setInterSlotStatus(slot, statusValue) {
+      if (!this.hasLsesPerm) return
       slot.returnStatus = statusValue || null
       this.dispatch.interventions = [...this.dispatch.interventions]
       await this.dispatch.save()
@@ -2194,6 +2220,7 @@ export default {
     },
 
     async removeInterventionSlot(slotId) {
+      if (!this.hasLsesPerm) return
       const slot = this.dispatch.interventions.find(s=>s.id===slotId)
       if (!slot) return
 
@@ -2383,6 +2410,7 @@ export default {
       this.addDialog = true
     },
     async confirmAddPatate() {
+      if (!this.hasLsesPerm) return
       if (!this.selectedEmployee || !this.dispatch) return
       const emp = this.employees.find(e=>e.id===this.selectedEmployee.id)
       this.dispatch.patates = [...this.dispatch.patates, {
@@ -2399,11 +2427,13 @@ export default {
     },
 
     openQuickMoveDialog(emp, sourceKey) { 
+      if (!this.hasLsesPerm) return
       this.quickAddEmployee = emp; 
       this.quickMoveSourceKey = sourceKey;
       this.quickAddDialog = true 
     },
     async confirmQuickAdd(categoryValue) {
+      if (!this.hasLsesPerm) return
       if (!this.quickAddEmployee || !this.dispatch) return
       
       const empId = this.quickAddEmployee.employeeId || this.quickAddEmployee.id
@@ -2434,6 +2464,7 @@ export default {
     },
 
     async addRadio(category = 'standard') {
+      if (!this.hasLsesPerm) return
       if (!this.dispatch) return
       if ((this.dispatch.radios || []).length >= 30) {
         Swal.fire({ title: 'Limite atteinte', text: 'Vous ne pouvez pas ajouter plus de 30 radios.', icon: 'warning', background: '#1e293b', color: '#fff' })
@@ -2449,6 +2480,7 @@ export default {
       await this.dispatch.save()
     },
     async onRadioAssign(radio, newEmpId) {
+      if (!this.hasLsesPerm) return
       if (radio.category === 'direction' && !this.isDirection) {
         Swal.fire({ title: 'Accès refusé', text: 'Seules les personnes de la Direction peuvent modifier ces radios.', icon: 'error', background: '#1e293b', color: '#fff' })
         return
@@ -2479,6 +2511,7 @@ export default {
       }
     },
     async removeRadio(radio) {
+      if (!this.hasLsesPerm) return
       if (!this.dispatch) return
       const r = await Swal.fire({ 
         icon: 'warning', 
@@ -2503,6 +2536,7 @@ export default {
       }
     },
     async toggleRadioStatus(radio) {
+      if (!this.hasLsesPerm) return
       radio.status = radio.status === 'on' ? 'off' : 'on'
       this.dispatch.radios = [...this.dispatch.radios]
       await this.dispatch.save()
