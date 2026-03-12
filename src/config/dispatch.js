@@ -39,13 +39,49 @@ export const centralRoles = [
 ]
 
 export const hospitalStatuses = [
-    { value: 'gestion_normale', label: 'Gestion Normale', gsheet: '🎙️', icon: 'mdi-hospital', color: '#2e7d32' },
-    { value: 'hopital_ferme', label: 'Hôpital Fermé', gsheet: 'Off - 🎙️', icon: 'mdi-close', color: '#c62828' },
-    { value: 'coups_de_feu', label: 'Coups de feu à proximité', gsheet: '🎙️', icon: 'mdi-alert', color: '#e65100' },
-    { value: 'gestion_bagarre', label: 'Gestion bagarre', gsheet: '🎙️', icon: 'mdi-sword', color: '#0049e6ff' },
-    { value: 'gestion_fusillade', label: 'Gestion fusillade', gsheet: '🎙️', icon: 'mdi-fire-extinguisher', color: '#e43d7dff' },
-    { value: 'mode_nuit', label: 'Mode nuit', gsheet: '🌙', icon: 'mdi-moon-waning-crescent', color: '#6a3de4ff' },
+    { value: 'gestion_normale', label: 'Gestion Normale', gsheet: '🎙️', icon: 'mdi-hospital-building', color: '#2e7d32', lightColor: '#1b5e20', lightBg: 'rgba(46, 125, 50, 0.12)' },
+    { value: 'hopital_ferme', label: 'Hôpital Fermé', gsheet: 'Off - 🎙️', icon: 'mdi-close', color: '#c62828', lightColor: '#b71c1c', lightBg: 'rgba(198, 40, 40, 0.12)' },
+    { value: 'coups_de_feu', label: 'Coups de feu à proximité', gsheet: '🎙️', icon: 'mdi-alert', color: '#e65100', lightColor: '#e65100', lightBg: 'rgba(230, 81, 0, 0.12)' },
+    { value: 'gestion_bagarre', label: 'Gestion bagarre', gsheet: '🎙️', icon: 'mdi-sword', color: '#0049e6ff', lightColor: '#1a52cb', lightBg: 'rgba(26, 82, 203, 0.12)' },
+    { value: 'gestion_fusillade', label: 'Gestion fusillade', gsheet: '🎙️', icon: 'mdi-fire-extinguisher', color: '#e43d7dff', lightColor: '#c2185b', lightBg: 'rgba(194, 24, 91, 0.12)' },
+    { value: 'mode_nuit', label: 'Mode nuit', gsheet: '🌙', icon: 'mdi-moon-waning-crescent', color: '#6a3de4ff', lightColor: '#512da8', lightBg: 'rgba(81, 45, 168, 0.12)' },
 ]
+
+export const safdStatusConfig = {
+    brand: { color: '#f97316', icon: 'mdi-fire-truck', label: 'SAFD' },
+    dispo: {
+        dark: { color: '#34d399', bg: 'rgba(52, 211, 153, 0.15)', border: 'rgba(52, 211, 153, 0.3)' },
+        light: { color: '#065f46', bg: 'rgba(5, 150, 105, 0.12)', border: 'rgba(5, 150, 105, 0.25)' }
+    },
+    indispo: {
+        dark: { color: '#f87171', bg: 'rgba(248, 113, 113, 0.15)', border: 'rgba(248, 113, 113, 0.3)' },
+        light: { color: '#991b1b', bg: 'rgba(220, 38, 38, 0.12)', border: 'rgba(220, 38, 38, 0.25)' }
+    },
+    default: {
+        dark: { color: '#fca5a5', bg: 'rgba(239, 68, 68, 0.15)', border: 'rgba(239, 68, 68, 0.3)' },
+        light: { color: '#b91c1c', bg: 'rgba(185, 28, 28, 0.12)', border: 'rgba(185, 28, 28, 0.25)' }
+    }
+}
+
+export const bcesStatusConfig = {
+    brand: { color: '#3b82f6', icon: 'mdi-hospital-building', label: 'BCES' },
+    dispo: {
+        dark: { color: '#34d399', bg: 'rgba(52, 211, 153, 0.15)', border: 'rgba(52, 211, 153, 0.3)' },
+        light: { color: '#065f46', bg: 'rgba(5, 150, 105, 0.12)', border: 'rgba(5, 150, 105, 0.25)' }
+    },
+    nuit: {
+        dark: { color: '#60a5fa', bg: 'rgba(59, 130, 246, 0.15)', border: 'rgba(59, 130, 246, 0.3)' },
+        light: { color: '#1e40af', bg: 'rgba(37, 99, 235, 0.12)', border: 'rgba(37, 99, 235, 0.25)' }
+    },
+    indispo: {
+        dark: { color: '#f87171', bg: 'rgba(248, 113, 113, 0.15)', border: 'rgba(248, 113, 113, 0.3)' },
+        light: { color: '#991b1b', bg: 'rgba(220, 38, 38, 0.12)', border: 'rgba(220, 38, 38, 0.25)' }
+    },
+    default: {
+        dark: { color: '#93c5fd', bg: 'rgba(59, 130, 246, 0.15)', border: 'rgba(59, 130, 246, 0.3)' },
+        light: { color: '#1d4ed8', bg: 'rgba(29, 78, 216, 0.12)', border: 'rgba(29, 78, 216, 0.25)' }
+    }
+}
 
 export const crisisMedicalStatuses = [
     { value: 'reveil', label: 'Réveil après OP', emoji: '🥱', color: '#10b981' },

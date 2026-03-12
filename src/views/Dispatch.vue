@@ -23,7 +23,7 @@
 
         <v-menu location="bottom">
           <template v-slot:activator="{ props }">
-            <span v-bind="props" class="hosp-btn" :class="`hosp-${dispatch?.hospitalStatus||'gestion_normale'}`">
+            <span v-bind="props" class="hosp-btn" :style="hospitalStatusStyle">
               <v-icon size="13" class="mr-1">mdi-hospital-building</v-icon>
               Status hôpital : <strong>{{ hospitalStatusMeta.label }}</strong>
               <v-icon size="13" class="ml-1">mdi-chevron-down</v-icon>
@@ -40,15 +40,25 @@
           </v-list>
         </v-menu>
 
-        <span class="hosp-btn ml-3" style="background: rgba(239, 68, 68, 0.15); border-color: rgba(239, 68, 68, 0.3); color: #fca5a5; pointer-events: none;">
-          <v-icon size="13" class="mr-1">mdi-fire-truck</v-icon>
-          Status SAFD : <strong :style="((safdStatus || '').toLowerCase().includes('dispo') && !(safdStatus || '').toLowerCase().includes('indispo')) ? 'color: #34d399;' : 'color: #f87171;'">{{ safdStatus || 'Inconnu' }}</strong>
-        </span>
+        <div class="status-pill ml-3" :style="safdStatusStyle.wrapper">
+          <div class="pill-icon" :style="safdStatusStyle.brand">
+            <v-icon size="14" color="white" class="mr-1">{{ safdStatusConfig.brand.icon }}</v-icon>
+            <span class="text-white font-weight-black" style="font-size: 0.65rem;">{{ safdStatusConfig.brand.label }}</span>
+          </div>
+          <div class="pill-text" :style="safdStatusStyle.status">
+            {{ safdStatus || 'Inconnu' }}
+          </div>
+        </div>
 
-        <span class="hosp-btn ml-3" style="background: rgba(59, 130, 246, 0.15); border-color: rgba(59, 130, 246, 0.3); color: #93c5fd; pointer-events: none;">
-          <v-icon size="13" class="mr-1">mdi-shield-cross</v-icon>
-          Status BCES : <strong :style="((bcesStatus || '').toLowerCase().includes('dispo') && !(bcesStatus || '').toLowerCase().includes('indispo')) ? 'color: #34d399;' : ((bcesStatus || '').toLowerCase().includes('nuit') ? 'color: #60a5fa;' : 'color: #f87171;')">{{ bcesStatus || 'Inconnu' }}</strong>
-        </span>
+        <div class="status-pill ml-3" :style="bcesStatusStyle.wrapper">
+          <div class="pill-icon" :style="bcesStatusStyle.brand">
+            <v-icon size="14" color="white" class="mr-1">{{ bcesStatusConfig.brand.icon }}</v-icon>
+            <span class="text-white font-weight-black" style="font-size: 0.65rem;">{{ bcesStatusConfig.brand.label }}</span>
+          </div>
+          <div class="pill-text" :style="bcesStatusStyle.status">
+            {{ bcesStatus || 'Inconnu' }}
+          </div>
+        </div>
 
       </div>
       <div class="th-cell">
@@ -1251,6 +1261,8 @@ import {
   returnStatuses,
   centralRoles,
   hospitalStatuses,
+  safdStatusConfig,
+  bcesStatusConfig,
   crisisMedicalStatuses,
   crisisAffiliations,
   crisisBeds,
@@ -1309,6 +1321,8 @@ export default {
       crisisBedGroups,
       complements,
       morgueConfig,
+      safdStatusConfig,
+      bcesStatusConfig,
     }
   },
 
@@ -1332,6 +1346,54 @@ export default {
     hospitalStatusMeta() {
       if (!this.dispatch) return this.hospitalStatuses[0]
       return this.hospitalStatuses.find(s => s.value === this.dispatch.hospitalStatus) || this.hospitalStatuses[0]
+    },
+    hospitalStatusStyle() {
+      const meta = this.hospitalStatusMeta
+      if (this.isLightTheme) {
+        return {
+          color: meta.lightColor || meta.color,
+          background: meta.lightBg || 'rgba(255,255,255,0.1)',
+          borderColor: 'rgba(0,0,0,0.1)'
+        }
+      }
+      return {
+        color: meta.color,
+        background: 'rgba(255,255,255,0.05)',
+        borderColor: 'rgba(255,255,255,0.1)'
+      }
+    },
+    safdStatusStyle() {
+      const status = (this.safdStatus || '').toLowerCase()
+      const mode = this.isLightTheme ? 'light' : 'dark'
+      let key = 'default'
+      if (status.includes('dispo') && !status.includes('indispo')) key = 'dispo'
+      else if (status.includes('indispo')) key = 'indispo'
+      
+      const config = this.safdStatusConfig[key][mode]
+      const brandColor = this.safdStatusConfig.brand.color
+      
+      return {
+        wrapper: { borderColor: config.border, background: config.bg },
+        brand: { background: brandColor },
+        status: { color: config.color }
+      }
+    },
+    bcesStatusStyle() {
+      const status = (this.bcesStatus || '').toLowerCase()
+      const mode = this.isLightTheme ? 'light' : 'dark'
+      let key = 'default'
+      if (status.includes('dispo') && !status.includes('indispo')) key = 'dispo'
+      else if (status.includes('indispo')) key = 'indispo'
+      else if (status.includes('nuit')) key = 'nuit'
+      
+      const config = this.bcesStatusConfig[key][mode]
+      const brandColor = this.bcesStatusConfig.brand.color
+      
+      return {
+        wrapper: { borderColor: config.border, background: config.bg },
+        brand: { background: brandColor },
+        status: { color: config.color }
+      }
     },
 
     allEmployees() {
@@ -2520,9 +2582,30 @@ export default {
   display: flex; align-items: center;
 }
 .hosp-btn:hover { background: rgba(255,255,255,.12); }
-.hosp-gestion_normale { color: #a5d6a7 !important; }
-.hosp-hopital_ferme   { color: #ef9a9a !important; }
-.hosp-coups_de_feu    { color: #ffcc80 !important; }
+
+.status-pill {
+  display: flex;
+  align-items: stretch;
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid transparent;
+  height: 20px;
+  pointer-events: none;
+  font-size: 0.73rem;
+}
+.pill-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+}
+.pill-text {
+  display: flex;
+  align-items: center;
+  padding: 0 6px;
+  font-weight: 700;
+  white-space: nowrap;
+}
 
 .freq-input {
   background: rgba(0,0,0,0.2);
