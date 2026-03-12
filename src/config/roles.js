@@ -15,9 +15,9 @@ const ROLES_CONFIG = {
     'Directeur Adjoint': { color: '#e53935', name: 'red' },
     'Responsable de Service': { color: '#8e24aa', name: 'purple' },
     'Assistant RH': { color: '#fb8c00', name: 'orange' },
-    'Spécialiste': { color: '#1ebde5', name: 'cyan' },
-    'Titulaire': { color: '#1ebde5', name: 'cyan' },
-    'Résident': { color: '#1e88e5', name: 'blue' },
+    'Spécialiste': { color: '#1e88e5', name: 'blue' },
+    'Titulaire': { color: '#1e88e5', name: 'blue' },
+    'Résident': { color: '#1ebde5', name: 'cyan' },
     'Interne': { color: '#43a047', name: 'green' },
     'Temporaire': { color: '#ffd700', name: 'amber' }
 }
