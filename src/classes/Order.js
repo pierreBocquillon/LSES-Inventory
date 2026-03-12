@@ -5,17 +5,20 @@ let collectionName = "orders"
 
 function docToInstance(document) {
   let data = document.data()
-  return data ? new Order(document.id, data.date, data.company, data.items, data.destroy, data.weight) : null
+  return data ? new Order(document.id, data.date, data.company, data.items, data.destroy, data.weight, data.status, data.price, data.updatedAt) : null
 }
 
 class Order {
-  constructor(id, date, company, items, destroy, weight) {
+  constructor(id, date, company, items, destroy, weight, status, price, updatedAt) {
     this.id = id
     this.date = date
     this.company = company
     this.items = items
     this.destroy = destroy
     this.weight = weight
+    this.status = status || 'A faire'
+    this.price = price ?? null
+    this.updatedAt = updatedAt ?? null
   }
 
   static initOne() {
@@ -72,6 +75,9 @@ class Order {
       items: this.items,
       destroy: this.destroy,
       weight: this.weight,
+      status: this.status || 'A faire',
+      price: this.price ?? null,
+      updatedAt: new Date().getTime(),
     }
 
     if (this.id) {
