@@ -890,16 +890,16 @@
                 <v-avatar color="primary" class="text-white">{{ emp.name.charAt(0) }}</v-avatar>
               </template>
               <v-list-item-title class="font-weight-bold">{{ emp.name }}</v-list-item-title>
-              <v-list-item-subtitle>
+              <div class="text-body-2 text-medium-emphasis text-wrap">
                 {{ (emp.promotionRequest.value || emp.promotionRequest) === 'Intégration RH' ? 'Demande :' : 'Candidature Responsable Pôle :' }}
                 <v-chip size="small" class="ml-2">
                   {{ getSpecialtyIcon(emp.promotionRequest.value || emp.promotionRequest) }} {{ getSpecialtyName(emp.promotionRequest.value || emp.promotionRequest) }}
                 </v-chip>
-              </v-list-item-subtitle>
-              <v-list-item-subtitle v-if="emp.promotionRequest.motivation" class="mt-2 text-wrap">
+              </div>
+              <div v-if="emp.promotionRequest.motivation" class="mt-2 text-body-2 text-medium-emphasis text-wrap">
                 <v-icon size="small" class="mr-1">mdi-text-box-outline</v-icon>
                 <i>"{{ emp.promotionRequest.motivation }}"</i>
-              </v-list-item-subtitle>
+              </div>
               <template v-slot:append>
                 <v-btn color="success" icon="mdi-check" size="small" variant="text" @click="acceptPromotion(emp)" class="mr-2"></v-btn>
                 <v-btn color="error" icon="mdi-close" size="small" variant="text" @click="rejectPromotion(emp)"></v-btn>
