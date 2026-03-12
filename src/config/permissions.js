@@ -35,21 +35,6 @@ let permissions = [
     value: 'logs'
   },
   {
-    icon: '💻',
-    name: 'Développeur',
-    value: 'dev'
-  },
-  {
-    icon: '⚕️',
-    name: 'Ordre des médecins',
-    value: 'admin'
-  },
-  {
-    icon: '👔',
-    name: 'Ressources Humaines',
-    value: 'rh'
-  },
-  {
     icon: '🎓',
     name: 'Formation',
     value: 'trainer'
@@ -58,6 +43,21 @@ let permissions = [
     icon: '🚁',
     name: 'Formateur Off-Road/Médicoptère',
     value: 'restricted_trainer'
+  },
+  {
+    icon: '👔',
+    name: 'Ressources Humaines',
+    value: 'rh'
+  },
+  {
+    icon: '💻',
+    name: 'Développeur',
+    value: 'dev'
+  },
+  {
+    icon: '⚕️',
+    name: 'Ordre des médecins',
+    value: 'admin'
   },
 ]
 
