@@ -812,6 +812,7 @@
                             <th>Date</th>
                             <th>Formateur</th>
                             <th>Scénarios</th>
+                            <th>Blessures</th>
                             <th>Malus</th>
                             <th>Type</th>
                             <th>Objectifs</th>
@@ -824,6 +825,11 @@
                             <td>{{ sim.trainer }}</td>
                             <td>
                                 <v-chip v-for="s in sim.scenarios" :key="s" size="x-small" class="mr-1">{{ s }}</v-chip>
+                            </td>
+                            <td>
+                                <v-chip v-for="inj in sim.injuries" :key="inj.bodyPart + inj.severity" size="x-small" :color="getSeverityColor(inj.severity)" variant="flat" class="mr-1 mb-1">
+                                    {{ inj.bodyPart }} ({{ inj.severity }})
+                                </v-chip>
                             </td>
                             <td>
                                 <v-chip v-for="m in sim.malus" :key="m" size="x-small" color="error" class="mr-1">{{ m }}</v-chip>
@@ -1452,9 +1458,9 @@ export default {
             id: Date.now().toString(),
             date: new Date().toISOString(),
             trainer: this.userStore.profile.name || 'Inconnu',
-            scenarios: [...this.selectedScenarios],
-            injuries: [...this.generatedInjuries],
-            malus: [...this.selectedMalus],
+            scenarios: JSON.parse(JSON.stringify(this.selectedScenarios)),
+            injuries: JSON.parse(JSON.stringify(this.generatedInjuries)),
+            malus: JSON.parse(JSON.stringify(this.selectedMalus)),
             isValidating: isValidating,
             objectives: this.selectedScenarioObjectives.map(o => o.title)
         }
