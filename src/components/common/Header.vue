@@ -17,7 +17,7 @@
             <template v-for="item in group">
               <v-list-item @click="$router.push(item.link)">
                 <div class="d-flex align-center">
-                  <v-icon class="mr-2">{{ item.icon }}</v-icon>
+                  <img :src="item.img" height="24" class="mr-2" style="object-fit: contain;" />
                   <h3 class="font-weight-regular">{{ item.title }}</h3>
                   <v-badge color="primary" v-if="item.notif > 0" :content="item.notif" inline offset-x="-5"></v-badge>
                 </div>
@@ -149,6 +149,8 @@ export default {
 
             if (!currentEmployee) {
               hasAccess = false
+            } else if (userPerms && userPerms.some(p => ['dev', 'admin'].includes(p))) {
+              hasAccess = true
             } else if (['Directeur', 'Directeur Adjoint'].includes(currentEmployee.role)) {
               hasAccess = true
             } else {

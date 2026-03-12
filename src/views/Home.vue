@@ -57,8 +57,8 @@
           <template v-for="group in filteredNavItems">
             <v-card v-for="item in group" :key="item.link" class="nav-card rounded-xl d-flex align-center justify-center flex-column" width="150" height="150" variant="tonal" hover @click="$router.push(item.link)" style="cursor: pointer; position: relative;">
               <v-badge v-if="item.notif > 0" color="error" :content="item.notif" style="position: absolute; top: 20px; right: 20px;"></v-badge>
-              <v-icon size="64" class="mb-2">{{ item.icon }}</v-icon>
-              <h3 class="font-weight-medium text-center px-2" style="white-space: normal; line-height: 1.5;">{{ item.title }}</h3>
+              <img :src="item.img" height="100" class="mb-2" style="object-fit: contain;" />
+              <h3 class="font-weight-medium text-center px-2" style="white-space: normal; line-height: 1.2;">{{ item.title }}</h3>
             </v-card>
           </template>
         </div>
@@ -75,7 +75,7 @@
           <v-btn color="primary" variant="tonal" prepend-icon="mdi-school" @click="openRequestDialog">
             Demande de formation
           </v-btn>
-          <v-btn color="deep-purple" variant="tonal" prepend-icon="mdi-account-plus" @click="openCandidatureForm">
+          <v-btn color="purple" variant="tonal" prepend-icon="mdi-account-plus" @click="openCandidatureForm">
             Candidature
           </v-btn>
           <v-btn color="amber" variant="tonal" prepend-icon="mdi-medal" @click="openPromotionDialog">
@@ -345,6 +345,8 @@ export default {
 
             if (!currentEmployee) {
               hasAccess = false
+            } else if (userPerms && userPerms.some(p => ['dev', 'admin'].includes(p))) {
+              hasAccess = true
             } else if (['Directeur', 'Directeur Adjoint'].includes(currentEmployee.role)) {
               hasAccess = true
             } else {
@@ -599,7 +601,7 @@ export default {
 
 <style scoped>
 .home-page {
-  min-height: 100vh;
+  min-height: calc(100vh - 15rem);
 }
 
 .nav-card {

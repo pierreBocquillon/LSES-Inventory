@@ -10,6 +10,9 @@
         <v-tab value="history" v-if="this.userStore.profile.permissions.some(p => ['dev', 'admin', 'cash'].includes(p))">
           Historique
         </v-tab>
+        <v-tab value="vehicles" v-if="this.userStore.profile.permissions.some(p => ['dev', 'admin', 'vehicles'].includes(p))">
+          Véhicules
+        </v-tab>
       </v-tabs>
       
       <v-tabs-window v-model="tab">
@@ -20,6 +23,10 @@
 
         <v-tabs-window-item value="history" v-if="this.userStore.profile.permissions.some(p => ['dev', 'admin', 'cash'].includes(p))">
           <HistoryTab />
+        </v-tabs-window-item>
+
+        <v-tabs-window-item value="vehicles" v-if="this.userStore.profile.permissions.some(p => ['dev', 'admin', 'vehicles'].includes(p))">
+          <VehiclesTab />
         </v-tabs-window-item>
 
       </v-tabs-window>
@@ -38,6 +45,7 @@ import logger from '../functions/logger'
 
 import GarageTab from '@/components/garage/GarageTab.vue'
 import HistoryTab from '@/components/garage/HistoryTab.vue'
+import VehiclesTab from '@/components/garage/VehiclesTab.vue'
 
 import { initNotifManager, stopNotifManager, garageNotif } from '@/functions/nofifManager.js'
 
@@ -46,6 +54,7 @@ export default {
   components: {
     GarageTab,
     HistoryTab,
+    VehiclesTab,
   },
   data() {
     return {

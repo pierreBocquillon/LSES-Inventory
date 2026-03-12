@@ -94,16 +94,7 @@ const routes = [
       permissions: ['stock']
     }
   },
-  {
-    name: 'Vehicules',
-    path: '/vehicles',
-    component: () => import("@/views/Vehicles.vue"),
-    meta: {
-      needAccount: true,
-      showNav: true,
-      permissions: ['vehicles']
-    }
-  },
+
   {
     name: 'Utilisateurs',
     path: '/users',
