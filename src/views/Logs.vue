@@ -1,160 +1,159 @@
 <template>
   <div style="height: calc(100% - 42px);">
     <v-card class="ma-5 pa-5 rounded-xl h-100">
+      <h1 class="text-center text-primary mb-6">Logs</h1>
 
-      <h3 class="text-center">Logs :</h3>
+      <div class="d-flex justify-center mb-4 gap-4 align-center flex-wrap">
+        <v-select v-model="selectedUser" :items="Object.values(userList)" item-title="name" item-value="id" label="Filtrer par utilisateur" density="compact" variant="outlined" style="max-width: 250px;" clearable hide-details class="mx-2" @update:model-value="fetchLogs"></v-select>
 
-      <v-expansion-panels>
-        <v-expansion-panel>
-          <v-expansion-panel-title collapse-icon="mdi-minus" expand-icon="mdi-plus">
-            <template v-slot:actions="{ expanded }">
-              <v-icon color="primary" :icon="expanded ? 'mdi-minus' : 'mdi-plus'"></v-icon>
-            </template>
+        <v-select v-model="selectedType" :items="typeList" label="Filtrer par type" density="compact" variant="outlined" style="max-width: 250px;" clearable hide-details class="mx-2" @update:model-value="fetchLogs"></v-select>
 
-            <h4 class="text-primary">
-              <span>Filtres</span>
-            </h4>
-          </v-expansion-panel-title>
-          <v-expansion-panel-text>
-            <v-select class="my-2" color="primary" base-color="primary" variant="outlined" hide-details :items="profiles" v-model="filter.profile" item-value="id" label="Utilisateur" clearable>
-              <template #item="{ props, item }">
-                <v-list-item v-bind="props" :title="null">
-                  <template #default>
-                    {{ item.raw.name }}
-                  </template>
-                </v-list-item>
-              </template>
-              <template #selection="{ item, index }">
-                {{ item.raw.name }}
-              </template>
-            </v-select>
-            
-            <v-select class="my-2" color="primary" base-color="primary" variant="outlined" hide-details :items="types" v-model="filter.type" label="Type" clearable></v-select>
+        <v-btn icon color="secondary" @click="fetchLogs" title="Actualiser les logs" density="compact" class="mx-2">
+          <v-icon>mdi-refresh</v-icon>
+        </v-btn>
+      </div>
 
-            <v-text-field class="my-2" color="primary" base-color="primary" variant="outlined" hide-details v-model="filter.search" label="Recherche" clearable> </v-text-field>
-
-          </v-expansion-panel-text>
-        </v-expansion-panel>
-    </v-expansion-panels>
-
-      <v-data-table :headers="[{ title: 'Date', key: 'id' }, { title: 'Utilisateur', key: 'user' }, { title: 'Type', key: 'type' }, { title: 'Description', key: 'description' }, { title: '', key: 'action', sortable: false }]" :items="logs" items-per-page="50" no-data-text="Aucun log" :search="filter.search">
-
-        <template v-slot:item.id="{ item }">
-          <span class="font-weight-regular">{{ new Date(parseInt(item.id)).toLocaleString() }}</span>
+      <v-data-table :headers="headers" :items="logs" :loading="loading" :sort-by="[{ key: 'id', order: 'desc' }]" class="elevation-1" items-per-page="100" hide-default-footer>
+        <template v-slot:item.date="{ item }">
+          {{ formatDate(item.id) }}
         </template>
-        
+
         <template v-slot:item.user="{ item }">
-          <span class="font-weight-regular">{{ profiles.find(profile => profile.id === item.user)?.name || 'Utilisateur supprimé' }}</span>
-        </template>
-        
-        <template v-slot:item.type="{ item }">
-          <span class="font-weight-regular">{{ item.type }}</span>
+          {{ userList[item.user]?.name || 'Inconnu' }}
         </template>
 
-        <template v-slot:item.description="{ item }">
-          <span class="font-weight-regular">{{ item.description }}</span>
+        <template v-slot:item.actions="{ item }">
+          <v-btn v-if="isDev" icon="mdi-delete" variant="text" color="error" size="small" @click="deleteLog(item)"></v-btn>
         </template>
-
-        <template v-slot:item.action="{ item }">
-          <v-btn color="error" variant="text" icon @click="deleteLog(item)" v-if="userStore.profile.permissions.includes('dev')">
-            <v-icon>mdi-delete</v-icon>
-          </v-btn>
-        </template>
-
       </v-data-table>
 
+      <div class="text-center pt-2">
+        <v-pagination v-model="page" :length="totalPages" @update:model-value="fetchLogs"></v-pagination>
+      </div>
     </v-card>
   </div>
 </template>
 
 <script>
 import { useUserStore } from '@/store/user.js'
-
-import Swal from 'sweetalert2/dist/sweetalert2.js'
-
-import Log from '../classes/Log'
+import Log from '@/classes/Log.js'
 import Profile from '@/classes/Profile.js'
 
 export default {
-  props : [],
+  props: [],
   data() {
     return {
       userStore: useUserStore(),
+      selectedUser: null,
+      selectedType: null,
       logs: [],
-      profiles: [],
-      filter: {
-        profile: null,
-        type: null,
-        search: "",
-      },
-      types: [],
-      timeout: null,
+      page: 1,
+      totalLogs: 0,
+      pageSize: 50,
+      loading: false,
+      userList: {},
+      typeList: ['INVENTAIRE', 'COMMANDES', 'VEHICULES', 'NOTES DE FRAIS', 'PASSWORD', 'ENTREPRISES' , 'ITEMS', 'UTILISATEURS', 'FORMATION', 'Ajout employés', 'Changement de grade', 'Suppression employé', 'Ajout faute', 'Mise a pied', 'Retrait de mise a pied']
     }
   },
-  watch: {
-    filter: {
-      handler() {
-        this.getLogs()
-      },
-      deep: true
-    }
+  mounted() {
+    this.fetchUsers()
+    this.fetchLogs()
   },
-  async mounted() {
-    this.profiles = await Profile.getAll()
-    this.profiles.sort((a, b) => a.name.localeCompare(b.name))
-    this.getLogs()
+  computed: {
+    totalPages() {
+      const pages = Math.ceil(this.totalLogs / this.pageSize) || 1
+      return pages > 10 ? 10 : pages
+    },
+    isDev() {
+      return this.userStore.profile.permissions && this.userStore.profile.permissions.includes('dev')
+    },
+    headers() {
+      const baseHeaders = [
+        { title: 'Date', key: 'date', align: 'start', sortable: false },
+        { title: 'Utilisateur', key: 'user', align: 'start', sortable: false },
+        { title: 'Type', key: 'type', align: 'start', sortable: false },
+        { title: 'Description', key: 'description', sortable: false },
+      ]
+
+      if (this.isDev) {
+        baseHeaders.push({ title: '', key: 'actions', sortable: false, align: 'end' })
+      }
+
+      return baseHeaders
+    },
   },
   methods: {
-    async getLogs() {
-      this.logs = await Log.getAll()
-      this.logs.sort((a, b) => parseInt(b.id) - parseInt(a.id))
-
-      let toRemove = []
-      let previousLog = null
-      for (let log of this.logs) {
-        if(previousLog == null) {
-          previousLog = log
-          continue
-        }else{
-          if(log.type == previousLog.type
-            && log.user == previousLog.user 
-            && log.description.split('(')[0] == previousLog.description.split('(')[0]
-            && (parseInt(previousLog.id) - parseInt(log.id)) < (60*1000)) {
-            toRemove.push(log.id)
-          }
-        }
-        previousLog = log
+    async fetchUsers() {
+      try {
+        const profiles = await Profile.getAll()
+        profiles.forEach(profile => {
+          this.userList[profile.id] = profile
+        })
+      } catch (error) {
+        console.error("Erreur lors du chargement des utilisateurs", error)
       }
-      this.logs = this.logs.filter(log => !toRemove.includes(log.id))
-      
-      let filtered = this.logs
+    },
+    async fetchLogs() {
+      this.loading = true
+      try {
+        const filters = {}
+        if (this.selectedUser) filters.user = this.selectedUser
+        if (this.selectedType) filters.type = this.selectedType
 
-      if (this.filter.profile) {
-        filtered = filtered.filter(log => log.user == this.filter.profile)
+        this.totalLogs = await Log.getCount(filters)
+        this.logs = await Log.getByPage(this.page, this.pageSize, filters)
+
+      } catch (e) {
+        console.error("Erreur lors du chargement des logs", e)
+      } finally {
+        this.loading = false
       }
+    },
+    getWeekRange(date) {
+      const current = new Date(date);
+      const day = current.getDay();
+      const diff = current.getDate() - day + (day === 0 ? -6 : 1);
 
-      this.types = [...new Set(this.logs.map(log => log.type))].sort()
+      const monday = new Date(current.setDate(diff));
+      const sunday = new Date(monday);
+      sunday.setDate(monday.getDate() + 6);
 
-      if (this.filter.type) {
-        filtered = filtered.filter(log => log.type == this.filter.type)
+      const formatDate = (date) => {
+        return date.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' })
       }
-
-      if (this.filter.search && this.filter.search.trim() != "") {
-        const search = this.filter.search.trim().toLowerCase()
-        filtered = filtered.filter(log => 
-          log.type.toLowerCase().includes(search) ||
-          log.description.toLowerCase().includes(search) ||
-          (this.profiles.find(profile => profile.id === log.user)?.name.toLowerCase().includes(search))
-        )
-      }
-
-      this.logs = filtered
+      return `${formatDate(monday)} - ${formatDate(sunday)}`
     },
     async deleteLog(log) {
-      await log.delete()
-      this.getLogs()
+      if (log) {
+        // Since log is an instance of Log class
+        await log.delete()
+        this.fetchLogs()
+      }
     },
+    formatDate(date) {
+      if (!date) return '';
+      // Si c'est un timestamp Firestore (objet avec seconds)
+      if (typeof date === 'object' && date.seconds) {
+        return new Intl.DateTimeFormat('fr-FR', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit'
+        }).format(date.toDate());
+      }
+
+      // Si c'est un timestamp numérique ou une date
+      return new Intl.DateTimeFormat('fr-FR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      }).format(date);
+    }
   },
-  
 }
 </script>
