@@ -644,7 +644,7 @@
             <input 
                 v-model="dispatch.crisisZip" 
                 @change="dispatch.save()" 
-                class="location-input" 
+                class="location-input crisis-zip-input" 
                 style="width: 70px; font-weight: 900; background: transparent; border: none; outline: none; color: #fff; text-align: center; text-transform: uppercase;" 
                 placeholder="ZIP" 
             />
@@ -2872,6 +2872,7 @@ export default {
   min-width: 0;
 }
 .location-input::placeholder { color: #475569; }
+.crisis-zip-input::placeholder { color: rgba(255, 255, 255, 0.6) !important; opacity: 1; }
 
 .return-badge {
   display: inline-flex;
