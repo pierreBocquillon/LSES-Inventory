@@ -1604,12 +1604,20 @@ export default {
         this.dispatch.centrale.employees.forEach(e => ids.add(e.employeeId))
       ;(this.dispatch.interventions || []).forEach(s => (s.employees || []).forEach(e => ids.add(e.employeeId)))
       ;(this.dispatch.patates || []).forEach(p => { if (p.employeeId) ids.add(p.employeeId) })
+      
       const actives = this.allEmployees.filter(e => ids.has(e.id))
-      if (currentId && !actives.find(e => e.id === currentId)) {
+      
+      const options = [
+        ...actives,
+        { id: 'BCES', name: 'BCES', phone: '', role: '' }
+      ]
+
+      if (currentId && currentId !== 'BCES' && !actives.find(e => e.id === currentId)) {
         const current = this.allEmployees.find(e => e.id === currentId)
-        if (current) return [...actives, current]
+
+        if (current) return [...options, current]
       }
-      return actives
+      return options
     },
 
     getRadioEmployeeOptions(radio) {
