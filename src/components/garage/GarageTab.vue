@@ -347,7 +347,7 @@ export default {
           vehicle.lastRepairDate = new Date().getTime()
           vehicle.save()
 
-          fetch('https://script.google.com/macros/s/AKfycbwf0AveLsdLMQMMzR-0flSwVP-VE9Hd8OCF5pmfDBMiCkiDKN0wJhMwXxvnUmAgGx8Z/exec', {
+          fetch('https://script.google.com/macros/s/AKfycbwDWdQakJgJ22wYz2-uo6LRheJSFX7_-kox8oGBSxe808QXr9ryMg74LNDc5ufgNgKp/execc', {
             method: 'POST',
             mode: 'no-cors',
             headers: {
@@ -372,7 +372,7 @@ export default {
           vehicle.needRepair = true
           vehicle.save()
 
-          fetch('https://script.google.com/macros/s/AKfycbwf0AveLsdLMQMMzR-0flSwVP-VE9Hd8OCF5pmfDBMiCkiDKN0wJhMwXxvnUmAgGx8Z/exec', {
+          fetch('https://script.google.com/macros/s/AKfycbwDWdQakJgJ22wYz2-uo6LRheJSFX7_-kox8oGBSxe808QXr9ryMg74LNDc5ufgNgKp/execc', {
             method: 'POST',
             mode: 'no-cors',
             headers: {
@@ -404,7 +404,7 @@ export default {
           vehicle.insurance = true
           await vehicle.save()
 
-          fetch('https://script.google.com/macros/s/AKfycbwf0AveLsdLMQMMzR-0flSwVP-VE9Hd8OCF5pmfDBMiCkiDKN0wJhMwXxvnUmAgGx8Z/exec', {
+          fetch('https://script.google.com/macros/s/AKfycbwDWdQakJgJ22wYz2-uo6LRheJSFX7_-kox8oGBSxe808QXr9ryMg74LNDc5ufgNgKp/execc', {
             method: 'POST',
             mode: 'no-cors',
             headers: {
@@ -453,7 +453,7 @@ export default {
       history.price = 0
       await history.save()
 
-      fetch('https://script.google.com/macros/s/AKfycbwf0AveLsdLMQMMzR-0flSwVP-VE9Hd8OCF5pmfDBMiCkiDKN0wJhMwXxvnUmAgGx8Z/exec', {
+      fetch('https://script.google.com/macros/s/AKfycbwDWdQakJgJ22wYz2-uo6LRheJSFX7_-kox8oGBSxe808QXr9ryMg74LNDc5ufgNgKp/execc', {
         method: 'POST',
         mode: 'no-cors',
         headers: {
@@ -496,7 +496,7 @@ export default {
             vehicle.insurance = false
             await vehicle.save()
 
-            fetch('https://script.google.com/macros/s/AKfycbwf0AveLsdLMQMMzR-0flSwVP-VE9Hd8OCF5pmfDBMiCkiDKN0wJhMwXxvnUmAgGx8Z/exec', {
+            fetch('https://script.google.com/macros/s/AKfycbwDWdQakJgJ22wYz2-uo6LRheJSFX7_-kox8oGBSxe808QXr9ryMg74LNDc5ufgNgKp/execc', {
               method: 'POST',
               mode: 'no-cors',
               headers: {
@@ -542,7 +542,7 @@ export default {
 
       await this.currentVehicle.save()
 
-      fetch('https://script.google.com/macros/s/AKfycbwf0AveLsdLMQMMzR-0flSwVP-VE9Hd8OCF5pmfDBMiCkiDKN0wJhMwXxvnUmAgGx8Z/exec', {
+      fetch('https://script.google.com/macros/s/AKfycbwDWdQakJgJ22wYz2-uo6LRheJSFX7_-kox8oGBSxe808QXr9ryMg74LNDc5ufgNgKp/execc', {
         method: 'POST',
         mode: 'no-cors',
         headers: {
@@ -586,7 +586,7 @@ export default {
 
       await this.currentVehicle.save()
 
-      fetch('https://script.google.com/macros/s/AKfycbwf0AveLsdLMQMMzR-0flSwVP-VE9Hd8OCF5pmfDBMiCkiDKN0wJhMwXxvnUmAgGx8Z/exec', {
+      fetch('https://script.google.com/macros/s/AKfycbwDWdQakJgJ22wYz2-uo6LRheJSFX7_-kox8oGBSxe808QXr9ryMg74LNDc5ufgNgKp/execc', {
         method: 'POST',
         mode: 'no-cors',
         headers: {

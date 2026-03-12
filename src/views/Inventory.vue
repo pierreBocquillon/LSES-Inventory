@@ -433,7 +433,7 @@ export default {
       this.currentItem.amount = totalAmount
       this.updateItem(this.currentItem)
       this.currentInstance.save()
-      fetch('https://script.google.com/macros/s/AKfycbwf0AveLsdLMQMMzR-0flSwVP-VE9Hd8OCF5pmfDBMiCkiDKN0wJhMwXxvnUmAgGx8Z/exec', {
+      fetch('https://script.google.com/macros/s/AKfycbwDWdQakJgJ22wYz2-uo6LRheJSFX7_-kox8oGBSxe808QXr9ryMg74LNDc5ufgNgKp/execc', {
         method: 'POST',
         mode: 'no-cors',
         headers: {

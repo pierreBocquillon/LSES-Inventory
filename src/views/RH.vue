@@ -304,8 +304,11 @@
               <v-col cols="12">
                 <v-text-field v-model="editedItem.email" label="Email (Gmail)" variant="outlined"></v-text-field>
               </v-col>
-              <v-col cols="12">
+              <v-col cols="12" md="6">
                 <v-text-field v-model="editedItem.phone" label="Téléphone" variant="outlined"></v-text-field>
+              </v-col>
+              <v-col cols="12" md="6">
+                <v-text-field v-model="editedItem.emoji" label="Emoji personnel" variant="outlined" :disabled="editedItem.role === 'Interne'" :hint="editedItem.role === 'Interne' ? 'Forcé à 🐣' : ''" persistent-hint></v-text-field>
               </v-col>
               <v-col cols="12">
                 <v-select v-model="editedItem.role" :items="['Interne', 'Résident', 'Titulaire', 'Spécialiste', 'Responsable de Service', 'Assistant RH', 'Directeur Adjoint', 'Directeur']" label="Rôle" variant="outlined" @update:model-value="onRoleChange"></v-select>
@@ -974,6 +977,7 @@ import {
 } from 'chart.js'
 import { Pie, Bar } from 'vue-chartjs'
 import AnimatedCounter from '@/components/AnimatedCounter.vue'
+import { roleOrder, getRoleColor, getRoleColorName } from '@/config/roles.js'
 
 ChartJS.register(...registerables)
 
@@ -1089,7 +1093,6 @@ export default {
         title: 'Rôle',
         key: 'role',
         sort: (a, b) => {
-          const roleOrder = ['Directeur', 'Directeur Adjoint', 'Assistant RH', 'Responsable de Service', 'Spécialiste', 'Titulaire', 'Résident', 'Interne']
           return roleOrder.indexOf(a) - roleOrder.indexOf(b)
         }
       },
@@ -1196,14 +1199,10 @@ export default {
       return this.candidatures.filter(c => c.status === 'Candidature reçue').length
     },
     sortedDirectoryEmployees() {
-      const roleOrder = ['Directeur', 'Directeur Adjoint', 'Assistant RH', 'Responsable de Service', 'Spécialiste', 'Titulaire', 'Résident', 'Interne']
-
       return [...this.employees].sort((a, b) => {
-        // 1. Sort by Role Priority
         const roleDiff = roleOrder.indexOf(a.role) - roleOrder.indexOf(b.role)
         if (roleDiff !== 0) return roleDiff
 
-        // 2. Sort by Seniority (Arrival Date) - Ascending (Earliest date = Most senior)
         if (!a.arrivalDate) return 1
         if (!b.arrivalDate) return -1
         return new Date(a.arrivalDate) - new Date(b.arrivalDate)
@@ -1376,13 +1375,8 @@ export default {
     },
 
 
-    getRoleColor(role) {
-      if (['Directeur', 'Directeur Adjoint'].includes(role)) return 'red'
-      if (['Responsable de Service'].includes(role)) return 'purple'
-      if (['Assistant RH'].includes(role)) return 'orange'
-      if (['Résident', 'Titulaire', 'Spécialiste'].includes(role)) return 'blue'
-      return 'green'
-    },
+    getRoleColor,
+    getRoleColorName,
 
     isTaskOverdue(task, type) {
       if (!task.doneAt) return true
@@ -1532,7 +1526,10 @@ export default {
             this.editedItem.simpleFault,
             this.editedItem.suspension,
             this.editedItem.isTrainerTrainee,
-            this.editedItem.simulations
+            this.editedItem.simulations,
+            this.editedItem.isRHTrainee,
+            this.editedItem.validatedTrainings,
+            this.editedItem.emoji
           )
         } else {
           // Creating new
@@ -1553,8 +1550,19 @@ export default {
             this.editedItem.medicalDegreeDate,
             this.editedItem.helicopterTrainingDate,
             this.editedItem.helicopterTrainingReimbursed,
-            [], // new employee has no requests
-            null // new employee has no promotion request
+            [],
+            null,
+            null,
+            null,
+            {},
+            null,
+            null,
+            null,
+            false,
+            [],
+            false,
+            [],
+            ''
           )
         }
 
@@ -1815,8 +1823,8 @@ export default {
     },
 
     directoryRowProps({ item }) {
-      const color = this.getRoleColor(item.role)
-      return { class: `bg-${color}-lighten-4` }
+      const colorName = this.getRoleColorName(item.role)
+      return { class: `bg-${colorName}-lighten-4` }
     },
 
     async captureDirectoryImage() {
@@ -2073,7 +2081,20 @@ export default {
         today,
         null,
         null,
-        false
+        false,
+        [],
+        null,
+        null,
+        null,
+        {},
+        null,
+        null,
+        null,
+        false,
+        [],
+        false,
+        [],
+        ''
       )
 
       try {

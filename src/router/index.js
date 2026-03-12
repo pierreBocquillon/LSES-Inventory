@@ -184,6 +184,16 @@ const routes = [
       permissions: []
     }
   },
+  {
+    name: 'Dispatch',
+    path: '/dispatch',
+    component: () => import("@/views/Dispatch.vue"),
+    meta: {
+      needAccount: true,
+      showNav: true,
+      permissions: []
+    }
+  },
 ]
 
 const router = createRouter({

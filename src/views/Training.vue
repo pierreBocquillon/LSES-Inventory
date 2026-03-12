@@ -1000,6 +1000,8 @@ import { useUserStore } from '@/store/user'
 import Swal from 'sweetalert2/dist/sweetalert2.js'
 import logger from '@/functions/logger.js'
 
+import { roleOrder as sharedRoleOrder, getRoleColor as sharedGetRoleColor } from '@/config/roles.js'
+
 export default {
   name: 'Training',
   data: () => ({
@@ -1090,8 +1092,7 @@ export default {
         title: 'Rôle', 
         key: 'role',
         sort: (a, b) => {
-          const roleOrder = ['Directeur', 'Directeur Adjoint', 'Assistant RH', 'Responsable de Service', 'Spécialiste', 'Titulaire', 'Résident', 'Interne']
-          return roleOrder.indexOf(a) - roleOrder.indexOf(b)
+          return sharedRoleOrder.indexOf(a) - sharedRoleOrder.indexOf(b)
         }
       },
       { title: 'Formations Validées', key: 'validatedTrainings', sortable: false, align: 'center' }
@@ -1317,10 +1318,6 @@ export default {
   },
 
   methods: {
-    getRoleColor(role) {
-      if (['Résident'].includes(role)) return 'blue'
-      return 'green'
-    },
     
     formatDate(dateString) {
       if (!dateString) return '-'
@@ -1682,11 +1679,7 @@ export default {
     },
 
     getRoleColor(role) {
-      if (['Directeur', 'Directeur Adjoint'].includes(role)) return 'red'
-      if (['Responsable de Service'].includes(role)) return 'purple'
-      if (['Assistant RH'].includes(role)) return 'orange'
-      if (['Résident', 'Titulaire', 'Spécialiste'].includes(role)) return 'blue'
-      return 'green'
+      return sharedGetRoleColor(role)
     },
 
     getTrainingColor(training) {
@@ -1766,7 +1759,7 @@ export default {
         }
     },
     getNextRole(currentRole) {
-        const roles = ['Interne', 'Résident', 'Titulaire', 'Spécialiste', 'Responsable de Service', 'Assistant RH', 'Directeur Adjoint', 'Directeur']
+        const roles = [...sharedRoleOrder].reverse()
         const index = roles.indexOf(currentRole)
         if (index !== -1 && index < roles.length - 1) {
             return roles[index + 1]

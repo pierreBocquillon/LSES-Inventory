@@ -1,63 +1,203 @@
 <template>
   <div>
     <template v-for="order in orders" :key="order.id">
-      <v-card class="mb-5 pa-3 pl-5 rounded-xl" variant="tonal" color="white" v-if="getCompagnyInfo(order)">
-        <div class="d-flex flex-row align-center justify-start flex-wrap">
-          <h2>Commande - {{ getCompagnyInfo(order).icon }} {{ getCompagnyInfo(order).name }} :</h2>
-          <v-spacer></v-spacer>
-          <v-btn variant="tonal" color="info" class="ml-3 rounded-xl" @click="copyMessage(order)">📄 Copier</v-btn>
-          <v-btn variant="tonal" color="deep-orange" class="ml-3 rounded-xl" @click="openEditOrder(order)">✏️ Modifier</v-btn>
-          <v-btn variant="tonal" color="error" class="ml-3 rounded-xl" @click="deleteOrder(order)">❌ Annuler</v-btn>
-          <v-btn variant="tonal" color="success" class="ml-3 rounded-xl" @click="payOrder(order)">💵 Valider</v-btn>
-        </div>
-        <div class="py-3">
-          <template v-for="orderItem in order.items" :key="orderItem.id">
-            <div class="pl-3 d-flex flex-row align-center justify-start mb-2" v-if="orderItem && orderItem.amount > 0 && orderItem.id && getItemInfo(orderItem.id)">
-              {{ getItemInfo(orderItem.id).icon }} {{ getItemInfo(orderItem.id).name }} - {{orderItem.amount}}
-            </div>
-          </template>
-          <div class="pl-3 d-flex flex-row align-center justify-start mt-5 mb-2" v-if="order.destroy && order.destroy > 0">
-            🗑️ Destruction - {{ order.destroy }}
-          </div>
-          <h3 class="mt-5">({{ Math.round(order.weight*100)/100 }} kg)</h3>
-        </div>
+      <v-card v-if="getCompagnyInfo(order)" class="mb-4 rounded-xl" variant="tonal" :style="{ backgroundColor: getStatusBgColor(order.status) }">
+
+        <!-- En-tête -->
+        <v-card-title class="d-flex flex-wrap align-center ga-2 pt-3 px-4">
+          <v-select
+            v-model="order.status"
+            :items="statusOptions"
+            item-title="label"
+            item-value="value"
+            density="compact"
+            hide-details
+            variant="tonal"
+            :base-color="getStatusColor(order.status)"
+            :color="getStatusColor(order.status)"
+            class="rounded-lg flex-grow-0"
+            style="min-width: 200px; max-width: 200px;"
+            @update:modelValue="updateOrderStatus(order)"
+          >
+            <template #item="{ item, props }">
+              <v-list-item v-bind="props">
+                <template #prepend>
+                  <v-icon :color="item.raw.color" size="x-small" class="mr-1">mdi-circle</v-icon>
+                </template>
+              </v-list-item>
+            </template>
+            <template #selection="{ item }">
+              <div class="d-flex align-center ga-1">
+                <v-icon :color="item.raw.color" size="x-small">mdi-circle</v-icon>
+                <span class="text-body-2 font-weight-medium">{{ item.raw.label }}</span>
+              </div>
+            </template>
+          </v-select>
+          <span class="text-h6 font-weight-bold">
+            {{ getCompagnyInfo(order).icon }} {{ getCompagnyInfo(order).name }}
+          </span>
+          <v-spacer />
+          <v-tooltip text="Copier le message" location="top">
+            <template #activator="{ props }">
+              <v-btn v-bind="props" icon variant="tonal" color="info" size="small" @click="copyMessage(order)">
+                <v-icon>mdi-content-copy</v-icon>
+              </v-btn>
+            </template>
+          </v-tooltip>
+          <v-tooltip text="Modifier" location="top">
+            <template #activator="{ props }">
+              <v-btn v-bind="props" icon variant="tonal" color="deep-orange" size="small" @click="openEditOrder(order)">
+                <v-icon>mdi-pencil</v-icon>
+              </v-btn>
+            </template>
+          </v-tooltip>
+          <v-tooltip text="Modifier le prix" location="top">
+            <template #activator="{ props }">
+              <v-btn v-bind="props" icon variant="tonal" color="success" size="small" @click="openPriceDialog(order)">
+                <v-icon>mdi-currency-usd</v-icon>
+              </v-btn>
+            </template>
+          </v-tooltip>
+          <v-tooltip text="Annuler la commande" location="top">
+            <template #activator="{ props }">
+              <v-btn v-bind="props" icon variant="tonal" color="error" size="small" @click="deleteOrder(order)">
+                <v-icon>mdi-close</v-icon>
+              </v-btn>
+            </template>
+          </v-tooltip>
+          <v-btn variant="tonal" color="success" size="small" class="rounded-lg" @click="payOrder(order)">
+            <v-icon start>mdi-check</v-icon>
+            Valider
+          </v-btn>
+        </v-card-title>
+
+        <v-divider class="mx-4" />
+
+        <!-- Contenu -->
+        <v-card-text class="px-5 pb-2 pt-3">
+          <v-expansion-panels variant="accordion" class="rounded-lg">
+            <v-expansion-panel elevation="0" style="background: transparent;">
+              <v-expansion-panel-title class="px-2 py-1 text-body-1 text-medium-emphasis" style="min-height: 36px;">
+                <div class="d-flex align-center ga-6 w-100">
+                  <span>{{ order.items.filter(i => i && i.amount > 0 && i.id && getItemInfo(i.id)).length + (order.destroy && order.destroy > 0 ? 1 : 0) }} article(s)</span>
+                  <span>
+                    <v-icon size="x-small" class="mr-1">mdi-weight</v-icon>{{ Math.round(order.weight * 100) / 100 }} kg
+                  </span>
+                  <span>
+                    <v-icon size="x-small" class="mr-1">mdi-cash</v-icon>
+                    <span v-if="order.price !== null && order.price !== ''">{{ order.price }} $</span>
+                    <span v-else class="font-italic">Inconnue</span>
+                  </span>
+                  <v-spacer />
+                  <span v-if="order.updatedAt" class="mr-2">
+                    <v-icon size="x-small" class="mr-1">mdi-clock-outline</v-icon>{{ formatDate(order.updatedAt) }}
+                  </span>
+                </div>
+              </v-expansion-panel-title>
+              <v-expansion-panel-text class="px-2 pb-2">
+                <table style="border-collapse: collapse;">
+                  <tbody>
+                    <tr
+                      v-for="orderItem in order.items.filter(i => i && i.amount > 0 && i.id && getItemInfo(i.id))"
+                      :key="orderItem.id"
+                    >
+                      <td class="text-body-2 py-1 pr-4" style="white-space: nowrap;">
+                        {{ getItemInfo(orderItem.id).icon }} {{ getItemInfo(orderItem.id).name }}
+                      </td>
+                      <td class="text-body-2 font-weight-medium py-1" style="white-space: nowrap;">
+                        × {{ orderItem.amount }}
+                      </td>
+                    </tr>
+                    <tr v-if="order.destroy && order.destroy > 0">
+                      <td class="text-body-2 text-error py-1 pr-4" style="white-space: nowrap;">
+                        🗑️ Destruction
+                      </td>
+                      <td class="text-body-2 font-weight-medium text-error py-1" style="white-space: nowrap;">
+                        × {{ order.destroy }}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </v-expansion-panel-text>
+            </v-expansion-panel>
+          </v-expansion-panels>
+        </v-card-text>
+
+
+
       </v-card>
     </template>
 
+    <!-- Dialog prix -->
+    <v-dialog v-model="priceDialog" max-width="360px">
+      <v-card class="rounded-xl">
+        <v-card-title class="text-center pt-5 pb-1">Modifier le prix</v-card-title>
+        <v-card-subtitle class="text-center pb-3" v-if="priceOrder">
+          {{ getCompagnyInfo(priceOrder)?.icon }} {{ getCompagnyInfo(priceOrder)?.name }}
+        </v-card-subtitle>
+        <v-divider />
+        <v-card-text class="pt-4">
+          <v-text-field
+            v-model="priceValue"
+            type="number"
+            density="comfortable"
+            variant="outlined"
+            label="Prix ($)"
+            class="rounded-lg"
+            hide-details
+            autofocus
+            @keyup.enter="savePriceDialog"
+          />
+        </v-card-text>
+        <v-divider />
+        <v-card-actions class="justify-center pa-4 ga-2">
+          <v-btn color="error" variant="tonal" class="rounded-lg" @click="priceDialog = false">Annuler</v-btn>
+          <v-btn color="primary" variant="tonal" class="rounded-lg" @click="savePriceDialog">Valider</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- Dialog édition -->
     <v-dialog v-model="editOrderDialog" max-width="600px">
       <v-card class="rounded-xl">
-        <v-card-text>
-          <h3 class="text-center mb-5">Commande ({{ Math.round(this.currentWeight*100)/100 }}kg):</h3>
+        <v-card-title class="text-center pt-5 pb-1">
+          Modifier la commande
+        </v-card-title>
+        <v-card-subtitle class="text-center pb-3">
+          {{ Math.round(currentWeight * 100) / 100 }} kg
+        </v-card-subtitle>
+        <v-divider />
+        <v-card-text class="pt-4">
           <table class="w-100">
             <tbody>
               <template v-for="itemData of editOrder.items" :key="itemData.id">
-                <tr v-if="!getItemInfo(itemData.id).isSecure || this.userStore.profile.permissions.some(p => ['dev', 'admin', 'security'].includes(p))">
+                <tr v-if="!getItemInfo(itemData.id).isSecure || userStore.profile.permissions.some(p => ['dev', 'admin', 'security'].includes(p))">
                   <td>{{ getItemInfo(itemData.id).icon }} {{ getItemInfo(itemData.id).name }} ({{ Math.max(getItemInfo(itemData.id).wanted - getItemInfo(itemData.id).amount, 0) }})</td>
                   <td style="width: 100px;">
-                    <v-text-field hide-details variant="plain" type="number" density="compact" v-model="itemData.amount"></v-text-field>
+                    <v-text-field hide-details variant="plain" type="number" density="compact" v-model="itemData.amount" />
                   </td>
-                  <td style="width: 100px;">({{ Math.round(itemData.amount * getItemInfo(itemData.id).weight * 100)/100 }}kg)</td>
+                  <td style="width: 110px;" class="text-medium-emphasis text-caption">
+                    {{ Math.round(itemData.amount * getItemInfo(itemData.id).weight * 100) / 100 }} kg
+                  </td>
                 </tr>
               </template>
+              <tr v-if="getCompagnyInfo(editOrder).canDestroy"><td colspan="3" class="py-2" /></tr>
               <tr v-if="getCompagnyInfo(editOrder).canDestroy">
-                <td colspan="3">&nbsp;</td>
-              </tr>
-              <tr v-if="getCompagnyInfo(editOrder).canDestroy">
-                <td  class="text-white">🗑️ Destruction ({{needToBeTrashed}})</td>
+                <td>🗑️ Destruction ({{ needToBeTrashed }})</td>
                 <td colspan="2" style="width: 100px;">
-                  <v-text-field hide-details variant="plain" type="number" density="compact" v-model="editOrder.destroy"></v-text-field>
+                  <v-text-field hide-details variant="plain" type="number" density="compact" v-model="editOrder.destroy" />
                 </td>
               </tr>
             </tbody>
           </table>
-          <div class="mt-3 d-flex flex-row align-center justify-center flex-wrap">
-            <v-btn color="error" variant="tonal" class="mx-2" @click="cancelEditOrder">Annuler</v-btn>
-            <v-btn color="primary" variant="tonal" class="mx-2" @click="saveEditOrder">Valider</v-btn>
-          </div>
         </v-card-text>
+        <v-divider />
+        <v-card-actions class="justify-center pa-4 ga-2">
+          <v-btn color="error" variant="tonal" class="rounded-lg" @click="cancelEditOrder">Annuler</v-btn>
+          <v-btn color="primary" variant="tonal" class="rounded-lg" @click="saveEditOrder">Valider</v-btn>
+        </v-card-actions>
       </v-card>
     </v-dialog>
-
   </div>
 </template>
 
@@ -73,65 +213,121 @@ import Swal from 'sweetalert2/dist/sweetalert2.js'
 import logger from '../../functions/logger'
 
 export default {
-  props: ["items", "storages", "companies"],
+  props: ['items', 'storages', 'companies'],
   data() {
     return {
       unsub: [],
-
       userStore: useUserStore(),
-
       orders: [],
       instances: [],
-
       editOrderDialog: false,
       editOrder: null,
+      priceDialog: false,
+      priceOrder: null,
+      priceValue: null,
+      statusOptions: [
+        { label: 'A faire',             value: 'A faire',             color: 'error'   },
+        { label: 'Message envoyé',      value: 'Message envoyé',      color: 'blue'    },
+        { label: 'A relancer',          value: 'A relancer',          color: 'orange'  },
+        { label: 'Attente de réception',value: 'Attente de réception',color: 'success' },
+      ],
     }
   },
   mounted() {
-    this.unsub.push(Order.listenAll(orders => {
-      this.orders = orders
-    }))
-    this.unsub.push(Instance.listenAll(instances => {
-      this.instances = instances
-    }))
+    this.unsub.push(Order.listenAll(orders => { this.orders = orders }))
+    this.unsub.push(Instance.listenAll(instances => { this.instances = instances }))
   },
   computed: {
     needToBeTrashed() {
-      let needToBeTrashed = 0
-      for(let item of this.items) {
-        if(item.amount > 0 && item.isInstantiated && item.instanceByDate) {
-          let instance = this.instances.find(i => i.id === item.id)
-          if(instance) {
-            for(let contentItem of instance.content) {
-              if(new Date(contentItem.date.split('/').reverse().join('-')).setHours(0,0,0,0) < new Date().setHours(0,0,0,0) && !contentItem.locked) {
-                needToBeTrashed += parseInt(contentItem.amount)
+      let total = 0
+      for (const item of this.items) {
+        if (item.amount > 0 && item.isInstantiated && item.instanceByDate) {
+          const instance = this.instances.find(i => i.id === item.id)
+          if (instance) {
+            for (const contentItem of instance.content) {
+              if (
+                new Date(contentItem.date.split('/').reverse().join('-')).setHours(0, 0, 0, 0) < new Date().setHours(0, 0, 0, 0) &&
+                !contentItem.locked
+              ) {
+                total += parseInt(contentItem.amount)
               }
             }
           }
         }
       }
-      return needToBeTrashed
+      return total
     },
-    currentWeight(){
+    currentWeight() {
       let weight = 0
-      this.editOrder.items.forEach(orderItem => {  
+      this.editOrder.items.forEach(orderItem => {
         if (orderItem && orderItem.amount > 0 && orderItem.id && this.getItemInfo(orderItem.id)) {
           weight += this.getItemInfo(orderItem.id).weight * orderItem.amount
         }
       })
       return weight
-    }
+    },
   },
   methods: {
+    getCompagnyInfo(order) {
+      return this.companies.find(c => c.id == order.company)
+    },
+    getItemInfo(id) {
+      return this.items.find(i => i.id == id)
+    },
+    getStatusColor(status) {
+      const map = {
+        'A faire':              'error',
+        'Message envoyé':       'blue',
+        'A relancer':           'orange',
+        'Attente de réception': 'success',
+      }
+      return map[status] || 'error'
+    },
+    getStatusBgColor(status) {
+      const map = {
+        'A faire':              'rgba(229,57,53,0.12)',
+        'Message envoyé':       'rgba(33,150,243,0.12)',
+        'A relancer':           'rgba(255,152,0,0.12)',
+        'Attente de réception': 'rgba(76,175,80,0.12)',
+      }
+      return map[status] || 'rgba(229,57,53,0.12)'
+    },
+    formatDate(ts) {
+      if (!ts) return ''
+      const d = new Date(ts)
+      return d.toLocaleDateString('fr-FR') + ' ' + d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+    },
+
+    // --- Statut ---
+    updateOrderStatus(order) {
+      order.save().catch(() => Swal.fire('Erreur !', 'Impossible de mettre à jour le statut.', 'error'))
+    },
+
+    // --- Prix ---
+    openPriceDialog(order) {
+      this.priceOrder = order
+      this.priceValue = order.price ?? null
+      this.priceDialog = true
+    },
+    savePriceDialog() {
+      const val = parseFloat(this.priceValue)
+      if (!isNaN(val) && val >= 0) {
+        this.priceOrder.price = val
+        this.priceOrder.save().catch(() => Swal.fire('Erreur !', 'Impossible de mettre à jour le prix.', 'error'))
+      }
+      this.priceDialog = false
+    },
+
+    // --- Édition ---
     openEditOrder(order) {
       this.editOrder = Object.assign(new Order(), order)
-      let orderItems = []
+      const orderItems = []
       this.items.sort((a, b) => a.name.localeCompare(b.name))
-      for(let item of this.items) {
-        if(item.seller == order.company) {
+      for (const item of this.items) {
+        if (item.seller == order.company) {
           orderItems.push({
             id: item.id,
-            amount: order.items.find(oi => oi.id == item.id)?.amount || 0
+            amount: order.items.find(oi => oi.id == item.id)?.amount || 0,
           })
         }
       }
@@ -141,160 +337,141 @@ export default {
     cancelEditOrder() {
       this.editOrderDialog = false
     },
-    saveEditOrder(){
+    saveEditOrder() {
       this.editOrder.weight = 0
       this.editOrder.items.forEach(orderItem => {
         if (orderItem && orderItem.amount > 0 && orderItem.id && this.getItemInfo(orderItem.id)) {
           this.editOrder.weight += this.getItemInfo(orderItem.id).weight * orderItem.amount
         }
       })
-      logger.log(this.userStore.profile.id, 'COMMANDES', `Modification d'une commande chez ${this.getCompagnyInfo(this.editOrder).icon}${this.getCompagnyInfo(this.editOrder).name} (${Math.round(this.editOrder.weight*100)/100} kg)`)
-      this.editOrder.save().then(() => {
-        Swal.fire(
-          'Modifié !',
-          'La commande a été modifiée.',
-          'success'
-        )
-        this.editOrderDialog = false
-      }).catch(err => {
-        Swal.fire(
-          'Erreur !',
-          'Une erreur est survenue lors de la modification de la commande.',
-          'error'
-        )
-      })
+      const company = this.getCompagnyInfo(this.editOrder)
+      logger.log(this.userStore.profile.id, 'COMMANDES', `Modification d'une commande chez ${company.icon}${company.name} (${Math.round(this.editOrder.weight * 100) / 100} kg)`)
+      this.editOrder.save()
+        .then(() => {
+          this.editOrderDialog = false
+          Swal.fire('Modifié !', 'La commande a été modifiée.', 'success')
+        })
+        .catch(() => Swal.fire('Erreur !', 'Une erreur est survenue lors de la modification.', 'error'))
     },
-    copyMessage(order){
-      let message = "Commande - " + this.getCompagnyInfo(order).icon + " " + this.getCompagnyInfo(order).name + " :\n\n"
-      order.items.forEach(orderItem => {  
+
+    // --- Copie ---
+    copyMessage(order) {
+      const company = this.getCompagnyInfo(order)
+      let message = `Commande - ${company.icon} ${company.name} :\n\n`
+      order.items.forEach(orderItem => {
         if (orderItem && orderItem.amount > 0 && orderItem.id && this.getItemInfo(orderItem.id)) {
-          message += this.getItemInfo(orderItem.id).icon + " " + this.getItemInfo(orderItem.id).name + " - " + orderItem.amount + "\n"
+          const item = this.getItemInfo(orderItem.id)
+          message += `${item.icon} ${item.name} - ${orderItem.amount}\n`
         }
       })
       if (order.destroy && order.destroy > 0) {
-        message += "\n" + "🗑️ Destruction - " + order.destroy + "\n"
+        message += `\n🗑️ Destruction - ${order.destroy}\n`
       }
-      message += "\n(" + Math.round(order.weight*100)/100 + " kg)"
+      message += `\n(${Math.round(order.weight * 100) / 100} kg)`
       navigator.clipboard.writeText(message).then(() => {
-        Swal.fire({
-          title: 'Copié !',
-          text: `Le message de la commande a été copié dans le presse-papier.`,
-          icon: 'success',
-          timer: 2000,
-          showConfirmButton: false
-        })
+        Swal.fire({ title: 'Copié !', text: 'Le message a été copié dans le presse-papier.', icon: 'success', timer: 2000, showConfirmButton: false })
       })
     },
-    getCompagnyInfo(order){
-      return this.companies.find(c => c.id == order.company)
-    },
-    getItemInfo(item){
-      return this.items.find(i => i.id == item)
-    },
+
+    // --- Validation ---
     payOrder(order) {
-      Swal.fire({
-        title: 'Entrer le montant total de cette commande',
-        input: 'number',
-        inputAttributes: {
-          step: 0.01
-        },
-      }).then((result) => {
-        if (result.isConfirmed) {
-          const price = result.value
+      const doValidate = (price) => {
+        const orderData = JSON.parse(JSON.stringify(order))
+        const company = this.getCompagnyInfo(order)
+        const history = History.initOne()
 
-          if (isNaN(parseInt(price)) || parseInt(price) < 0) {
-            Swal.fire(
-              'Erreur !',
-              'Le montant entré est invalide.',
-              'error'
-            )
-            return
+        history.company  = orderData.company
+        history.items    = orderData.items
+        history.weight   = orderData.weight
+        history.destroy  = orderData.destroy
+        history.price    = price
+        history.payDate  = new Date().getTime()
+
+        let showWarning = false
+        const warningItems = []
+
+        for (const item of orderData.items) {
+          const currentItem = this.items.find(i => i.id == item.id)
+          if (currentItem && !currentItem.isInstantiated) {
+            currentItem.amount = parseInt(currentItem.amount) + parseInt(item.amount)
+            currentItem.save()
+          } else if (currentItem && currentItem.isInstantiated) {
+            showWarning = true
+            warningItems.push(item)
           }
+        }
 
-          let orderData = JSON.parse(JSON.stringify(order))
-          let history = History.initOne()
-          
-          history.company = orderData.company
-          history.items = orderData.items
-          history.weight = orderData.weight
-          history.destroy = orderData.destroy
-          history.price = price
-          history.payDate = new Date().getTime()
-
-          let showWarning = false
-          let warningItems = []
-
-          for (let item of orderData.items) {
-            let currentItem = this.items.find(i => i.id == item.id)
-            if (currentItem && !currentItem.isInstantiated) {
-              currentItem.amount = parseInt(currentItem.amount) + parseInt(item.amount)
-              currentItem.save()
-            }else if (currentItem.isInstantiated) {
-              showWarning = true
-              warningItems.push(item)
-            }
-          }
-
-          history.save().then(() => {
-            logger.log(this.userStore.profile.id, 'COMMANDES', `Validation d'une commande chez ${this.getCompagnyInfo(order).icon}${this.getCompagnyInfo(order).name} (${Math.round(order.weight*100)/100} kg) pour un montant de ${price}$`)
+        history.save()
+          .then(() => {
+            logger.log(this.userStore.profile.id, 'COMMANDES', `Validation d'une commande chez ${company.icon}${company.name} (${Math.round(orderData.weight * 100) / 100} kg) pour ${price}$`)
             order.delete()
             if (showWarning) {
               Swal.fire(
                 'Attention !',
-                'Certains items de cette commande contiennent des instances qui devrons etre mis a jour a la main! ( ' + warningItems.map(i => this.getItemInfo(i.id)?.icon + ' ' + this.getItemInfo(i.id)?.name).join(', ') + ' )',
+                'Certains items contiennent des instances à mettre à jour manuellement : ' +
+                  warningItems.map(i => `${this.getItemInfo(i.id)?.icon} ${this.getItemInfo(i.id)?.name}`).join(', '),
                 'warning'
               )
-            }else{
-              Swal.fire(
-                'Commande validée !',
-                'La commande a été enregistrée dans l\'historique.',
-                'success'
-              )
+            } else {
+              Swal.fire('Commande validée !', "La commande a été enregistrée dans l'historique.", 'success')
             }
-          }).catch(err => {
-            Swal.fire(
-              'Erreur !',
-              'Une erreur est survenue lors de l\'enregistrement de la commande.',
-              'error'
-            )
           })
-        }
-      })
+          .catch(() => Swal.fire('Erreur !', "Une erreur est survenue lors de l'enregistrement.", 'error'))
+      }
+
+      const priceVal = parseFloat(order.price)
+      const priceAlreadySet = !isNaN(priceVal) && priceVal >= 0 && order.price !== null && order.price !== ''
+
+      if (priceAlreadySet) {
+        doValidate(priceVal)
+      } else {
+        Swal.fire({
+          title: 'Montant total de la commande',
+          input: 'number',
+          inputAttributes: { min: 0, step: 0.01 },
+          showCancelButton: true,
+          confirmButtonText: 'Valider',
+          cancelButtonText: 'Annuler',
+        }).then(result => {
+          if (!result.isConfirmed) return
+          const price = parseFloat(result.value)
+          if (isNaN(price) || price < 0) {
+            Swal.fire('Erreur !', 'Le montant entré est invalide.', 'error')
+            return
+          }
+          doValidate(price)
+        })
+      }
     },
+
+    // --- Suppression ---
     deleteOrder(order) {
+      // On capture les infos avant tout appel asynchrone
+      const company = this.getCompagnyInfo(order)
+      const weight  = order.weight
+      const orderId = order.id
+
       Swal.fire({
-        title: 'Êtes-vous sûr de vouloir annuler cette commande ?',
-        text: "Cette action est irréversible !",
+        title: `Annuler la commande ?`,
+        html: `<b>${company?.icon} ${company?.name}</b><br><span class="text-caption">${Math.round(weight * 100) / 100} kg</span>`,
         icon: 'warning',
         showCancelButton: true,
-        confirmButtonText: 'Oui !',
-        cancelButtonText: 'Annuler'
-      }).then((result) => {
-        if (result.isConfirmed) {
-          order.delete().then(() => {
-            logger.log(this.userStore.profile.id, 'COMMANDES', `Annulation d'une commande chez ${this.getCompagnyInfo(order).icon}${this.getCompagnyInfo(order).name} (${Math.round(order.weight*100)/100} kg)`)
-            Swal.fire(
-              'Annulé !',
-              'La commande a été annulée.',
-              'success'
-            )
-          }).catch(err => {
-            Swal.fire(
-              'Erreur !',
-              'Une erreur est survenue lors de l\'annulation de la commande.',
-              'error'
-            )
+        confirmButtonColor: '#d33',
+        confirmButtonText: 'Oui, annuler',
+        cancelButtonText: 'Non, garder',
+      }).then(result => {
+        if (!result.isConfirmed) return
+        order.delete()
+          .then(() => {
+            logger.log(this.userStore.profile.id, 'COMMANDES', `Annulation d'une commande chez ${company?.icon}${company?.name} (${Math.round(weight * 100) / 100} kg)`)
+            Swal.fire('Annulée !', 'La commande a été annulée.', 'success')
           })
-        }
+          .catch(() => Swal.fire('Erreur !', "Une erreur est survenue lors de l'annulation.", 'error'))
       })
-    }
+    },
   },
   beforeUnmount() {
-    this.unsub.forEach(unsub => {
-      if (typeof unsub == 'function') {
-        unsub()
-      }
-    })
-  }
+    this.unsub.forEach(unsub => { if (typeof unsub === 'function') unsub() })
+  },
 }
 </script>
