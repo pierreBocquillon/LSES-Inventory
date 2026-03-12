@@ -1,12 +1,9 @@
 <template>
-  <div class="dispatch-root" :class="{ 'is-dragging': !!draggingEmployee }">
+  <div class="dispatch-root" :class="{ 'is-dragging': !!draggingEmployee, 'theme--light': isLightTheme }">
 
         <div class="dispatch-top-headers">
       <div class="th-cell th-left">
-        <v-icon size="13" class="mr-1">mdi-headset</v-icon>Status Centrale
-        <span class="ml-1">🎧</span>
-        &nbsp;|&nbsp;
-        <span style="opacity:.7">Interventions</span>
+        <v-icon size="13" class="mr-1">mdi-headset</v-icon>Status Centrale & Interventions
       </div>
       <div class="th-cell th-center d-flex align-center justify-space-between w-100 px-3">
         <div class="d-flex align-center" style="gap: 15px;">
@@ -63,7 +60,12 @@
           <v-icon size="14">mdi-refresh</v-icon>
         </v-btn>
       </div>
-      <div class="th-cell th-right">📻 Radios & Notes</div>
+      <div class="th-cell th-right d-flex align-center justify-space-between">
+        <span>📻 Radios & Notes</span>
+        <v-btn icon variant="plain" size="x-small" @click="toggleTheme" title="Changer de thème">
+          <v-icon size="14" :color="isLightTheme ? undefined : 'amber'">{{ isLightTheme ? 'mdi-weather-night' : 'mdi-white-balance-sunny' }}</v-icon>
+        </v-btn>
+      </div>
     </div>
 
         <div class="dispatch-body" style="height: 88vh; overflow: hidden; grid-template-rows: 1fr;">
@@ -553,7 +555,7 @@
 
       <div class="far-right-panel">
 
-                <div class="radios-wrapper mt-auto pa-2" style="border-top: 1px solid #334155; background: rgba(0,0,0,0.15)">
+        <div class="radios-wrapper mt-auto pa-2" style="border-top: 1px solid #334155; background: rgba(0,0,0,0.15)">
           <div class="text-caption font-weight-bold text-grey-lighten-1 mb-2 d-flex align-center flex-shrink-0">
             <v-icon size="14" class="mr-1">mdi-radio-handheld</v-icon> Stock Radios
             <span class="cnt ml-2" title="Radios standards prises / total">{{ standardRadios.filter(r => r.employeeId).length }} / {{ standardRadios.length }}</span>
@@ -1294,6 +1296,7 @@ export default {
       crisisExpanded: localStorage.getItem('dispatch_crisis_expanded') !== 'false',
       bedsExpanded: localStorage.getItem('dispatch_beds_expanded') !== 'false',
       morgueExpanded: localStorage.getItem('dispatch_morgue_expanded') === 'true',
+      isLightTheme: localStorage.getItem('dispatch_light_theme') === 'true',
 
       allCategories,
       interventionTypes,
@@ -1391,19 +1394,19 @@ export default {
       return date.toLocaleDateString('fr-FR') + ' à ' + date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
     },
     lastRepairColorClass() {
-      if (!this.vehicles || !this.vehicles.length) return 'text-white'
+      if (!this.vehicles || !this.vehicles.length) return this.isLightTheme ? 'text-grey-darken-3' : 'text-white'
       const withDates = this.vehicles.filter(v => v.lastRepairDate)
-      if (!withDates || !withDates.length) return 'text-white'
+      if (!withDates || !withDates.length) return this.isLightTheme ? 'text-grey-darken-3' : 'text-white'
 
       const latest = withDates.sort((a,b) => b.lastRepairDate - a.lastRepairDate)[0]
-      if (!latest || !latest.lastRepairDate) return 'text-white'
+      if (!latest || !latest.lastRepairDate) return this.isLightTheme ? 'text-grey-darken-3' : 'text-white'
 
       const diff = this.currentTime - latest.lastRepairDate
       const hours = diff / (1000 * 60 * 60)
 
       if (hours >= 48) return 'text-red-lighten-1'
       if (hours >= 24) return 'text-orange-lighten-1'
-      return 'text-white'
+      return this.isLightTheme ? 'text-grey-darken-3' : 'text-white'
     },
     fouriereVehicles() {
       return (this.vehicles || []).filter(v => v.where === 'fouriere')
@@ -1440,7 +1443,7 @@ export default {
         const saveDate = notifState.saveDates[storage.id]
         const ts = saveDate ? saveDate.date : 0
         let dateStr = 'Aucune'
-        let colorClass = 'text-white'
+        let colorClass = this.isLightTheme ? 'text-grey-darken-3' : 'text-white'
 
         if (ts) {
           const date = new Date(ts)
@@ -1465,6 +1468,7 @@ export default {
     crisisExpanded(val) { localStorage.setItem('dispatch_crisis_expanded', val) },
     bedsExpanded(val) { localStorage.setItem('dispatch_beds_expanded', val) },
     morgueExpanded(val) { localStorage.setItem('dispatch_morgue_expanded', val) },
+    isLightTheme(val) { localStorage.setItem('dispatch_light_theme', val) },
   },
 
   mounted() {
@@ -1500,6 +1504,10 @@ export default {
   },
 
   methods: {
+    toggleTheme() {
+      this.isLightTheme = !this.isLightTheme;
+    },
+
     syncCentraleGSheet() {
       if (!this.dispatch?.centrale?.employees) return
 
@@ -2512,9 +2520,9 @@ export default {
   display: flex; align-items: center;
 }
 .hosp-btn:hover { background: rgba(255,255,255,.12); }
-.hosp-gestion_normale { color: #a5d6a7; }
-.hosp-hopital_ferme   { color: #ef9a9a; }
-.hosp-coups_de_feu    { color: #ffcc80; }
+.hosp-gestion_normale { color: #a5d6a7 !important; }
+.hosp-hopital_ferme   { color: #ef9a9a !important; }
+.hosp-coups_de_feu    { color: #ffcc80 !important; }
 
 .freq-input {
   background: rgba(0,0,0,0.2);
@@ -2902,5 +2910,127 @@ export default {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+/* Light Theme Overrides */
+.theme--light {
+  background: #f8fafc;
+  color: #334155;
+}
+.theme--light .dispatch-top-headers {
+  background: #e2e8f0;
+  color: #1e293b;
+  border-bottom-color: #cbd5e1;
+}
+.theme--light .cnt {
+  background: rgba(0, 0, 0, 0.1);
+  color: #1e293b;
+}
+
+.theme--light .patate-content-area .cnt,
+.theme--light .inner-bottom-categories .cnt,
+.theme--light .crises-bottom-section .cnt {
+  color: #ffffff !important;
+}
+.theme--light .th-cell { border-right-color: #cbd5e1; }
+.theme--light .left-panel { background: #e2e8f0; border-right-color: #cbd5e1; }
+.theme--light .center-panel { background: #f8fafc; border-right-color: #cbd5e1; }
+.theme--light .right-panel { background: #f1f5f9; border-left-color: #cbd5e1; }
+.theme--light .far-right-panel { background: #e2e8f0; border-left-color: #cbd5e1; }
+
+.theme--light .dispatch-body { border-bottom-color: #cbd5e1; }
+.theme--light .slot-section-title {
+  box-shadow: 0 1px 2px rgba(0,0,0,.1);
+  text-shadow: none;
+}
+.theme--light .person-card {
+  background: #ffffff;
+  border-color: rgba(0,0,0,0.1);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+.theme--light .person-card:hover { box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+.theme--light .person-card--hs { background: #ffffff; border-color: rgba(0,0,0,0.15); }
+.theme--light .pc-name { color: #1e293b; }
+.theme--light .pc-phone { color: #64748b; }
+.theme--light .location-input { color: #334155; }
+.theme--light .location-input::placeholder { color: #94a3b8; }
+.theme--light .freq-input { background: #ffffff; border-color: #cbd5e1; color: #1e293b; }
+.theme--light .inter-type-badge { background: #ffffff; border-color: #cbd5e1; color: #475569;}
+.theme--light .return-badge { background: #ffffff; border-color: #cbd5e1; color: #475569; }
+
+.theme--light .crises-bottom-section, 
+.theme--light .beds-bottom-section, 
+.theme--light .morgue-section {
+  background: #f1f5f9 !important;
+  border-top-color: #cbd5e1 !important;
+}
+
+.theme--light table th, .theme--light table td {
+  border-color: #cbd5e1 !important;
+}
+
+.theme--light .inner-bottom-categories { background: #f1f5f9; border-top-color: #cbd5e1; }
+.theme--light .inner-bottom-panel { border-right-color: #cbd5e1; border-top-color: #cbd5e1; }
+.theme--light .bottom-panel { border-right-color: #cbd5e1; }
+
+.theme--light .radios-wrapper, .theme--light .notepad-wrapper, .theme--light .vehicles-info-wrapper, .theme--light .stock-info-wrapper {
+  background: #f8fafc !important;
+  border-top-color: #cbd5e1 !important;
+}
+.theme--light .radio-item { background: #ffffff !important; border-color: #cbd5e1 !important; }
+.theme--light .text-grey-lighten-1, .theme--light .text-grey-lighten-2, .theme--light .text-grey { color: #475569 !important; }
+.theme--light .notepad-input { background: #ffffff; border-color: #cbd5e1; color: #1e293b; }
+.theme--light .notepad-display { background: #ffffff; border-color: #cbd5e1; color: #1e293b; }
+.theme--light .drop-slot { background: rgba(0,0,0,0.03); border-color: #cbd5e1; }
+.theme--light .drop-slot--over { background: rgba(59,130,246,0.1); border-color: #3b82f6; }
+.theme--light .inter-location-row { background: #ffffff; border-color: #cbd5e1; }
+
+/* Enhanced Table & Inputs color contrast for Light Theme (Crisis, Beds, Morgue) */
+.theme--light th { color: #1e293b !important; }
+.theme--light table td, .theme--light table label { color: #334155; }
+.theme--light select, .theme--light input { color: #0f172a !important; }
+
+.theme--light .patate-content-area.drop-over { background: #e2e8f0; }
+.theme--light .right-panel.drop-over { background: #cbd5e1; }
+.theme--light .inner-bottom-panel.drop-over { background: #cbd5e1; }
+.theme--light .bottom-panel.drop-over { filter: brightness(0.95); }
+
+.theme--light .beds-bottom-section > div > div, 
+.theme--light .morgue-section > div > div {
+  border-color: #cbd5e1 !important;
+  background: #f8fafc !important; 
+}
+
+.theme--light option, 
+.theme--light .location-input option {
+  background: #ffffff !important;
+  color: #0f172a !important;
+}
+
+.theme--light td[style*="background: rgba(0,0,0,0.3)"] { background: rgba(0,0,0,0.06) !important; color: #334155 !important; }
+.theme--light td[style*="background: rgba(0,0,0,0.2)"] { background: rgba(0,0,0,0.03) !important; color: #334155 !important; }
+.theme--light td[style*="background: rgba(255,255,255,0.02)"] { background: rgba(0,0,0,0.04) !important; color: #334155 !important; }
+.theme--light td[style*="background: rgba(255,255,255,0.04)"] { background: rgba(0,0,0,0.05) !important; color: #334155 !important; }
+.theme--light td[style*="background: rgba(255,255,255,0.05)"] { background: rgba(0,0,0,0.05) !important; color: #334155 !important; }
+
+.theme--light td[style*="background: rgba(56, 189, 248, 0.1)"] { background: rgba(56, 189, 248, 0.2) !important; color: #0f172a !important; }
+.theme--light input.text-blue-lighten-2 { color: #0369a1 !important; font-weight: 700 !important; }
+
+.theme--light td[style*="background: rgba(107,114,128,0.25)"] { background: rgba(107,114,128,0.2) !important; }
+.theme--light td[style*="background: rgba(88,28,135,0.25)"] { background: rgba(147,51,234,0.15) !important; }
+.theme--light td[style*="background: rgba(20,83,45,0.35)"] { background: rgba(34,197,94,0.15) !important; }
+
+.theme--light table td, 
+.theme--light table th { color: #1e293b !important; }
+
+.theme--light input[style*="color: #9ca3af"], 
+.theme--light input[style*="color: #d1d5db"],
+.theme--light td[style*="color: #cbd5e1"],
+.theme--light td[style*="color: #94a3b8"],
+.theme--light td[style*="color: #9ca3af"] { color: #1e293b !important; font-weight: 700 !important; }
+
+.theme--light .text-purple-lighten-3 { color: #6b21a8 !important; }
+.theme--light .text-green-lighten-3 { color: #15803d !important; }
+.theme--light .text-blue-lighten-2 { color: #0369a1 !important; }
+.theme--light .text-red-lighten-2 { color: #b91c1c !important; }
 </style>
 
