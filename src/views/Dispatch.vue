@@ -524,7 +524,7 @@
             <div class="text-caption font-weight-bold text-orange-lighten-2" style="font-size: 0.65rem;">🛡️ Gardiennage</div>
             <div class="d-flex flex-wrap mt-1" style="gap: 4px;">
               <span v-for="v in guardVehicles" :key="v.id" class="vehicle-badge" style="font-size: 0.55rem; padding: 1px 4px; border-color: #ffb74d; color: #ffb74d; background: rgba(255,183,77,0.1)">
-                {{ v.name }}
+                {{ v.name }}{{ v.recupDate ? ` - ${formatDateTime(v.recupDate)}` : '' }}
               </span>
             </div>
           </div>
@@ -533,7 +533,7 @@
             <div class="text-caption font-weight-bold text-red-lighten-2 mt-1" style="font-size: 0.65rem;">⛔ Fourrière</div>
             <div class="d-flex flex-wrap mt-1" style="gap: 4px;">
               <span v-for="v in fouriereVehicles" :key="v.id" class="vehicle-badge" style="font-size: 0.55rem; padding: 1px 4px; border-color: #e57373; color: #e57373; background: rgba(229,115,115,0.1)">
-                {{ v.name }}
+                {{ v.name }}{{ v.recupDate ? ` - ${formatDateTime(v.recupDate)}` : '' }}
               </span>
             </div>
           </div>
@@ -542,7 +542,7 @@
             <div class="text-caption font-weight-bold text-blue-lighten-2 mt-1" style="font-size: 0.65rem;">📄 Demande Assurance</div>
             <div class="d-flex flex-wrap mt-1" style="gap: 4px;">
               <span v-for="v in insuranceVehicles" :key="v.id" class="vehicle-badge" style="font-size: 0.55rem; padding: 1px 4px; border-color: #64b5f6; color: #64b5f6; background: rgba(100,181,246,0.1)">
-                {{ v.name }}
+                {{ v.name }}{{ v.recupDate ? ` (🗓️ ${formatDateTime(v.recupDate)})` : '' }}
               </span>
             </div>
           </div>
@@ -551,7 +551,7 @@
             <div class="text-caption font-weight-bold text-purple-lighten-2 mt-1" style="font-size: 0.65rem;">🔧 À Réparer</div>
             <div class="d-flex flex-wrap mt-1" style="gap: 4px;">
               <span v-for="v in needRepairVehicles" :key="v.id" class="vehicle-badge" style="font-size: 0.55rem; padding: 1px 4px; border-color: #ce93d8; color: #ce93d8; background: rgba(206,147,216,0.1)">
-                {{ v.name }}
+                {{ v.name }}{{ v.recupDate ? ` (🗓️ ${formatDateTime(v.recupDate)})` : '' }}
               </span>
             </div>
           </div>
