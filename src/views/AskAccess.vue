@@ -63,7 +63,8 @@ export default {
         return
       }
 
-      let fullName = `${this.firstname.toUpperCase()[0]}${this.firstname.slice(1).toLowerCase()} ${this.lastname.toUpperCase()[0]}${this.lastname.slice(1).toLowerCase()}`
+      const formatName = (str) => str.toLowerCase().replace(/(?:^|\s|-|')\S/g, c => c.toUpperCase())
+      let fullName = `${formatName(this.firstname.trim())} ${formatName(this.lastname.trim())}`
       let email = `${fullName.replace(/[^a-zA-Z0-9]/g, '').toLowerCase()}@lses.ls`
 
       let existingProfile = await Profile.getByName(fullName)
