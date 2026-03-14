@@ -166,39 +166,57 @@
           @dragleave="onDragLeave('centrale')"
           @drop.prevent="dropOn('centrale')"
         >
-          <div v-for="emp in (dispatch?.centrale?.employees||[])" :key="emp.employeeId" class="person-card"
-            :class="{ dragging: draggingSource?.employeeId===emp.employeeId }"
-            :style="`border-left:3px solid ${getRoleColor(emp.role)};background:${getRoleColor(emp.role)}15`"
-            :draggable="hasLsesPerm"
-            @dragstart="startDrag(emp, 'centrale')"
-            @dragend="onDragEnd"
-            @click="openQuickMoveDialog(emp, 'centrale')"
+          <v-menu
+            v-for="emp in (dispatch?.centrale?.employees||[])"
+            :key="emp.employeeId"
+            open-on-hover
+            location="bottom"
+            :disabled="!!draggingEmployee"
+            offset="5"
           >
-            <div class="pc-grip">⠿</div>
-            <div class="pc-info">
-              <v-icon v-if="hasHelicopterTraining(emp.employeeId || emp.id)" size="12" class="pc-helico-icon" title="Médicoptère">mdi-helicopter</v-icon>
-              <div class="pc-name">
-                {{ getEmployeeEmoji(emp.employeeId || emp.id) }} {{ emp.name?.split(' ')[0] }}
-                <v-icon
-                  v-if="emp.role === 'Temporaire'"
-                  size="12"
-                  class="ml-1 cursor-pointer text-amber-lighten-2"
-                  title="Modifier temporaire"
-                  @click.stop="promptEditTemporaryEmployee(emp)"
-                >mdi-pencil</v-icon>
+            <template #activator="{ props }">
+              <div
+                v-bind="props"
+                class="person-card"
+                :class="{ dragging: draggingSource?.employeeId===emp.employeeId }"
+                :style="`border-left:3px solid ${getRoleColor(emp.role)};background:${getRoleColor(emp.role)}15`"
+                :draggable="hasLsesPerm"
+                @dragstart="startDrag(emp, 'centrale')"
+                @dragend="onDragEnd"
+                @click="openQuickMoveDialog(emp, 'centrale')"
+              >
+                <div class="pc-grip">⠿</div>
+                <div class="pc-info">
+                  <v-icon v-if="hasHelicopterTraining(emp.employeeId || emp.id)" size="12" class="pc-helico-icon" title="Médicoptère">mdi-helicopter</v-icon>
+                  <div class="pc-name">
+                    {{ emp.name?.split(' ')[0] }}
+                    <v-icon
+                      v-if="emp.role === 'Temporaire'"
+                      size="12"
+                      class="ml-1 cursor-pointer text-amber-lighten-2"
+                      title="Modifier temporaire"
+                      @click.stop="promptEditTemporaryEmployee(emp)"
+                    >mdi-pencil</v-icon>
+                  </div>
+                  <div class="pc-phone">{{ emp.phone }}</div>
+                </div>
               </div>
-              <div class="pc-phone">{{ emp.phone }}</div>
+            </template>
+
+            <div class="pc-popover-content" @mouseenter.stop @mouseleave.stop>
+              <div class="pc-role" :style="`color:${getRoleColor(emp.role)}`"><span class="mr-1">{{ getEmployeeEmoji(emp.employeeId || emp.id) }}</span> {{ emp.role }}</div>
               <div class="pc-validations" v-if="getValidationBadges(emp.employeeId).length">
                 <span v-for="b in getValidationBadges(emp.employeeId)" :key="b.title" class="val-emoji" :title="b.title">{{ b.emoji }}</span>
               </div>
               <div class="pc-specs">
                 <span v-for="sv in (emp.allSpecialties||[])" :key="sv" class="spec-emoji" :title="getSpecialtyName(sv)">{{ getSpecialtyIcon(sv) }}</span>
               </div>
-              <div class="pc-role" :style="`color:${getRoleColor(emp.role)}`">{{ emp.role }}</div>
-                            <template v-if="(dispatch?.centrale?.employees||[]).indexOf(emp) > 0">
+
+              <!-- Central Role Badge Selection -->
+              <template v-if="(dispatch?.centrale?.employees||[]).indexOf(emp) > 0">
                 <v-menu location="top start" :close-on-content-click="true" :disabled="!hasLsesPerm">
-                  <template v-slot:activator="{ props }">
-                    <span v-bind="props" class="return-badge"
+                  <template v-slot:activator="{ props: roleProps }">
+                    <span v-bind="roleProps" class="return-badge mt-1"
                       :style="emp.centralRole ? `background:${getCentralRole(emp.centralRole)?.color}22;border-color:${getCentralRole(emp.centralRole)?.color};color:${getCentralRole(emp.centralRole)?.color}` : ''"
                       @click.stop>
                       {{ emp.centralRole ? (getCentralRole(emp.centralRole)?.emoji + ' ' + getCentralRole(emp.centralRole)?.label) : '＋ Rôle' }}
@@ -221,8 +239,8 @@
                 </v-menu>
               </template>
             </div>
-          </div>
-          <div class="drop-empty">
+          </v-menu>
+          <div v-if="draggingEmployee" class="drop-empty">
             <v-icon size="12" color="#90a4ae">mdi-arrow-down</v-icon> Déposer ici
           </div>
         </div>
@@ -313,41 +331,54 @@
               @dragleave="onDragLeave(`inter:${slot.id}`)"
               @drop.prevent="dropOn(`inter:${slot.id}`)"
             >
-                            <div
+              <v-menu
                 v-for="emp in (slot.employees||[])"
                 :key="emp.employeeId"
-                class="person-card"
-                :class="{ dragging: draggingSource?.employeeId===emp.employeeId }"
-                :style="`border-left:3px solid ${getRoleColor(emp.role)};background:${getRoleColor(emp.role)}15`"
-                :draggable="hasLsesPerm"
-                @dragstart="startDrag(emp, `inter:${slot.id}`)"
-                @dragend="onDragEnd"
-                @click="openQuickMoveDialog(emp, `inter:${slot.id}`)"
+                open-on-hover
+                location="bottom"
+                :disabled="!!draggingEmployee"
+                offset="5"
               >
-                <div class="pc-grip">⠿</div>
-                <div class="pc-info">
-                  <v-icon v-if="hasHelicopterTraining(emp.employeeId || emp.id)" size="12" class="pc-helico-icon" title="Médicoptère">mdi-helicopter</v-icon>
-                  <div class="pc-name">
-                {{ getEmployeeEmoji(emp.employeeId || emp.id) }} {{ emp.name?.split(' ')[0] }}
-                <v-icon
-                  v-if="emp.role === 'Temporaire'"
-                  size="12"
-                  class="ml-1 cursor-pointer text-amber-lighten-2"
-                  title="Modifier temporaire"
-                  @click.stop="promptEditTemporaryEmployee(emp)"
-                >mdi-pencil</v-icon>
-              </div>
-                  <div class="pc-phone">{{ emp.phone }}</div>
+                <template #activator="{ props }">
+                  <div
+                    v-bind="props"
+                    class="person-card person-card--inter"
+                    :class="{ dragging: draggingEmployee?.employeeId === emp.employeeId }"
+                    :style="`border-left:3px solid ${getRoleColor(emp.role)};background:${getRoleColor(emp.role)}15`"
+                    draggable="true"
+                    @dragstart="startDrag($event, emp, `inter:${slot.id}`)"
+                    @dragend="onDragEnd"
+                    @contextmenu.prevent="openQuickMoveDialog(emp, `inter:${slot.id}`)"
+                  >
+                    <div class="pc-grip">⠿</div>
+                    <div class="pc-info">
+                      <v-icon v-if="hasHelicopterTraining(emp.employeeId || emp.id)" size="12" class="pc-helico-icon" title="Médicoptère">mdi-helicopter</v-icon>
+                      <div class="pc-name">
+                        {{ emp.name?.split(' ')[0] }}
+                        <v-icon
+                          v-if="emp.role === 'Temporaire'"
+                          size="12"
+                          class="ml-1 cursor-pointer text-amber-lighten-2"
+                          title="Modifier temporaire"
+                          @click.stop="promptEditTemporaryEmployee(emp)"
+                        >mdi-pencil</v-icon>
+                      </div>
+                      <div class="pc-phone">{{ emp.phone }}</div>
+                    </div>
+                  </div>
+                </template>
+
+                <div class="pc-popover-content" @mouseenter.stop @mouseleave.stop>
+                  <div class="pc-role" :style="`color:${getRoleColor(emp.role)}`"><span class="mr-1">{{ getEmployeeEmoji(emp.employeeId || emp.id) }}</span> {{ emp.role }}</div>
                   <div class="pc-validations" v-if="getValidationBadges(emp.employeeId).length">
                     <span v-for="b in getValidationBadges(emp.employeeId)" :key="b.title" class="val-emoji" :title="b.title">{{ b.emoji }}</span>
                   </div>
                   <div class="pc-specs">
                     <span v-for="sv in (emp.allSpecialties||[])" :key="sv" class="spec-emoji" :title="getSpecialtyName(sv)">{{ getSpecialtyIcon(sv) }}</span>
                   </div>
-                  <div class="pc-role" :style="`color:${getRoleColor(emp.role)}`">{{ emp.role }}</div>
                 </div>
-              </div>
-                            <div class="drop-empty">
+              </v-menu>
+                            <div v-if="draggingEmployee" class="drop-empty">
                 <v-icon size="12" color="#90a4ae">mdi-arrow-down</v-icon> Déposer ici
               </div>
             </div>
@@ -2607,7 +2638,7 @@ export default {
 
 .dispatch-top-headers {
   display: grid;
-  grid-template-columns: 230px 1fr 350px 280px;
+  grid-template-columns: 320px 1fr 350px 280px;
   background: linear-gradient(90deg, #0f172a 0%, #1e293b 60%, #0f172a 100%);
   color: #e2e8f0;
   font-size: 0.73rem;
@@ -2671,7 +2702,7 @@ export default {
 
 .dispatch-body {
   display: grid;
-  grid-template-columns: 230px 1fr 350px 280px;
+  grid-template-columns: 320px 1fr 350px 280px;
   overflow: hidden;
   border-bottom: 2px solid #334155;
 }
@@ -3158,5 +3189,18 @@ export default {
 .theme--light .text-green-lighten-3 { color: #15803d !important; }
 .theme--light .text-blue-lighten-2 { color: #0369a1 !important; }
 .theme--light .text-red-lighten-2 { color: #b91c1c !important; }
+.pc-popover-content {
+  background: #1e293b;
+  border: 1.5px solid #334155;
+  border-radius: 6px;
+  padding: 8px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+  min-width: 140px;
+}
+.theme--light .pc-popover-content {
+  background: #ffffff;
+  border-color: #cbd5e1;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+}
 </style>
 
