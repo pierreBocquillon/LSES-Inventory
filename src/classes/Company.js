@@ -45,8 +45,8 @@ class Company {
     return documents.docs.map(docToInstance)
   }
 
-  static async listenAll(callback) {
-    onSnapshot(collection(db, collectionName), snapshot => {
+  static listenAll(callback) {
+    return onSnapshot(collection(db, collectionName), snapshot => {
       const list = []
       snapshot.forEach(doc => {
         list.push(docToInstance(doc))
@@ -55,15 +55,15 @@ class Company {
     })
   }
 
-  static async listenById(id, callback) {
-    onSnapshot(doc(db, collectionName, id), snapshot => {
+  static listenById(id, callback) {
+    return onSnapshot(doc(db, collectionName, id), snapshot => {
       callback(docToInstance(snapshot))
     })
   }
 
-  static async listenByName(name, callback) {
+  static listenByName(name, callback) {
     const q = query(collection(db, collectionName), where("name", "==", name))
-    onSnapshot(q, snapshot => {
+    return onSnapshot(q, snapshot => {
       const list = []
       snapshot.forEach(doc => {
         list.push(docToInstance(doc))
