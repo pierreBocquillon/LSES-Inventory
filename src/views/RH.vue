@@ -791,7 +791,7 @@
               </v-col>
               <v-col cols="12">
                 <div class="text-subtitle-2 mb-1">Statut</div>
-                <v-select v-model="editedCandidature.status" :items="['Candidature reçue', 'Appel pour entretien', 'Entretien planifié', 'Entretien en cours d\'analyse', 'Recrutement planifié', 'Refusé']" variant="outlined" hide-details></v-select>
+                <v-select v-model="editedCandidature.status" :items="['Candidature reçue', 'Appel pour entretien', 'Entretien planifié', 'Entretien en cours d\'analyse', 'Recrutement planifié', 'Refusé']" variant="outlined" hide-details @update:model-value="onStatusUpdate"></v-select>
               </v-col>
               <v-col cols="12">
                 <v-textarea v-model="editedCandidature.availabilities" label="Disponibilités" variant="outlined" rows="3"></v-textarea>
@@ -2018,7 +2018,7 @@ export default {
       }
     },
 
-    async confirmFinalize(decision) {
+    async confirmFinalize(decision, onCancel = null) {
       const actionText = decision === 'accept' ? 'Embaucher' : 'Refuser'
       const confirmText = decision === 'accept' ? 'Oui, embaucher' : 'Oui, refuser'
       const icon = decision === 'accept' ? 'question' : 'warning'
@@ -2036,8 +2036,28 @@ export default {
       }).then((result) => {
         if (result.isConfirmed) {
           this.finalizeCandidature(decision)
+        } else if (onCancel) {
+          onCancel()
         }
       })
+    },
+
+    async onStatusUpdate(newStatus) {
+      if (newStatus === 'Recrutement planifié') {
+        const original = this.candidatures.find(c => c.id === this.editedCandidature.id)
+        const oldStatus = original ? original.status : 'Entretien en cours d\'analyse'
+        
+        this.confirmFinalize('accept', () => {
+          this.editedCandidature.status = oldStatus
+        })
+      } else if (newStatus === 'Refusé') {
+        const original = this.candidatures.find(c => c.id === this.editedCandidature.id)
+        const oldStatus = original ? original.status : 'Entretien en cours d\'analyse'
+
+        this.confirmFinalize('reject', () => {
+          this.editedCandidature.status = oldStatus
+        })
+      }
     },
 
     async finalizeCandidature(decision) {
