@@ -1889,25 +1889,6 @@ export default {
     async resetDispatch() {
       if (!this.hasLsesPerm) return
       if (!this.dispatch) return;
-      
-      this.dispatch.patates = [];
-      
-      if (this.dispatch.centrale) {
-        this.dispatch.centrale.employees = [];
-      }
-      
-      if (this.dispatch.interventions) {
-        this.dispatch.interventions.forEach(slot => {
-          slot.employees = [];
-        });
-      }
-      
-      if (this.dispatch.radios) {
-        this.dispatch.radios.forEach(radio => {
-          radio.status = 'off';
-        });
-      }
-      
       await Dispatch.resetAll()
       this.syncCentraleGSheet();
     },
@@ -2145,36 +2126,6 @@ export default {
         console.warn("Drop ignored: missing employee identifier", emp)
         return
       }
-
-      this._removeFromSource(src, empId)
-
-      if (targetKey === 'centrale') {
-        if (!this.dispatch.centrale) this.dispatch.centrale = { location: null, complement: null, type: null, returnStatus: null, employees: [] }
-        if (!this.dispatch.centrale.employees) this.dispatch.centrale.employees = []
-        if (!this.dispatch.centrale.employees.find(e => e.employeeId === empId)) {
-          this.dispatch.centrale.employees.push({ ...emp, employeeId: empId, centralRole: null })
-        }
-      } else if (targetKey.startsWith('inter:')) {
-        const slotId = targetKey.slice(6)
-        const slot = this.dispatch.interventions.find(s=>s.id===slotId)
-        if (slot) {
-          if (!slot.employees) slot.employees = []
-          if (!slot.employees.find(e => e.employeeId === empId)) {
-            slot.employees.push({ ...emp, employeeId: empId })
-          }
-        }
-      } else if (targetKey.startsWith('cat:')) {
-        const category = targetKey.slice(4)
-        this.dispatch.patates.push({
-          ...emp,
-          employeeId: empId,
-          id: Date.now().toString()+Math.random().toString(36).slice(2,6),
-          category,
-        })
-      }
-      this.dispatch.patates = [...this.dispatch.patates]
-      this.dispatch.centrale.employees = [...(this.dispatch.centrale.employees || [])]
-      this.dispatch.interventions = [...this.dispatch.interventions]
       
       if (targetKey === 'hs') this.autoTurnOffRadio(empId)
       if (targetKey === 'centrale' || src === 'centrale') this.syncCentraleGSheet()
@@ -2205,22 +2156,8 @@ export default {
       if (!this.hasLsesPerm) return
       if (!this.dispatch) return
       
-      let wasInCentrale = false
-      if (this.dispatch.centrale?.employees) {
-        wasInCentrale = this.dispatch.centrale.employees.some(e => e.employeeId === employeeId)
-        this.dispatch.centrale.employees = this.dispatch.centrale.employees.filter(e => e.employeeId !== employeeId)
-      }
+      let wasInCentrale = this.dispatch.centrale?.employees?.some(e => e.employeeId === employeeId)
       
-      ;(this.dispatch.interventions||[]).forEach(s => {
-        s.employees = (s.employees||[]).filter(e => e.employeeId !== employeeId)
-      })
-      
-      this.dispatch.patates = this.dispatch.patates.filter(p=>p.employeeId!==employeeId)
-      
-      this.dispatch.patates = [...this.dispatch.patates]
-      this.dispatch.centrale.employees = [...(this.dispatch.centrale.employees || [])]
-      this.dispatch.interventions = [...this.dispatch.interventions]
-
       this.autoTurnOffRadio(employeeId)
       if (wasInCentrale) this.syncCentraleGSheet()
       
@@ -2232,16 +2169,16 @@ export default {
       const r = await Swal.fire({ icon:'question', title:'Vider la centrale ?',
         showCancelButton:true, confirmButtonText:'Vider', cancelButtonText:'Annuler' })
       if (!r.isConfirmed) return
-      this.dispatch.centrale = { location: null, complement: null, type: null, returnStatus: null, employees: [] }
-      await Dispatch.updateField('centrale', this.dispatch.centrale)
+      const emptyCentrale = { location: null, complement: null, type: null, returnStatus: null, employees: [] }
+      await Dispatch.updateCentrale(emptyCentrale)
       this.syncCentraleGSheet()
     },
 
     async removeEmpFromCentrale(employeeId) {
       if (!this.hasLsesPerm) return
       if (!this.dispatch?.centrale) return
-      this.dispatch.centrale.employees = (this.dispatch.centrale.employees||[]).filter(e => e.employeeId !== employeeId)
-      await Dispatch.updateCentrale({ employees: this.dispatch.centrale.employees })
+      const emps = (this.dispatch.centrale.employees||[]).filter(e => e.employeeId !== employeeId)
+      await Dispatch.updateCentrale({ employees: emps })
       this.syncCentraleGSheet()
     },
 
@@ -2272,10 +2209,11 @@ export default {
     async setCentraleEmpRole(emp, roleValue) {
       if (!this.hasLsesPerm) return
       if (!this.dispatch?.centrale?.employees) return
-      const found = this.dispatch.centrale.employees.find(e => e.employeeId === emp.employeeId)
+      const emps = JSON.parse(JSON.stringify(this.dispatch.centrale.employees))
+      const found = emps.find(e => e.employeeId === emp.employeeId)
       if (found) {
         found.centralRole = roleValue
-        await Dispatch.updateCentrale({ employees: this.dispatch.centrale.employees })
+        await Dispatch.updateCentrale({ employees: emps })
       }
     },
 
@@ -2297,15 +2235,14 @@ export default {
         return
       }
       const newSlotId = Date.now().toString()+Math.random().toString(36).slice(2,6)
-      this.dispatch.interventions = [...(this.dispatch.interventions||[]), {
+      await Dispatch.addInterventionSlot({
         id: newSlotId,
         type: 'intervention',
         employees: [],
         returnStatus: null,
         location: null,
         complement: null,
-      }]
-      await Dispatch.updateField('interventions', this.dispatch.interventions)
+      })
       
       this.$nextTick(() => {
         const el = document.getElementById(`zip-input-${newSlotId}`)
@@ -2315,63 +2252,30 @@ export default {
 
     async setInterSlotType(slot, typeValue) {
       if (!this.hasLsesPerm) return
-      slot.type = typeValue
-      this.dispatch.interventions = [...this.dispatch.interventions]
-      await Dispatch.updateField('interventions', this.dispatch.interventions)
+      await Dispatch.updateIntervention(slot.id, { type: typeValue })
     },
 
     async setInterSlotLocation(slot, value) {
       if (!this.hasLsesPerm) return
-      slot.location = value.trim() || null
-      this.dispatch.interventions = [...this.dispatch.interventions]
-      await Dispatch.updateField('interventions', this.dispatch.interventions)
+      await Dispatch.updateIntervention(slot.id, { location: value.trim() || null })
     },
 
     async setInterSlotStatus(slot, statusValue) {
       if (!this.hasLsesPerm) return
-      slot.returnStatus = statusValue || null
-      this.dispatch.interventions = [...this.dispatch.interventions]
-      await Dispatch.updateField('interventions', this.dispatch.interventions)
+      await Dispatch.updateIntervention(slot.id, { returnStatus: statusValue || null })
     },
 
     async removeEmployeeFromSlot(slotId, employeeId) {
       const slot = this.dispatch.interventions.find(s=>s.id===slotId)
-      if (slot) slot.employees = (slot.employees||[]).filter(e => e.employeeId !== employeeId)
-      this.dispatch.interventions = [...this.dispatch.interventions]
-      await Dispatch.updateField('interventions', this.dispatch.interventions)
+      if (slot) {
+        const emps = (slot.employees||[]).filter(e => e.employeeId !== employeeId)
+        await Dispatch.updateIntervention(slotId, { employees: emps })
+      }
     },
 
     async removeInterventionSlot(slotId) {
       if (!this.hasLsesPerm) return
-      const slot = this.dispatch.interventions.find(s=>s.id===slotId)
-      if (!slot) return
-
-      const isModified = slot.employees?.length > 0 || slot.location || slot.complement || slot.returnStatus || slot.type !== 'intervention'
-
-      if (isModified) {
-        slot.employees?.forEach(emp => {
-          this.dispatch.patates.push({
-            id: Date.now().toString()+Math.random().toString(36).slice(2,6),
-            employeeId: emp.employeeId,
-            name: emp.name,
-            phone: emp.phone,
-            role: emp.role || '',
-            allSpecialties: emp.allSpecialties||[],
-            category: 'en_service',
-          })
-        })
-        slot.employees = []
-        slot.location = null
-        slot.complement = null
-        slot.returnStatus = null
-        slot.type = 'intervention'
-      } else {
-        this.dispatch.interventions = this.dispatch.interventions.filter(s=>s.id!==slotId)
-      }
-      this.dispatch.patates = [...this.dispatch.patates]
-      this.dispatch.interventions = [...this.dispatch.interventions]
-      
-      await Dispatch.deleteInterventionSlot(slotId, isModified)
+      await Dispatch.deleteInterventionSlot(slotId)
     },
 
     async addCrisisSlot() {
@@ -2380,8 +2284,7 @@ export default {
         Swal.fire({ title: 'Limite atteinte', text: 'Vous ne pouvez pas ajouter plus de 50 patients en crise.', icon: 'warning', background: '#1e293b', color: '#fff' })
         return
       }
-      this.dispatch.crises = [...(this.dispatch.crises||[]), {
-        id: Date.now().toString()+Math.random().toString(36).slice(2,6),
+      const newCrisis = {
         name: '',
         isComa: false,
         isHeavyInjured: false,
@@ -2394,13 +2297,12 @@ export default {
         bed: null,
         canalCheckCentrale: false,
         arrivalTime: null,
-      }]
-      await Dispatch.updateField('crises', this.dispatch.crises)
+      }
+      await Dispatch.addCrisis(newCrisis)
     },
 
     async removeCrisisSlot(slotId) {
-      this.dispatch.crises = this.dispatch.crises.filter(s=>s.id!==slotId)
-      await Dispatch.updateField('crises', this.dispatch.crises)
+      await Dispatch.removeCrisis(slotId)
     },
     async confirmClearCrises() {
       if (!this.dispatch) return
@@ -2417,9 +2319,8 @@ export default {
         color: '#fff'
       })
       if (r.isConfirmed) {
-        this.dispatch.crises = []
         this.dispatch.crisisZip = ''
-        await Dispatch.updateField('crises', [])
+        await Dispatch.clearAllCrises()
         await Dispatch.updateField('crisisZip', '')
       }
     },
@@ -2523,16 +2424,6 @@ export default {
       const role = emp?.role || this.selectedEmployee.role || ''
       const specs = emp ? (emp.specialties || []) : (this.selectedEmployee.allSpecialties || [])
 
-      this.dispatch.patates.push({
-        ...this.selectedEmployee,
-        employeeId: empId,
-        id: Date.now().toString()+Math.random().toString(36).slice(2,6),
-        category: this.addDialogCategoryValue,
-        role,
-        allSpecialties: specs,
-      })
-      this.dispatch.patates = [...this.dispatch.patates]
-
       await Dispatch.migrateEmployee(empId, null, `cat:${this.addDialogCategoryValue}`, {
         name: this.selectedEmployee.name || '',
         phone: this.selectedEmployee.phone || '',
@@ -2560,23 +2451,10 @@ export default {
       const role = emp?.role || this.quickAddEmployee.role || ''
       const specs = emp ? (emp.specialties || []) : (this.quickAddEmployee.allSpecialties || [])
 
-      this._removeFromSource(src, empId)
-      if (categoryValue !== 'hs') {
-        this.dispatch.patates.push({
-          ...this.quickAddEmployee,
-          employeeId: empId,
-          id: Date.now().toString()+Math.random().toString(36).slice(2,6),
-          category: categoryValue,
-          role,
-          allSpecialties: specs,
-        })
-      } else {
+      if (categoryValue === 'hs') {
         this.autoTurnOffRadio(empId)
       }
-      this.dispatch.patates = [...this.dispatch.patates]
-      this.dispatch.centrale.employees = [...(this.dispatch.centrale.employees || [])]
-      this.dispatch.interventions = [...this.dispatch.interventions]
-
+      
       if (src === 'centrale') this.syncCentraleGSheet()
 
       await Dispatch.migrateEmployee(empId, src, categoryValue === 'hs' ? null : `cat:${categoryValue}`, {
@@ -2596,14 +2474,15 @@ export default {
         Swal.fire({ title: 'Limite atteinte', text: 'Vous ne pouvez pas ajouter plus de 30 radios.', icon: 'warning', background: '#1e293b', color: '#fff' })
         return
       }
-      this.dispatch.radios = [...(this.dispatch.radios||[]), {
+      const radios = JSON.parse(JSON.stringify(this.dispatch.radios || []))
+      radios.push({
         id: Date.now().toString()+Math.random().toString(36).slice(2,6),
         serial: '',
         employeeId: null,
         status: 'on',
         category
-      }]
-      await Dispatch.updateField('radios', this.dispatch.radios)
+      })
+      await Dispatch.updateField('radios', radios)
     },
     async onRadioAssign(radio, newEmpId) {
       if (!this.hasLsesPerm) return
@@ -2617,9 +2496,14 @@ export default {
       } else if (radio.employeeId && !newEmpId) {
         radio.status = 'off'
       }
-      radio.employeeId = newEmpId || null
-      this.dispatch.radios = [...this.dispatch.radios]
-      await Dispatch.updateField('radios', this.dispatch.radios)
+      const radios = JSON.parse(JSON.stringify(this.dispatch.radios || []))
+      const found = radios.find(r => r.id === radio.id)
+      if (found) {
+        found.employeeId = newEmpId || null
+        if (!radio.employeeId && newEmpId) found.status = 'on'
+        else if (radio.employeeId && !newEmpId) found.status = 'off'
+        await Dispatch.updateField('radios', radios)
+      }
 
       if (oldEmpId !== newEmpId) {
         const serialStr = radio.serial || 'sans matricule'
@@ -2650,8 +2534,8 @@ export default {
       })
       if (!r.isConfirmed) return
 
-      this.dispatch.radios = (this.dispatch.radios||[]).filter(r => r.id !== radio.id)
-      await Dispatch.updateField('radios', this.dispatch.radios)
+      const radios = (this.dispatch.radios||[]).filter(r => r.id !== radio.id)
+      await Dispatch.updateField('radios', radios)
     },
     autoTurnOffRadio(employeeId) {
       if (!this.dispatch?.radios || !employeeId) return
@@ -2663,9 +2547,12 @@ export default {
     },
     async toggleRadioStatus(radio) {
       if (!this.hasLsesPerm) return
-      radio.status = radio.status === 'on' ? 'off' : 'on'
-      this.dispatch.radios = [...this.dispatch.radios]
-      await Dispatch.updateField('radios', this.dispatch.radios)
+      const radios = JSON.parse(JSON.stringify(this.dispatch.radios || []))
+      const found = radios.find(r => r.id === radio.id)
+      if (found) {
+        found.status = found.status === 'on' ? 'off' : 'on'
+        await Dispatch.updateField('radios', radios)
+      }
     },
 
     getMorgueSlot(section, index) {
