@@ -296,7 +296,7 @@
           <v-container>
             <v-row>
               <v-col cols="12">
-                <v-text-field v-model="editedItem.name" label="Nom complet" variant="outlined"></v-text-field>
+                <v-text-field v-model="editedItem.name" label="Prénom et nom" variant="outlined"></v-text-field>
               </v-col>
               <v-col cols="12">
                 <v-select v-model="editedItem.sex" :items="['Homme', 'Femme']" label="Sexe" variant="outlined"></v-select>
@@ -310,8 +310,11 @@
               <v-col cols="12" md="6">
                 <v-text-field v-model="editedItem.emoji" label="Emoji personnel" variant="outlined" :disabled="editedItem.role === 'Interne'" :hint="editedItem.role === 'Interne' ? 'Forcé à 🐣' : ''" persistent-hint></v-text-field>
               </v-col>
-              <v-col cols="12">
+              <v-col cols="12" md="6">
                 <v-select v-model="editedItem.role" :items="['Interne', 'Résident', 'Titulaire', 'Spécialiste', 'Responsable de Service', 'Assistant RH', 'Directeur Adjoint', 'Directeur']" label="Rôle" variant="outlined" @update:model-value="onRoleChange"></v-select>
+              </v-col>
+              <v-col cols="12" md="6">
+                <v-text-field v-model="editedItem.cid" label="CID" variant="outlined"></v-text-field>
               </v-col>
               <v-col cols="12">
                 <v-select v-model="editedItem.specialties" :items="specialties" item-title="name" item-value="value" label="Spécialités" multiple chips closable-chips variant="outlined">
@@ -781,7 +784,7 @@
           <v-container>
             <v-row>
               <v-col cols="12" md="6">
-                <v-text-field v-model="editedCandidature.name" label="Nom complet" variant="outlined"></v-text-field>
+                <v-text-field v-model="editedCandidature.name" label="Prénom et nom" variant="outlined"></v-text-field>
               </v-col>
               <v-col cols="12" md="6">
                 <v-text-field v-model="editedCandidature.phone" label="Téléphone" variant="outlined"></v-text-field>
@@ -1116,6 +1119,7 @@ export default {
       medicalDegreeDate: null,
       helicopterTrainingDate: null,
       helicopterTrainingReimbursed: false,
+      cid: '',
     },
     defaultItem: {
       name: '',
@@ -1132,6 +1136,7 @@ export default {
       medicalDegreeDate: null,
       helicopterTrainingDate: null,
       helicopterTrainingReimbursed: false,
+      cid: '',
     },
     detailsDialog: false,
     selectedEmployee: null,
@@ -1529,7 +1534,8 @@ export default {
             this.editedItem.simulations,
             this.editedItem.isRHTrainee,
             this.editedItem.validatedTrainings,
-            this.editedItem.emoji
+            this.editedItem.emoji,
+            this.editedItem.cid
           )
         } else {
           // Creating new
@@ -1562,7 +1568,8 @@ export default {
             [],
             false,
             [],
-            ''
+            '',
+            this.editedItem.cid
           )
         }
 
@@ -1881,7 +1888,7 @@ export default {
       if (silent) {
         try {
           const payload = this.sortedDirectoryEmployees.map(e => ({
-            name: e.name || '',
+            name: e.cid ? `${e.name} [${e.cid}]` : e.name,
             arrivalDate: e.arrivalDate ? new Date(e.arrivalDate).toLocaleDateString('fr-FR') : '',
             phone: e.phone || '',
             cdiDate: e.cdiDate ? new Date(e.cdiDate).toLocaleDateString('fr-FR') : '-',
@@ -1935,7 +1942,7 @@ export default {
           try {
             // Prepare data
             const payload = this.sortedDirectoryEmployees.map(e => ({
-              name: e.name || '',
+              name: e.cid ? `${e.name} ${e.cid}` : e.name,
               arrivalDate: e.arrivalDate ? new Date(e.arrivalDate).toLocaleDateString('fr-FR') : '',
               phone: e.phone || '',
               cdiDate: e.cdiDate ? new Date(e.cdiDate).toLocaleDateString('fr-FR') : '-',
@@ -2114,6 +2121,7 @@ export default {
         [],
         false,
         [],
+        '',
         ''
       )
 
