@@ -1366,7 +1366,7 @@ export default {
       bedsExpanded: localStorage.getItem('dispatch_beds_expanded') !== 'false',
       morgueExpanded: localStorage.getItem('dispatch_morgue_expanded') === 'true',
       isLightTheme: localStorage.getItem('dispatch_light_theme') === 'true',
-
+      Dispatch,
       allCategories,
       interventionTypes,
       returnStatuses,
