@@ -10,13 +10,13 @@
            <div class="d-flex align-center">
              <v-icon size="13" color="cyan" class="mr-1">mdi-radio-handheld</v-icon>
              <span class="mr-1 text-grey-lighten-1">LSES:</span>
-             <input v-if="isDirection && dispatch" v-model="dispatch.lsesRadio" @change="dispatch.save()" class="freq-input" placeholder="---" />
+             <input v-if="isDirection && dispatch" v-model="dispatch.lsesRadio" @change="Dispatch.updateField('lsesRadio', dispatch.lsesRadio)" class="freq-input" placeholder="---" />
              <span v-else class="freq-display text-cyan font-weight-bold">{{ dispatch?.lsesRadio || '---' }}</span>
            </div>
            <div class="d-flex align-center">
              <v-icon size="13" color="orange" class="mr-1">mdi-radio-tower</v-icon>
              <span class="mr-1 text-grey-lighten-1">Commune:</span>
-             <input v-if="isDirection && dispatch" v-model="dispatch.communeRadio" @change="dispatch.save()" class="freq-input" placeholder="---" />
+             <input v-if="isDirection && dispatch" v-model="dispatch.communeRadio" @change="Dispatch.updateField('communeRadio', dispatch.communeRadio)" class="freq-input" placeholder="---" />
              <span v-else class="freq-display text-orange font-weight-bold">{{ dispatch?.communeRadio || '---' }}</span>
            </div>
         </div>
@@ -148,7 +148,7 @@
           <select
             v-if="dispatch?.centrale"
             v-model="dispatch.centrale.complement"
-            @change="dispatch.save()"
+            @change="Dispatch.updateCentrale({ complement: dispatch.centrale.complement })"
             class="location-input ml-2"
             style="width: 85px; border-left: 2px solid #64748b; padding-left: 8px;"
             :style="{ color: dispatch?.centrale?.complement ? (complements.find(c => c.value === dispatch?.centrale?.complement)?.color || '#fff') : '#64748b' }"
@@ -303,6 +303,7 @@
             <div class="inter-location-row d-flex align-center">
               <v-icon size="11" color="#90a4ae" class="mr-1">mdi-map-marker</v-icon>
               <input
+                :id="`zip-input-${slot.id}`"
                 class="location-input"
                 style="flex: 1;"
                 :value="slot.location || ''"
@@ -313,7 +314,7 @@
               />
               <select
                 v-model="slot.complement"
-                @change="dispatch.save()"
+                @change="Dispatch.updateIntervention(slot.id, { complement: slot.complement })"
                 class="location-input ml-2"
                 style="width: 85px; border-left: 2px solid #64748b; padding-left: 8px;"
                 :style="{ color: slot.complement ? (complements.find(c => c.value === slot.complement)?.color || '#fff') : '#64748b' }"
@@ -493,6 +494,9 @@
                     <v-icon v-if="hasHelicopterTraining(p.employeeId || p.id)" size="12" class="pc-helico-icon" title="Médicoptère">mdi-helicopter</v-icon>
                   </div>
                   <div class="pc-phone">{{ p.phone }}</div>
+                  <div class="pc-validations" v-if="getValidationBadges(p.employeeId || p.id).length">
+                    <span v-for="b in getValidationBadges(p.employeeId || p.id)" :key="b.title" class="val-emoji" :title="b.title">{{ b.emoji }}</span>
+                  </div>
                   <div class="pc-specs">
                     <span v-for="sv in (p.allSpecialties||[])" :key="sv" class="spec-emoji" :title="getSpecialtyName(sv)">{{ getSpecialtyIcon(sv) }}</span>
                   </div>
@@ -635,7 +639,7 @@
           </div>
           <div class="mb-2 d-flex align-center bg-transparent flex-shrink-0" v-if="(dispatch?.radios||[]).length && isDirection">
              <span class="text-caption font-weight-bold text-grey-lighten-1 mr-2"><v-icon size="12" class="mr-1">mdi-weather-night</v-icon> Nuit:</span>
-             <select v-if="isDirection" v-model="dispatch.nuitRadioId" @change="dispatch.save()" class="location-input mx-1" style="border: 1px solid #334155; padding:2px; border-radius:4px; max-width:130px; font-weight:bold;">
+             <select v-if="isDirection" v-model="dispatch.nuitRadioId" @change="Dispatch.updateField('nuitRadioId', dispatch.nuitRadioId)" class="location-input mx-1" style="border: 1px solid #334155; padding:2px; border-radius:4px; max-width:130px; font-weight:bold;">
                 <option :value="null" style="background:#1a1f35">-- Aucune --</option>
                 <option v-for="rad in dispatch?.radios||[]" :key="rad.id" :value="rad.id" style="background:#1a1f35">{{ rad.serial || rad.id.slice(0,4) }}</option>
              </select>
@@ -651,7 +655,7 @@
               <template v-if="group.radios.length">
                 <div :class="['text-caption font-weight-bold mt-1 mb-1', group.color]" style="font-size: 0.65rem; letter-spacing: 0.05em;">{{ group.title.toUpperCase() }}</div>
                 <div v-for="radio in group.radios" :key="radio.id" class="radio-item d-flex align-center mb-1 pa-1" :style="['background: rgba(255,255,255,0.05); border-radius: 4px; border: 1px solid', radio.id === dispatch?.nuitRadioId ? '#f59e0b' : '#334155'].join(' ')">
-                  <input v-if="isDirection && hasLsesPerm" v-model="radio.serial" @change="dispatch.save()" class="location-input" style="width:50px; font-weight:bold" placeholder="# Série" />
+                  <input v-if="isDirection && hasLsesPerm" v-model="radio.serial" @change="Dispatch.updateRadio(radio.id, { serial: radio.serial })" class="location-input" style="width:50px; font-weight:bold" placeholder="# Série" />
                   <span v-else class="text-caption font-weight-bold mx-1" style="width:50px; display:inline-block; color:#94a3b8; text-align:center;">{{ radio.serial || '---' }}</span>
                    <select :disabled="radio.category === 'direction' && !isDirection" :value="radio.employeeId" @change="onRadioAssign(radio, $event.target.value)" class="location-input mx-1" style="border-left:1px solid #334155; padding-left:4px; max-width: 120px;">
                      <option :value="''" style="background:#1a1f35">-- Assigner --</option>
@@ -677,7 +681,7 @@
           <textarea
             v-if="isDirection && dispatch"
             v-model="dispatch.notepad"
-            @change="dispatch.save()"
+            @change="Dispatch.updateField('notepad', dispatch.notepad)"
             class="notepad-input"
             placeholder="Bloc notes (modifiable par la direction)"
             rows="6"
@@ -699,7 +703,7 @@
             <v-icon size="12" class="mr-1 text-white">mdi-map-marker</v-icon>
             <input 
                 v-model="dispatch.crisisZip" 
-                @change="dispatch.save()" 
+                @change="Dispatch.updateField('crisisZip', dispatch.crisisZip)" 
                 class="location-input crisis-zip-input" 
                 style="width: 70px; font-weight: 900; background: transparent; border: none; outline: none; color: #fff; text-align: center; text-transform: uppercase;" 
                 placeholder="ZIP" 
@@ -720,7 +724,7 @@
             <tr style="border-bottom: 1px solid #334155; color: #cbd5e1; font-size: 0.75rem;">
               <th style="padding: 8px; font-weight: 500; text-align: center; width: 40px;">Coma</th>
               <th style="padding: 8px; font-weight: 500; text-align: center; width: 60px;">Lourd / Inconscient</th>
-              <th style="padding: 8px; font-weight: 500;">Nom du patient</th>
+              <th style="padding: 8px; font-weight: 500;">Nom et prénom</th>
               <th style="padding: 8px; font-weight: 500;">Appartenance</th>
               <th style="padding: 8px; font-weight: 500;">Détails</th>
               <th style="padding: 8px; font-weight: 500;">Qui rapatrie</th>
@@ -733,7 +737,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="crisis in (dispatch?.crises||[])" :key="crisis.id" 
+            <tr v-for="crisis in sortedCrises" :key="crisis.id" 
               :style="[
                 { borderBottom: '1px solid #1e293b' },
                 crisis.canalCheckCentrale 
@@ -750,29 +754,29 @@
               ]">
               
               <td style="padding: 6px; text-align: center;">
-                <input type="checkbox" v-model="crisis.isComa" @change="dispatch.save()" style="width: 16px; height: 16px; accent-color: #ef4444;" />
+                <input type="checkbox" v-model="crisis.isComa" @change="Dispatch.updateCrisis(crisis.id, { isComa: crisis.isComa })" style="width: 16px; height: 16px; accent-color: #ef4444;" />
               </td>
 
               <td style="padding: 6px; text-align: center;">
-                <input type="checkbox" v-model="crisis.isHeavyInjured" @change="dispatch.save()" style="width: 16px; height: 16px; accent-color: #f97316;" />
+                <input type="checkbox" v-model="crisis.isHeavyInjured" @change="Dispatch.updateCrisis(crisis.id, { isHeavyInjured: crisis.isHeavyInjured })" style="width: 16px; height: 16px; accent-color: #f97316;" />
               </td>
 
               <td style="padding: 6px;">
-                <input v-model="crisis.name" @change="dispatch.save()" class="location-input font-weight-bold text-red-lighten-2" style="font-size: 0.8rem; width: 100%; border-bottom: 1px solid transparent;" placeholder="Nom" />
+                <input v-model="crisis.name" @input="onCrisisNameInput(crisis, $event.target.value)" class="location-input font-weight-bold text-red-lighten-2" style="font-size: 0.8rem; width: 100%; border-bottom: 1px solid transparent;" placeholder="Nom" />
               </td>
 
               <td style="padding: 6px;">
-                <select v-model="crisis.affiliation" @change="onCrisisMetadataChange(crisis)" class="location-input font-weight-bold" style="border: 1px solid #334155; padding: 4px; border-radius: 4px; background: rgba(255,255,255,0.02); width: 100%;" :style="{ color: crisisAffiliations.find(a => a.value === crisis.affiliation)?.color || '#fff' }">
+                <select v-model="crisis.affiliation" @change="Dispatch.updateCrisis(crisis.id, { affiliation: crisis.affiliation })" class="location-input font-weight-bold" style="border: 1px solid #334155; padding: 4px; border-radius: 4px; background: rgba(255,255,255,0.02); width: 100%;" :style="{ color: crisisAffiliations.find(a => a.value === crisis.affiliation)?.color || '#fff' }">
                   <option v-for="aff in crisisAffiliations" :key="aff.value" :value="aff.value" style="background:#1a1f35" :style="{ color: aff.color || '#e2e8f0' }">{{ aff.label }}</option>
                 </select>
               </td>
 
               <td style="padding: 6px;">
-                <input v-model="crisis.reason" @change="dispatch.save()" class="location-input" placeholder="Calibre // GPB // Blessures // ZIP" style="font-size: 0.75rem; background: rgba(0,0,0,0.2); padding: 5px 8px; border-radius: 4px; width: 100%; border: 1px solid #334155;" />
+                <input v-model="crisis.reason" @input="onCrisisReasonInput(crisis, $event.target.value)" class="location-input" placeholder="Calibre // GPB // Blessures // ZIP" style="font-size: 0.75rem; background: rgba(0,0,0,0.2); padding: 5px 8px; border-radius: 4px; width: 100%; border: 1px solid #334155;" />
               </td>
               
               <td style="padding: 6px;">
-                <select v-model="crisis.repatriatedBy" @change="dispatch.save()" class="location-input" style="border: 1px solid #334155; padding: 4px; border-radius: 4px; width: 100%; background: rgba(255,255,255,0.02); color: #fff; font-weight: 600;">
+                <select v-model="crisis.repatriatedBy" @change="Dispatch.updateCrisis(crisis.id, { repatriatedBy: crisis.repatriatedBy })" class="location-input" style="border: 1px solid #334155; padding: 4px; border-radius: 4px; width: 100%; background: rgba(255,255,255,0.02); color: #fff; font-weight: 600;">
                   <option :value="null" style="background:#1a1f35; color: #fff;">-- Sélectionner --</option>
                   <option v-for="emp in getCrisisEmployeeOptions(crisis.repatriatedBy)" :key="emp.id" :value="emp.id" style="background:#1a1f35">{{ emp.name }}</option>
                 </select>
@@ -786,21 +790,21 @@
               </td>
               
               <td style="padding: 6px;">
-                <select v-model="crisis.treatedBy" @change="dispatch.save()" class="location-input" style="border: 1px solid #334155; padding: 4px; border-radius: 4px; width: 100%; background: rgba(255,255,255,0.02); color: #fff; font-weight: 600;">
+                <select v-model="crisis.treatedBy" @change="Dispatch.updateCrisis(crisis.id, { treatedBy: crisis.treatedBy })" class="location-input" style="border: 1px solid #334155; padding: 4px; border-radius: 4px; width: 100%; background: rgba(255,255,255,0.02); color: #fff; font-weight: 600;">
                   <option :value="null" style="background:#1a1f35; color: #fff;">-- Sélectionner --</option>
                   <option v-for="emp in getCrisisEmployeeOptions(crisis.treatedBy)" :key="emp.id" :value="emp.id" style="background:#1a1f35">{{ emp.name }}</option>
                 </select>
               </td>
               
               <td style="padding: 6px;">
-                <select v-model="crisis.medicalStatus" @change="dispatch.save()" class="location-input" style="border: 1px solid #334155; padding: 4px; border-radius: 4px; background: rgba(255,255,255,0.02); font-weight: 600;" :style="{ color: crisisMedicalStatuses.find(s => s.value === crisis.medicalStatus)?.color || '#fff' }">
+                <select v-model="crisis.medicalStatus" @change="Dispatch.updateCrisis(crisis.id, { medicalStatus: crisis.medicalStatus })" class="location-input" style="border: 1px solid #334155; padding: 4px; border-radius: 4px; background: rgba(255,255,255,0.02); font-weight: 600;" :style="{ color: crisisMedicalStatuses.find(s => s.value === crisis.medicalStatus)?.color || '#fff' }">
                   <option :value="null" style="background:#1a1f35; color: #fff;">-- Statut --</option>
                   <option v-for="stat in crisisMedicalStatuses" :key="stat.value" :value="stat.value" style="background:#1a1f35" :style="{ color: stat.color || '#e2e8f0' }">{{ stat.emoji ? stat.emoji + ' ' : '' }}{{ stat.label }}</option>
                 </select>
               </td>
               
               <td style="padding: 6px;">
-                <select v-model="crisis.bed" @change="dispatch.save()" class="location-input" style="border: 1px solid #334155; padding: 4px; border-radius: 4px; background: rgba(255,255,255,0.02); color: #fff; font-weight: 600;">
+                <select v-model="crisis.bed" @change="Dispatch.updateCrisis(crisis.id, { bed: crisis.bed })" class="location-input" style="border: 1px solid #334155; padding: 4px; border-radius: 4px; background: rgba(255,255,255,0.02); color: #fff; font-weight: 600;">
                   <option :value="null" style="background:#1a1f35; color: #fff;">-- Lit --</option>
                   <option v-for="bed in crisisBeds" :key="bed.value" :value="bed.value" style="background:#1a1f35">{{ bed.label }}</option>
                 </select>
@@ -808,7 +812,7 @@
               
               <td style="padding: 6px;">
                 <label class="d-flex align-center cursor-pointer">
-                  <input type="checkbox" v-model="crisis.canalCheckCentrale" @change="dispatch.save()" class="mr-1" style="width: 14px; height: 14px;" />
+                  <input type="checkbox" v-model="crisis.canalCheckCentrale" @change="Dispatch.updateCrisis(crisis.id, { canalCheckCentrale: crisis.canalCheckCentrale })" class="mr-1" style="width: 14px; height: 14px;" />
                 </label>
               </td>
 
@@ -1374,6 +1378,7 @@ export default {
       safdStatusConfig,
       bcesStatusConfig,
       locations: vehiclesLocations,
+      _timeouts: {},
     }
   },
 
@@ -1430,6 +1435,18 @@ export default {
         borderColor: 'rgba(255,255,255,0.1)'
       }
     },
+    sortedCrises() {
+      if (!this.dispatch || !this.dispatch.crises) return []
+      return [...this.dispatch.crises].sort((a, b) => {
+        const getAffIdx = (val) => {
+          const idx = this.crisisAffiliations.findIndex(aff => aff.value === val)
+          return idx === -1 ? 999 : idx
+        }
+        const affDiff = getAffIdx(a.affiliation) - getAffIdx(b.affiliation)
+        if (affDiff !== 0) return affDiff
+        return (a.arrivalTime || 0) - (b.arrivalTime || 0)
+      })
+    },
     safdStatusStyle() {
       const status = (this.safdStatus || '').toLowerCase()
       const mode = this.isLightTheme ? 'light' : 'dark'
@@ -1466,14 +1483,22 @@ export default {
 
     allEmployees() {
       const dbEmps = this.employees.map(e => ({
-        id: e.id, name: e.name, phone: e.phone || '', role: e.role || '',
+        id: e.id,
+        employeeId: e.id,
+        name: e.name || '',
+        phone: e.phone || '',
+        role: e.role || '',
         allSpecialties: e.specialties || [],
-        displayLabel: e.phone ? `${e.name} — ${e.phone}` : e.name,
+        displayLabel: e.phone ? `${e.name || ''} — ${e.phone}` : (e.name || ''),
       }))
       const tempEmps = (this.dispatch?.temporaryEmployees || []).map(e => ({
-        id: e.id, employeeId: e.id, name: e.name, phone: e.phone || '', role: 'Temporaire',
+        id: e.id,
+        employeeId: e.id,
+        name: e.name || '',
+        phone: e.phone || '',
+        role: 'Temporaire',
         allSpecialties: [],
-        displayLabel: e.phone ? `${e.name} — ${e.phone}` : e.name,
+        displayLabel: e.phone ? `${e.name || ''} — ${e.phone}` : (e.name || ''),
       }))
       return [...dbEmps, ...tempEmps]
     },
@@ -1489,7 +1514,7 @@ export default {
       return new Set(ids)
     },
 
-        sortedUnassignedEmployees() {
+    sortedUnassignedEmployees() {
       const order = roleOrder
       return this.allEmployees
         .filter(e => !this.usedEmployeeIds.has(e.id))
@@ -1778,15 +1803,11 @@ export default {
         }
       }).then(async (result) => {
         if (result.isConfirmed) {
-          if (!this.dispatch) return;
-          if (!this.dispatch.temporaryEmployees) this.dispatch.temporaryEmployees = [];
-          this.dispatch.temporaryEmployees.push({
-            id: 'temp_' + Date.now() + Math.random().toString(36).slice(2, 6),
+          await Dispatch.addTemporaryEmployee({
             name: result.value.name,
             phone: result.value.phone || '',
             validations: result.value.validations || []
           });
-          await this.dispatch.save();
         }
       })
     },
@@ -1839,56 +1860,33 @@ export default {
         }
       }).then(async (result) => {
         if (result.isConfirmed) {
-          tEmp.name = result.value.name;
-          tEmp.phone = result.value.phone;
-          tEmp.validations = result.value.validations;
-          
           const wasInCentrale = this.dispatch.centrale?.employees?.some(e => e.employeeId === realId);
-          this._updateTempRef(realId, tEmp);
-          await this.dispatch.save();
-          if (wasInCentrale) this.syncCentraleGSheet();
-
+          await Dispatch.updateTemporaryEmployee(realId, {
+            name: result.value.name,
+            phone: result.value.phone || '',
+            validations: result.value.validations || []
+          })
+          if (wasInCentrale) this.syncCentraleGSheet()
         } else if (result.isDenied) {
-          const wasInCentrale = this.dispatch.centrale?.employees?.some(e => e.employeeId === realId);
-          this.dispatch.temporaryEmployees = this.dispatch.temporaryEmployees.filter(e => e.id !== realId);
-          this._removeTempRefs(realId);
-          await this.dispatch.save();
-          if (wasInCentrale) this.syncCentraleGSheet();
+          const r = await Swal.fire({
+            title: 'Supprimer l\'employé ?',
+            text: 'Il sera retiré de toutes les sections.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            confirmButtonText: 'Oui, supprimer',
+            background: '#1e293b',
+            color: '#fff'
+          })
+          if (r.isConfirmed) {
+            const wasInCentrale = this.dispatch.centrale?.employees?.some(e => e.employeeId === realId);
+            await Dispatch.removeTemporaryEmployee(realId)
+            if (wasInCentrale) this.syncCentraleGSheet()
+          }
         }
       })
     },
-    
-    _updateTempRef(id, newData) {
-      if (this.dispatch.centrale && this.dispatch.centrale.employees) {
-        let f = this.dispatch.centrale.employees.find(e => e.employeeId === id)
-        if (f) { f.name = newData.name; f.phone = newData.phone }
-      }
-      if (this.dispatch.interventions) {
-        this.dispatch.interventions.forEach(s => {
-          let f = (s.employees||[]).find(e => e.employeeId === id)
-          if (f) { f.name = newData.name; f.phone = newData.phone }
-        })
-      }
-      if (this.dispatch.patates) {
-        let f = this.dispatch.patates.find(e => e.employeeId === id)
-        if (f) { f.name = newData.name; f.phone = newData.phone }
-      }
-    },
-    
-    _removeTempRefs(id) {
-       if (this.dispatch.centrale && this.dispatch.centrale.employees) {
-         this.dispatch.centrale.employees = this.dispatch.centrale.employees.filter(e => e.employeeId !== id)
-       }
-       if (this.dispatch.interventions) {
-         this.dispatch.interventions.forEach(s => {
-           s.employees = (s.employees||[]).filter(e => e.employeeId !== id)
-         })
-       }
-       if (this.dispatch.patates) {
-         this.dispatch.patates = this.dispatch.patates.filter(p => p.employeeId !== id)
-       }
-    },
-    resetDispatch() {
+    async resetDispatch() {
       if (!this.hasLsesPerm) return
       if (!this.dispatch) return;
       
@@ -1910,8 +1908,31 @@ export default {
         });
       }
       
-      this.dispatch.save();
+      await Dispatch.resetAll()
       this.syncCentraleGSheet();
+    },
+
+    onCrisisNameInput(crisis, val) {
+      crisis.name = val
+      this.debounceUpdate(crisis.id, 'name', () => {
+        Dispatch.updateCrisis(crisis.id, { name: crisis.name })
+      })
+    },
+
+    onCrisisReasonInput(crisis, val) {
+      crisis.reason = val
+      this.debounceUpdate(crisis.id, 'reason', () => {
+        Dispatch.updateCrisis(crisis.id, { reason: crisis.reason })
+      })
+    },
+
+    debounceUpdate(id, field, callback, delay = 500) {
+      const key = `${id}-${field}`
+      if (this._timeouts[key]) clearTimeout(this._timeouts[key])
+      this._timeouts[key] = setTimeout(() => {
+        callback()
+        delete this._timeouts[key]
+      }, delay)
     },
     fetchSafdStatus() {
       fetch('https://docs.google.com/spreadsheets/d/1A1gxOho_roNwxTtcbiEpLGSWbD8JUasMDu4NL-zdcbw/export?format=csv&gid=0')
@@ -2027,7 +2048,7 @@ export default {
       if (!this.hasLsesPerm) return
       if (!this.dispatch) return
       this.dispatch.hospitalStatus = value
-      await this.dispatch.save()
+      await Dispatch.updateField('hospitalStatus', value)
 
       const meta = this.hospitalStatuses.find(s => s.value === value) || this.hospitalStatuses[0]
       const label = meta.gsheet
@@ -2041,7 +2062,7 @@ export default {
       }
     },
 
-        startDrag(employee, sourceKey) {
+    startDrag(employee, sourceKey) {
       if (!this.hasLsesPerm) return
       this.draggingEmployee = employee
       this.draggingSource = sourceKey
@@ -2119,43 +2140,51 @@ export default {
       if (!emp || !this.dispatch) return
       if (src === targetKey) return   
 
-      this._removeFromSource(src, emp.employeeId)
+      const empId = emp.employeeId || emp.id
+      if (!empId) {
+        console.warn("Drop ignored: missing employee identifier", emp)
+        return
+      }
+
+      this._removeFromSource(src, empId)
 
       if (targetKey === 'centrale') {
         if (!this.dispatch.centrale) this.dispatch.centrale = { location: null, complement: null, type: null, returnStatus: null, employees: [] }
         if (!this.dispatch.centrale.employees) this.dispatch.centrale.employees = []
-        if (!this.dispatch.centrale.employees.find(e => e.employeeId === emp.employeeId)) {
-          this.dispatch.centrale.employees.push({ employeeId: emp.employeeId, name: emp.name, phone: emp.phone, allSpecialties: emp.allSpecialties||[], role: emp.role||'', centralRole: null })
+        if (!this.dispatch.centrale.employees.find(e => e.employeeId === empId)) {
+          this.dispatch.centrale.employees.push({ ...emp, employeeId: empId, centralRole: null })
         }
       } else if (targetKey.startsWith('inter:')) {
         const slotId = targetKey.slice(6)
         const slot = this.dispatch.interventions.find(s=>s.id===slotId)
         if (slot) {
           if (!slot.employees) slot.employees = []
-          
-          if (!slot.employees.find(e => e.employeeId === emp.employeeId)) {
-            slot.employees.push({ employeeId: emp.employeeId, name: emp.name, phone: emp.phone, allSpecialties: emp.allSpecialties||[], role: emp.role || '' })
+          if (!slot.employees.find(e => e.employeeId === empId)) {
+            slot.employees.push({ ...emp, employeeId: empId })
           }
         }
       } else if (targetKey.startsWith('cat:')) {
         const category = targetKey.slice(4)
         this.dispatch.patates.push({
+          ...emp,
+          employeeId: empId,
           id: Date.now().toString()+Math.random().toString(36).slice(2,6),
-          employeeId: emp.employeeId,
-          name: emp.name,
-          phone: emp.phone,
-          role: emp.role || '',
-          allSpecialties: emp.allSpecialties||[],
           category,
         })
       }
-
       this.dispatch.patates = [...this.dispatch.patates]
-      if (targetKey === 'hs')
-        this.autoTurnOffRadio(emp.employeeId)
-      await this.dispatch.save()
-      if (targetKey === 'centrale' || src === 'centrale')
-        this.syncCentraleGSheet()
+      this.dispatch.centrale.employees = [...(this.dispatch.centrale.employees || [])]
+      this.dispatch.interventions = [...this.dispatch.interventions]
+      
+      if (targetKey === 'hs') this.autoTurnOffRadio(empId)
+      if (targetKey === 'centrale' || src === 'centrale') this.syncCentraleGSheet()
+
+      await Dispatch.migrateEmployee(empId, src, targetKey === 'hs' ? null : targetKey, {
+        name: emp.name || '',
+        phone: emp.phone || '',
+        allSpecialties: emp.allSpecialties||[],
+        role: emp.role||''
+      })
     },
 
     _removeFromSource(sourceKey, employeeId) {
@@ -2187,9 +2216,15 @@ export default {
       })
       
       this.dispatch.patates = this.dispatch.patates.filter(p=>p.employeeId!==employeeId)
+      
+      this.dispatch.patates = [...this.dispatch.patates]
+      this.dispatch.centrale.employees = [...(this.dispatch.centrale.employees || [])]
+      this.dispatch.interventions = [...this.dispatch.interventions]
+
       this.autoTurnOffRadio(employeeId)
-      await this.dispatch.save()
       if (wasInCentrale) this.syncCentraleGSheet()
+      
+      await Dispatch.removeFromBoard(employeeId)
     },
 
     async clearCentrale() {
@@ -2198,7 +2233,7 @@ export default {
         showCancelButton:true, confirmButtonText:'Vider', cancelButtonText:'Annuler' })
       if (!r.isConfirmed) return
       this.dispatch.centrale = { location: null, complement: null, type: null, returnStatus: null, employees: [] }
-      await this.dispatch.save()
+      await Dispatch.updateField('centrale', this.dispatch.centrale)
       this.syncCentraleGSheet()
     },
 
@@ -2206,7 +2241,7 @@ export default {
       if (!this.hasLsesPerm) return
       if (!this.dispatch?.centrale) return
       this.dispatch.centrale.employees = (this.dispatch.centrale.employees||[]).filter(e => e.employeeId !== employeeId)
-      await this.dispatch.save()
+      await Dispatch.updateCentrale({ employees: this.dispatch.centrale.employees })
       this.syncCentraleGSheet()
     },
 
@@ -2215,7 +2250,7 @@ export default {
       if (!this.dispatch) return
       if (!this.dispatch.centrale) this.dispatch.centrale = { location: null, complement: null, type: null, returnStatus: null, employees: [] }
       this.dispatch.centrale.type = typeValue
-      await this.dispatch.save()
+      await Dispatch.updateCentrale({ type: typeValue })
     },
 
     async setCentraleReturnStatus(statusValue) {
@@ -2223,7 +2258,7 @@ export default {
       if (!this.dispatch) return
       if (!this.dispatch.centrale) this.dispatch.centrale = { location: null, complement: null, type: null, returnStatus: null, employees: [] }
       this.dispatch.centrale.returnStatus = statusValue || null
-      await this.dispatch.save()
+      await Dispatch.updateCentrale({ returnStatus: statusValue || null })
     },
 
     async setCentraleLocation(loc) {
@@ -2231,7 +2266,7 @@ export default {
       if (!this.dispatch) return
       if (!this.dispatch.centrale) this.dispatch.centrale = { location: null, complement: null, type: null, returnStatus: null, employees: [] }
       this.dispatch.centrale.location = loc
-      await this.dispatch.save()
+      await Dispatch.updateCentrale({ location: loc })
     },
 
     async setCentraleEmpRole(emp, roleValue) {
@@ -2240,7 +2275,7 @@ export default {
       const found = this.dispatch.centrale.employees.find(e => e.employeeId === emp.employeeId)
       if (found) {
         found.centralRole = roleValue
-        await this.dispatch.save()
+        await Dispatch.updateCentrale({ employees: this.dispatch.centrale.employees })
       }
     },
 
@@ -2261,43 +2296,49 @@ export default {
         Swal.fire({ title: 'Limite atteinte', text: 'Vous ne pouvez pas ajouter plus de 25 interventions.', icon: 'warning', background: '#1e293b', color: '#fff' })
         return
       }
+      const newSlotId = Date.now().toString()+Math.random().toString(36).slice(2,6)
       this.dispatch.interventions = [...(this.dispatch.interventions||[]), {
-        id: Date.now().toString()+Math.random().toString(36).slice(2,6),
+        id: newSlotId,
         type: 'intervention',
         employees: [],
         returnStatus: null,
         location: null,
         complement: null,
       }]
-      await this.dispatch.save()
+      await Dispatch.updateField('interventions', this.dispatch.interventions)
+      
+      this.$nextTick(() => {
+        const el = document.getElementById(`zip-input-${newSlotId}`)
+        if (el) el.focus()
+      })
     },
 
     async setInterSlotType(slot, typeValue) {
       if (!this.hasLsesPerm) return
       slot.type = typeValue
       this.dispatch.interventions = [...this.dispatch.interventions]
-      await this.dispatch.save()
+      await Dispatch.updateField('interventions', this.dispatch.interventions)
     },
 
     async setInterSlotLocation(slot, value) {
       if (!this.hasLsesPerm) return
       slot.location = value.trim() || null
       this.dispatch.interventions = [...this.dispatch.interventions]
-      await this.dispatch.save()
+      await Dispatch.updateField('interventions', this.dispatch.interventions)
     },
 
     async setInterSlotStatus(slot, statusValue) {
       if (!this.hasLsesPerm) return
       slot.returnStatus = statusValue || null
       this.dispatch.interventions = [...this.dispatch.interventions]
-      await this.dispatch.save()
+      await Dispatch.updateField('interventions', this.dispatch.interventions)
     },
 
     async removeEmployeeFromSlot(slotId, employeeId) {
       const slot = this.dispatch.interventions.find(s=>s.id===slotId)
       if (slot) slot.employees = (slot.employees||[]).filter(e => e.employeeId !== employeeId)
       this.dispatch.interventions = [...this.dispatch.interventions]
-      await this.dispatch.save()
+      await Dispatch.updateField('interventions', this.dispatch.interventions)
     },
 
     async removeInterventionSlot(slotId) {
@@ -2324,10 +2365,13 @@ export default {
         slot.complement = null
         slot.returnStatus = null
         slot.type = 'intervention'
-        this.dispatch.interventions = [...this.dispatch.interventions]
-      } else
+      } else {
         this.dispatch.interventions = this.dispatch.interventions.filter(s=>s.id!==slotId)
-      await this.dispatch.save()
+      }
+      this.dispatch.patates = [...this.dispatch.patates]
+      this.dispatch.interventions = [...this.dispatch.interventions]
+      
+      await Dispatch.deleteInterventionSlot(slotId, isModified)
     },
 
     async addCrisisSlot() {
@@ -2351,12 +2395,12 @@ export default {
         canalCheckCentrale: false,
         arrivalTime: null,
       }]
-      await this.dispatch.save()
+      await Dispatch.updateField('crises', this.dispatch.crises)
     },
 
     async removeCrisisSlot(slotId) {
       this.dispatch.crises = this.dispatch.crises.filter(s=>s.id!==slotId)
-      await this.dispatch.save()
+      await Dispatch.updateField('crises', this.dispatch.crises)
     },
     async confirmClearCrises() {
       if (!this.dispatch) return
@@ -2375,7 +2419,8 @@ export default {
       if (r.isConfirmed) {
         this.dispatch.crises = []
         this.dispatch.crisisZip = ''
-        await this.dispatch.save()
+        await Dispatch.updateField('crises', [])
+        await Dispatch.updateField('crisisZip', '')
       }
     },
 
@@ -2385,19 +2430,10 @@ export default {
       } else if (!crisis.arrivedAtHospital) {
         crisis.arrivalTime = null
       }
-      await this.onCrisisMetadataChange(crisis)
-    },
-
-    async onCrisisMetadataChange(crisis) {
-      if (!this.dispatch) return
-      this.dispatch.crises = [...this.dispatch.crises].sort((a, b) => {
-        const getAffIdx = (val) => {
-          const idx = this.crisisAffiliations.findIndex(aff => aff.value === val)
-          return idx === -1 ? 999 : idx
-        }
-        return getAffIdx(a.affiliation) - getAffIdx(b.affiliation)
+      await Dispatch.updateCrisis(crisis.id, { 
+        arrivedAtHospital: crisis.arrivedAtHospital, 
+        arrivalTime: crisis.arrivalTime 
       })
-      await this.dispatch.save()
     },
 
     formatTime(timestamp) {
@@ -2438,51 +2474,38 @@ export default {
       if (!this.dispatch || !this.dispatch.beds) return { patientName: '', fdoNotified: false, emergencyContactsNotified: false, reason: '', admissionTime: null }
       return this.dispatch.beds[bedValue] || { patientName: '', fdoNotified: false, emergencyContactsNotified: false, reason: '', admissionTime: null }
     },
-    updateBedPatientName(bedValue, name) {
+    async updateBedPatientName(bedValue, name) {
       if (!this.dispatch) return
       if (!this.dispatch.beds) this.dispatch.beds = {}
       if (!this.dispatch.beds[bedValue]) this.dispatch.beds[bedValue] = { patientName: '', fdoNotified: false, emergencyContactsNotified: false, reason: '', admissionTime: null }
       
       const oldName = this.dispatch.beds[bedValue].patientName
-      this.dispatch.beds[bedValue].patientName = name
-      
+      this.dispatch.beds[bedValue].patientName = name // Update local state immediately
+
+      let admissionTime = this.dispatch.beds[bedValue].admissionTime
       if (name && !oldName) {
-        this.dispatch.beds[bedValue].admissionTime = Date.now()
+        admissionTime = Date.now()
+        this.dispatch.beds[bedValue].admissionTime = admissionTime
       } else if (!name) {
+        admissionTime = null
         this.dispatch.beds[bedValue].admissionTime = null
       }
-      this.dispatch.beds = { ...this.dispatch.beds }
-      this.dispatch.save()
+      
+      this.debounceUpdate(bedValue, 'patientName', async () => {
+        await Dispatch.updateBed(bedValue, { patientName: name, admissionTime })
+      })
     },
-    updateBedReason(bedValue, reason) {
-      if (!this.dispatch) return
-      if (!this.dispatch.beds) this.dispatch.beds = {}
-      if (!this.dispatch.beds[bedValue]) this.dispatch.beds[bedValue] = { patientName: '', fdoNotified: false, emergencyContactsNotified: false, reason: '', admissionTime: null }
-      this.dispatch.beds[bedValue].reason = reason
-      this.dispatch.beds = { ...this.dispatch.beds }
-      this.dispatch.save()
+    async updateBedReason(bedValue, reason) {
+      await Dispatch.updateBed(bedValue, { reason })
     },
-    updateBedFdo(bedValue, checked) {
-      if (!this.dispatch) return
-      if (!this.dispatch.beds) this.dispatch.beds = {}
-      if (!this.dispatch.beds[bedValue]) this.dispatch.beds[bedValue] = { patientName: '', fdoNotified: false, emergencyContactsNotified: false, reason: '', admissionTime: null }
-      this.dispatch.beds[bedValue].fdoNotified = checked
-      this.dispatch.beds = { ...this.dispatch.beds }
-      this.dispatch.save()
+    async updateBedFdo(bedValue, checked) {
+      await Dispatch.updateBed(bedValue, { fdoNotified: checked })
     },
-    updateBedEmergencyContacts(bedValue, checked) {
-      if (!this.dispatch) return
-      if (!this.dispatch.beds) this.dispatch.beds = {}
-      if (!this.dispatch.beds[bedValue]) this.dispatch.beds[bedValue] = { patientName: '', fdoNotified: false, emergencyContactsNotified: false, reason: '', admissionTime: null }
-      this.dispatch.beds[bedValue].emergencyContactsNotified = checked
-      this.dispatch.beds = { ...this.dispatch.beds }
-      this.dispatch.save()
+    async updateBedEmergencyContacts(bedValue, checked) {
+      await Dispatch.updateBed(bedValue, { emergencyContactsNotified: checked })
     },
-    clearBed(bedValue) {
-      if (!this.dispatch || !this.dispatch.beds) return
-      this.dispatch.beds[bedValue] = { patientName: '', fdoNotified: false, emergencyContactsNotified: false, reason: '', admissionTime: null }
-      this.dispatch.beds = { ...this.dispatch.beds }
-      this.dispatch.save()
+    async clearBed(bedValue) {
+      await Dispatch.updateBed(bedValue, { patientName: '', fdoNotified: false, emergencyContactsNotified: false, reason: '', admissionTime: null })
     },
 
     openAddDialog(categoryValue) {
@@ -2493,17 +2516,29 @@ export default {
     async confirmAddPatate() {
       if (!this.hasLsesPerm) return
       if (!this.selectedEmployee || !this.dispatch) return
-      const emp = this.employees.find(e=>e.id===this.selectedEmployee.id)
-      this.dispatch.patates = [...this.dispatch.patates, {
+      this.addDialog = false
+      const empId = this.selectedEmployee.id
+      const emp = this.employees.find(e=>e.id===empId)
+
+      const role = emp?.role || this.selectedEmployee.role || ''
+      const specs = emp ? (emp.specialties || []) : (this.selectedEmployee.allSpecialties || [])
+
+      this.dispatch.patates.push({
+        ...this.selectedEmployee,
+        employeeId: empId,
         id: Date.now().toString()+Math.random().toString(36).slice(2,6),
-        employeeId: this.selectedEmployee.id,
-        name: this.selectedEmployee.name,
-        phone: this.selectedEmployee.phone || '',
-        role: emp?.role || '',
-        allSpecialties: emp ? (emp.specialties || []) : [],
         category: this.addDialogCategoryValue,
-      }]
-      await this.dispatch.save()
+        role,
+        allSpecialties: specs,
+      })
+      this.dispatch.patates = [...this.dispatch.patates]
+
+      await Dispatch.migrateEmployee(empId, null, `cat:${this.addDialogCategoryValue}`, {
+        name: this.selectedEmployee.name || '',
+        phone: this.selectedEmployee.phone || '',
+        allSpecialties: specs,
+        role,
+      })
       this.addDialog = false
     },
 
@@ -2516,31 +2551,41 @@ export default {
     async confirmQuickAdd(categoryValue) {
       if (!this.hasLsesPerm) return
       if (!this.quickAddEmployee || !this.dispatch) return
+      this.quickAddDialog = false
       
       const empId = this.quickAddEmployee.employeeId || this.quickAddEmployee.id
       const src = this.quickMoveSourceKey
+      const emp = this.employees.find(e=>e.id===empId)
+
+      const role = emp?.role || this.quickAddEmployee.role || ''
+      const specs = emp ? (emp.specialties || []) : (this.quickAddEmployee.allSpecialties || [])
 
       this._removeFromSource(src, empId)
-
       if (categoryValue !== 'hs') {
-        const emp = this.employees.find(e=>e.id===empId)
-        this.dispatch.patates = [...this.dispatch.patates, {
-          id: Date.now().toString()+Math.random().toString(36).slice(2,6),
+        this.dispatch.patates.push({
+          ...this.quickAddEmployee,
           employeeId: empId,
-          name: this.quickAddEmployee.name,
-          phone: this.quickAddEmployee.phone || '',
-          role: emp?.role || '',
-          allSpecialties: emp ? (emp.specialties || []) : [],
+          id: Date.now().toString()+Math.random().toString(36).slice(2,6),
           category: categoryValue,
-        }]
+          role,
+          allSpecialties: specs,
+        })
       } else {
         this.autoTurnOffRadio(empId)
       }
-
-      await this.dispatch.save()
+      this.dispatch.patates = [...this.dispatch.patates]
+      this.dispatch.centrale.employees = [...(this.dispatch.centrale.employees || [])]
+      this.dispatch.interventions = [...this.dispatch.interventions]
 
       if (src === 'centrale') this.syncCentraleGSheet()
-      
+
+      await Dispatch.migrateEmployee(empId, src, categoryValue === 'hs' ? null : `cat:${categoryValue}`, {
+        name: this.quickAddEmployee.name || '',
+        phone: this.quickAddEmployee.phone || '',
+        allSpecialties: specs,
+        role,
+      })
+
       this.quickAddDialog = false
     },
 
@@ -2558,7 +2603,7 @@ export default {
         status: 'on',
         category
       }]
-      await this.dispatch.save()
+      await Dispatch.updateField('radios', this.dispatch.radios)
     },
     async onRadioAssign(radio, newEmpId) {
       if (!this.hasLsesPerm) return
@@ -2574,7 +2619,7 @@ export default {
       }
       radio.employeeId = newEmpId || null
       this.dispatch.radios = [...this.dispatch.radios]
-      await this.dispatch.save()
+      await Dispatch.updateField('radios', this.dispatch.radios)
 
       if (oldEmpId !== newEmpId) {
         const serialStr = radio.serial || 'sans matricule'
@@ -2606,7 +2651,7 @@ export default {
       if (!r.isConfirmed) return
 
       this.dispatch.radios = (this.dispatch.radios||[]).filter(r => r.id !== radio.id)
-      await this.dispatch.save()
+      await Dispatch.updateField('radios', this.dispatch.radios)
     },
     autoTurnOffRadio(employeeId) {
       if (!this.dispatch?.radios || !employeeId) return
@@ -2620,7 +2665,7 @@ export default {
       if (!this.hasLsesPerm) return
       radio.status = radio.status === 'on' ? 'off' : 'on'
       this.dispatch.radios = [...this.dispatch.radios]
-      await this.dispatch.save()
+      await Dispatch.updateField('radios', this.dispatch.radios)
     },
 
     getMorgueSlot(section, index) {
@@ -2630,26 +2675,17 @@ export default {
     },
 
     async updateMorgueSlot(section, index, field, value) {
-      if (!this.dispatch) return
-      if (!this.dispatch.morgue) {
-        this.dispatch.morgue = { lockers: {}, urnShelves: {}, burials: {} }
-      }
-      if (!this.dispatch.morgue[section]) this.dispatch.morgue[section] = {}
-      const key = `slot_${index}`
-      if (!this.dispatch.morgue[section][key]) this.dispatch.morgue[section][key] = {}
-      this.dispatch.morgue[section][key][field] = value
-      this.dispatch.morgue = { ...this.dispatch.morgue, [section]: { ...this.dispatch.morgue[section] } }
-      await this.dispatch.save()
+      await Dispatch.updateMorgue(section, `slot_${index}`, { [field]: value })
     },
 
     async clearMorgueSlot(section, index) {
-      if (!this.dispatch?.morgue) return
-      const key = `slot_${index}`
-      if (this.dispatch.morgue[section]) {
-        this.dispatch.morgue[section][key] = {}
-        this.dispatch.morgue = { ...this.dispatch.morgue, [section]: { ...this.dispatch.morgue[section] } }
-      }
-      await this.dispatch.save()
+      await Dispatch.updateMorgue(section, `slot_${index}`, {
+        patientName: '',
+        admissionTime: null,
+        lockerNumber: '',
+        items: '',
+        status: ''
+      })
     },
 
     getMorgueChunks(count) {
