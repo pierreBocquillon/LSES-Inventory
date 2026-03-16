@@ -306,10 +306,11 @@
                 :id="`zip-input-${slot.id}`"
                 class="location-input"
                 style="flex: 1;"
-                :value="slot.location || ''"
+                :value="localBuffers[`${slot.id}-location`] ?? slot.location ?? ''"
                 placeholder="Code ZIP / Position"
                 :disabled="!hasLsesPerm"
-                @change="setInterSlotLocation(slot, $event.target.value)"
+                @input="onInterSlotLocationInput(slot, $event.target.value)"
+                @change="onInterSlotLocationInput(slot, $event.target.value)"
                 @keyup.enter="$event.target.blur()"
               />
               <select
@@ -680,8 +681,8 @@
           </div>
           <textarea
             v-if="isDirection && dispatch"
-            v-model="dispatch.notepad"
-            @change="Dispatch.updateField('notepad', dispatch.notepad)"
+            :value="localBuffers['global-notepad'] ?? dispatch.notepad"
+            @input="onNotepadInput($event.target.value)"
             class="notepad-input"
             placeholder="Bloc notes (modifiable par la direction)"
             rows="6"
@@ -702,11 +703,13 @@
         <div v-if="dispatch" class="ml-4 d-flex align-center" @click.stop style="background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.4); border-radius: 4px; padding: 2px 8px; box-shadow: 0 0 5px rgba(0,0,0,0.5);">
             <v-icon size="12" class="mr-1 text-white">mdi-map-marker</v-icon>
             <input 
-                v-model="dispatch.crisisZip" 
-                @change="Dispatch.updateField('crisisZip', dispatch.crisisZip)" 
+                v-model="localCrisisZip" 
+                @change="onZipChange"
+                @focus="$event.target.select()"
                 class="location-input crisis-zip-input" 
                 style="width: 70px; font-weight: 900; background: transparent; border: none; outline: none; color: #fff; text-align: center; text-transform: uppercase;" 
                 placeholder="ZIP" 
+                autofocus
             />
         </div>
         <v-icon size="14" class="ml-auto">{{ crisisExpanded ? 'mdi-chevron-up' : 'mdi-chevron-down' }}</v-icon>
@@ -762,7 +765,7 @@
               </td>
 
               <td style="padding: 6px;">
-                <input v-model="crisis.name" @input="onCrisisNameInput(crisis, $event.target.value)" class="location-input font-weight-bold text-red-lighten-2" style="font-size: 0.8rem; width: 100%; border-bottom: 1px solid transparent;" placeholder="Nom" />
+                <input :value="localBuffers[`${crisis.id}-name`] ?? crisis.name" @input="onCrisisNameInput(crisis, $event.target.value)" class="location-input font-weight-bold text-red-lighten-2" style="font-size: 0.8rem; width: 100%; border-bottom: 1px solid transparent;" placeholder="Nom" />
               </td>
 
               <td style="padding: 6px;">
@@ -772,7 +775,7 @@
               </td>
 
               <td style="padding: 6px;">
-                <input v-model="crisis.reason" @input="onCrisisReasonInput(crisis, $event.target.value)" class="location-input" placeholder="Calibre // GPB // Blessures // ZIP" style="font-size: 0.75rem; background: rgba(0,0,0,0.2); padding: 5px 8px; border-radius: 4px; width: 100%; border: 1px solid #334155;" />
+                <input :value="localBuffers[`${crisis.id}-reason`] ?? crisis.reason" @input="onCrisisReasonInput(crisis, $event.target.value)" class="location-input" placeholder="Calibre // GPB // Blessures // ZIP" style="font-size: 0.75rem; background: rgba(0,0,0,0.2); padding: 5px 8px; border-radius: 4px; width: 100%; border: 1px solid #334155;" />
               </td>
               
               <td style="padding: 6px;">
@@ -860,7 +863,7 @@
                   <td style="width: 130px; text-align: center; font-weight: bold; color: #94a3b8; font-size: 0.75rem; border: 1px solid #1e293b; background: rgba(255,255,255,0.02);">Nom Prénom</td>
                   <td v-for="(bedId, i) in bedSubarray" :key="bedId + '-name-' + i" style="padding: 2px; border: 1px solid #1e293b; height: 32px;" :style="bedId === '' ? 'background: rgba(0,0,0,0.3); pointer-events: none;' : (getBedData(bedId).patientName ? 'background: rgba(56, 189, 248, 0.1)' : 'background: rgba(0,0,0,0.2)')">
                     <input v-if="bedId !== ''"
-                      :value="getBedData(bedId).patientName" 
+                      :value="localBuffers[`${bedId}-patientName`] ?? getBedData(bedId).patientName" 
                       @input="updateBedPatientName(bedId, $event.target.value)"
                       class="location-input font-weight-bold text-center" 
                       :class="getBedData(bedId).patientName ? 'text-blue-lighten-2' : ''"
@@ -966,8 +969,8 @@
                     <td v-for="i in chunk" :key="'lk-name-'+chunkIdx+'-'+i"
                       style="padding: 2px; border: 1px solid #1f2937; height: 30px;"
                       :style="getMorgueSlot('lockers', i).name ? 'background: rgba(107,114,128,0.25)' : 'background: rgba(0,0,0,0.3)'">
-                      <input :value="getMorgueSlot('lockers', i).name || ''"
-                        @change="updateMorgueSlot('lockers', i, 'name', $event.target.value)"
+                      <input :value="localBuffers[`morgue-lockers-${i}-name`] ?? getMorgueSlot('lockers', i).name ?? ''"
+                        @input="updateMorgueSlot('lockers', i, 'name', $event.target.value)"
                         class="location-input font-weight-bold text-center"
                         :class="getMorgueSlot('lockers', i).name ? 'text-grey-lighten-2' : ''"
                         style="font-size: 0.78rem; width: 100%; border: none; background: transparent; outline: none; padding: 3px;" />
@@ -1379,6 +1382,8 @@ export default {
       bcesStatusConfig,
       locations: vehiclesLocations,
       _timeouts: {},
+      localCrisisZip: '',
+      localBuffers: {}, // { "id-field": "value" }
     }
   },
 
@@ -1631,6 +1636,10 @@ export default {
   },
 
   watch: {
+    'dispatch.crisisZip'(newVal) {
+      if (document.activeElement?.classList.contains('crisis-zip-input')) return
+      this.localCrisisZip = newVal || ''
+    },
     crisisExpanded(val) { localStorage.setItem('dispatch_crisis_expanded', val) },
     bedsExpanded(val) { localStorage.setItem('dispatch_beds_expanded', val) },
     morgueExpanded(val) { localStorage.setItem('dispatch_morgue_expanded', val) },
@@ -1644,7 +1653,12 @@ export default {
     this.fetchBcesStatus()
     this.bcesInterval = setInterval(this.fetchBcesStatus, 60000)
 
-    this.unsub = Dispatch.listenGlobal(data => { this.dispatch = data })
+    this.unsub = Dispatch.listenGlobal(d => {
+      this.dispatch = d
+      if (d && !this.localCrisisZip && !document.activeElement?.classList.contains('crisis-zip-input')) {
+        this.localCrisisZip = d.crisisZip || ''
+      }
+    })
     this.unsubEmployees = Employee.listenAll(list => {
       this.employees = [...list].sort((a,b) => (a.name||'').localeCompare(b.name||''))
     })
@@ -1894,16 +1908,19 @@ export default {
     },
 
     onCrisisNameInput(crisis, val) {
-      crisis.name = val
+      this.localBuffers[`${crisis.id}-name`] = val
       this.debounceUpdate(crisis.id, 'name', () => {
-        Dispatch.updateCrisis(crisis.id, { name: crisis.name })
+        Dispatch.updateCrisis(crisis.id, { name: val }).then(() => {
+          if (this.localBuffers[`${crisis.id}-name`] === val) delete this.localBuffers[`${crisis.id}-name`]
+        })
       })
     },
-
     onCrisisReasonInput(crisis, val) {
-      crisis.reason = val
+      this.localBuffers[`${crisis.id}-reason`] = val
       this.debounceUpdate(crisis.id, 'reason', () => {
-        Dispatch.updateCrisis(crisis.id, { reason: crisis.reason })
+        Dispatch.updateCrisis(crisis.id, { reason: val }).then(() => {
+          if (this.localBuffers[`${crisis.id}-reason`] === val) delete this.localBuffers[`${crisis.id}-reason`]
+        })
       })
     },
 
@@ -2174,12 +2191,18 @@ export default {
       this.syncCentraleGSheet()
     },
 
-    async removeEmpFromCentrale(employeeId) {
+    async removeEmpFromCentrale(empId) {
       if (!this.hasLsesPerm) return
-      if (!this.dispatch?.centrale) return
-      const emps = (this.dispatch.centrale.employees||[]).filter(e => e.employeeId !== employeeId)
-      await Dispatch.updateCentrale({ employees: emps })
+      const r = await Swal.fire({ icon:'warning', title:'Retirer de la centrale ?',
+        showCancelButton:true, confirmButtonText:'Retirer' })
+      if (!r.isConfirmed || !this.dispatch) return
+      
+      await Dispatch.migrateEmployee(empId, 'centrale', null, {})
       this.syncCentraleGSheet()
+    },
+    async setCentraleEmpRole(empId, role) {
+      if (!this.hasLsesPerm) return
+      await Dispatch.updateCentraleEmployee(empId, { centralRole: role })
     },
 
     async setCentraleType(typeValue) {
@@ -2204,17 +2227,6 @@ export default {
       if (!this.dispatch.centrale) this.dispatch.centrale = { location: null, complement: null, type: null, returnStatus: null, employees: [] }
       this.dispatch.centrale.location = loc
       await Dispatch.updateCentrale({ location: loc })
-    },
-
-    async setCentraleEmpRole(emp, roleValue) {
-      if (!this.hasLsesPerm) return
-      if (!this.dispatch?.centrale?.employees) return
-      const emps = JSON.parse(JSON.stringify(this.dispatch.centrale.employees))
-      const found = emps.find(e => e.employeeId === emp.employeeId)
-      if (found) {
-        found.centralRole = roleValue
-        await Dispatch.updateCentrale({ employees: emps })
-      }
     },
 
     getCentralRole(v) { return this.centralRoles.find(cr => cr.value === v) || null },
@@ -2258,6 +2270,15 @@ export default {
     async setInterSlotLocation(slot, value) {
       if (!this.hasLsesPerm) return
       await Dispatch.updateIntervention(slot.id, { location: value.trim() || null })
+    },
+    onInterSlotLocationInput(slot, val) {
+      if (!this.hasLsesPerm) return
+      this.localBuffers[`${slot.id}-location`] = val
+      this.debounceUpdate(slot.id, 'location', () => {
+        Dispatch.updateIntervention(slot.id, { location: val.trim() || null }).then(() => {
+          if (this.localBuffers[`${slot.id}-location`] === val) delete this.localBuffers[`${slot.id}-location`]
+        })
+      })
     },
 
     async setInterSlotStatus(slot, statusValue) {
@@ -2375,25 +2396,21 @@ export default {
       if (!this.dispatch || !this.dispatch.beds) return { patientName: '', fdoNotified: false, emergencyContactsNotified: false, reason: '', admissionTime: null }
       return this.dispatch.beds[bedValue] || { patientName: '', fdoNotified: false, emergencyContactsNotified: false, reason: '', admissionTime: null }
     },
-    async updateBedPatientName(bedValue, name) {
+    async updateBedPatientName(bedId, name) {
       if (!this.dispatch) return
       if (!this.dispatch.beds) this.dispatch.beds = {}
-      if (!this.dispatch.beds[bedValue]) this.dispatch.beds[bedValue] = { patientName: '', fdoNotified: false, emergencyContactsNotified: false, reason: '', admissionTime: null }
       
-      const oldName = this.dispatch.beds[bedValue].patientName
-      this.dispatch.beds[bedValue].patientName = name // Update local state immediately
-
-      let admissionTime = this.dispatch.beds[bedValue].admissionTime
-      if (name && !oldName) {
-        admissionTime = Date.now()
-        this.dispatch.beds[bedValue].admissionTime = admissionTime
-      } else if (!name) {
-        admissionTime = null
-        this.dispatch.beds[bedValue].admissionTime = null
-      }
+      this.localBuffers[`${bedId}-patientName`] = name
       
-      this.debounceUpdate(bedValue, 'patientName', async () => {
-        await Dispatch.updateBed(bedValue, { patientName: name, admissionTime })
+      this.debounceUpdate(bedId, 'patientName', async () => {
+        const bedData = this.getBedData(bedId)
+        let admissionTime = bedData.admissionTime
+        if (name && !bedData.patientName) admissionTime = Date.now()
+        else if (!name) admissionTime = null
+        
+        await Dispatch.updateBed(bedId, { patientName: name, admissionTime }).then(() => {
+          if (this.localBuffers[`${bedId}-patientName`] === name) delete this.localBuffers[`${bedId}-patientName`]
+        })
       })
     },
     async updateBedReason(bedValue, reason) {
@@ -2491,21 +2508,16 @@ export default {
         return
       }
       const oldEmpId = radio.employeeId
-      if (!radio.employeeId && newEmpId) {
-        radio.status = 'on'
-      } else if (radio.employeeId && !newEmpId) {
-        radio.status = 'off'
-      }
-      const radios = JSON.parse(JSON.stringify(this.dispatch.radios || []))
-      const found = radios.find(r => r.id === radio.id)
-      if (found) {
-        found.employeeId = newEmpId || null
-        if (!radio.employeeId && newEmpId) found.status = 'on'
-        else if (radio.employeeId && !newEmpId) found.status = 'off'
-        await Dispatch.updateField('radios', radios)
-      }
-
       if (oldEmpId !== newEmpId) {
+        const radios = JSON.parse(JSON.stringify(this.dispatch.radios || []))
+        const r = radios.find(x => x.id === radio.id)
+        if (r) {
+          r.employeeId = newEmpId || null
+          if (!oldEmpId && newEmpId) r.status = 'on'
+          else if (oldEmpId && !newEmpId) r.status = 'off'
+          await Dispatch.updateField('radios', radios)
+        }
+
         const serialStr = radio.serial || 'sans matricule'
         if (!oldEmpId && newEmpId) {
           const emp = this.employees.find(e => e.id === newEmpId)
@@ -2533,26 +2545,44 @@ export default {
         confirmButtonColor: '#d33'
       })
       if (!r.isConfirmed) return
-
-      const radios = (this.dispatch.radios||[]).filter(r => r.id !== radio.id)
-      await Dispatch.updateField('radios', radios)
+      
+      const radios = JSON.parse(JSON.stringify(this.dispatch.radios || []))
+      const idx = radios.findIndex(x => x.id === radio.id)
+      if (idx !== -1) {
+        radios.splice(idx, 1)
+        await Dispatch.updateField('radios', radios)
+      }
     },
     autoTurnOffRadio(employeeId) {
       if (!this.dispatch?.radios || !employeeId) return
-      const radio = this.dispatch.radios.find(r => r.employeeId === employeeId)
+      const radios = JSON.parse(JSON.stringify(this.dispatch.radios))
+      const radio = radios.find(r => r.employeeId === employeeId)
       if (radio) {
         radio.status = 'off'
-        this.dispatch.radios = [...this.dispatch.radios]
+        Dispatch.updateField('radios', radios)
       }
     },
     async toggleRadioStatus(radio) {
       if (!this.hasLsesPerm) return
-      const radios = JSON.parse(JSON.stringify(this.dispatch.radios || []))
-      const found = radios.find(r => r.id === radio.id)
-      if (found) {
-        found.status = found.status === 'on' ? 'off' : 'on'
+      const radios = JSON.parse(JSON.stringify(this.dispatch.radios))
+      const r = radios.find(x => x.id === radio.id)
+      if (r) {
+        r.status = r.status === 'on' ? 'off' : 'on'
         await Dispatch.updateField('radios', radios)
       }
+    },
+    onNotepadInput(val) {
+      if (!this.isDirection) return
+      this.localBuffers['global-notepad'] = val
+      this.debounceUpdate('global', 'notepad', () => {
+        Dispatch.updateField('notepad', val).then(() => {
+          if (this.localBuffers['global-notepad'] === val) delete this.localBuffers['global-notepad']
+        })
+      })
+    },
+    onZipChange() {
+      if (!this.dispatch) return
+      Dispatch.updateField('crisisZip', this.localCrisisZip.toUpperCase())
     },
 
     getMorgueSlot(section, index) {
@@ -2562,7 +2592,17 @@ export default {
     },
 
     async updateMorgueSlot(section, index, field, value) {
-      await Dispatch.updateMorgue(section, `slot_${index}`, { [field]: value })
+      if (field === 'name') {
+        const key = `morgue-${section}-${index}-name`
+        this.localBuffers[key] = value
+        this.debounceUpdate(key, 'name', () => {
+          Dispatch.updateMorgue(section, `slot_${index}`, { [field]: value }).then(() => {
+            if (this.localBuffers[key] === value) delete this.localBuffers[key]
+          })
+        })
+      } else {
+        await Dispatch.updateMorgue(section, `slot_${index}`, { [field]: value })
+      }
     },
 
     async clearMorgueSlot(section, index) {

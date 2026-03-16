@@ -1,4 +1,4 @@
-import { getFirestore, doc, setDoc, onSnapshot, getDoc, runTransaction, collection, updateDoc, deleteDoc, addDoc, getDocs, writeBatch } from "firebase/firestore"
+import { getFirestore, doc, setDoc, onSnapshot, getDoc, runTransaction, collection, updateDoc, deleteDoc, addDoc, getDocs, writeBatch, query, orderBy } from "firebase/firestore"
 let db = getFirestore()
 
 const GLOBAL_DOC_ID = "global"
@@ -12,8 +12,9 @@ function normalizeCentrale(c) {
 }
 
 class Dispatch {
-    constructor(centrale, patates, hospitalStatus, interventions, lsesRadio, communeRadio, notepad, radios, nuitRadioId, crises, beds, temporaryEmployees, morgue, crisisZip) {
+    constructor(centrale, patates, hospitalStatus, interventions, lsesRadio, communeRadio, notepad, radios, nuitRadioId, crises, beds, temporaryEmployees, morgue, crisisZip, centralEmpsData) {
         this.centrale = normalizeCentrale(centrale)
+        if (centralEmpsData) this.centrale.employees = centralEmpsData
         this.patates = patates || []
         this.hospitalStatus = hospitalStatus || 'gestion_normale'
         this.interventions = interventions || []
@@ -34,11 +35,13 @@ class Dispatch {
         const crisesRef = collection(db, collectionName, GLOBAL_DOC_ID, "crises")
         const interventionsRef = collection(db, collectionName, GLOBAL_DOC_ID, "interventions")
         const patatesRef = collection(db, collectionName, GLOBAL_DOC_ID, "patates")
+        const centralEmpsRef = collection(db, collectionName, GLOBAL_DOC_ID, "centrale_employees")
 
         let globalData = null
         let crisesData = []
         let interventionsData = []
         let patatesData = []
+        let centralEmpsData = []
 
         const emit = () => {
             if (globalData) {
@@ -50,13 +53,14 @@ class Dispatch {
                     globalData.lsesRadio,
                     globalData.communeRadio,
                     globalData.notepad,
-                    globalData.radios,
+                    globalData.radios || [],
                     globalData.nuitRadioId,
                     crisesData,
                     globalData.beds,
                     globalData.temporaryEmployees,
                     globalData.morgue,
-                    globalData.crisisZip
+                    globalData.crisisZip,
+                    centralEmpsData
                 ))
             }
         }
@@ -73,6 +77,7 @@ class Dispatch {
 
         const unsubInterventions = onSnapshot(interventionsRef, snapshot => {
             interventionsData = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }))
+            interventionsData.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0))
             emit()
         })
 
@@ -81,17 +86,28 @@ class Dispatch {
             emit()
         })
 
+        const unsubCentralEmps = onSnapshot(centralEmpsRef, snapshot => {
+            centralEmpsData = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }))
+            emit()
+        })
+
         return () => {
             unsubGlobal()
             unsubCrises()
             unsubInterventions()
             unsubPatates()
+            unsubCentralEmps()
         }
     }
 
     async save() {
         await updateDoc(doc(db, collectionName, GLOBAL_DOC_ID), {
-            centrale: this.centrale,
+            centrale: {
+                location: this.centrale.location || null,
+                complement: this.centrale.complement || null,
+                type: this.centrale.type || null,
+                returnStatus: this.centrale.returnStatus || null,
+            },
             hospitalStatus: this.hospitalStatus || 'gestion_normale',
             lsesRadio: this.lsesRadio || '',
             communeRadio: this.communeRadio || '',
@@ -139,26 +155,34 @@ class Dispatch {
 
     static async addInterventionSlot(slotData) {
         const c = collection(db, collectionName, GLOBAL_DOC_ID, "interventions")
-        await addDoc(c, slotData)
+        const newRef = slotData.id ? doc(c, slotData.id) : doc(c)
+        await setDoc(newRef, { ...slotData, id: newRef.id, createdAt: Date.now() })
+        return newRef.id
     }
 
-    static async updateRadio(radioId, updates) {
-        const d = doc(db, collectionName, GLOBAL_DOC_ID)
-        const snap = await getDoc(d)
-        if (!snap.exists()) return
-        const radios = snap.data().radios || []
-        const idx = radios.findIndex(r => r.id === radioId)
-        if (idx !== -1) {
-            radios[idx] = { ...radios[idx], ...updates }
-            await updateDoc(d, { radios })
-        }
+    static async updateCentraleEmployee(empId, updates) {
+        const c = collection(db, collectionName, GLOBAL_DOC_ID, "centrale_employees")
+        const snap = await getDocs(c)
+        const d = snap.docs.find(doc => doc.data().employeeId === empId)
+        if (d) await updateDoc(d.ref, updates)
     }
 
     static async updateCentrale(updates) {
         const d = doc(db, collectionName, GLOBAL_DOC_ID)
         const up = {}
-        Object.keys(updates).forEach(k => { up[`centrale.${k}`] = updates[k] })
+        Object.keys(updates).forEach(k => {
+            if (k === 'employees') return
+            up[`centrale.${k}`] = updates[k]
+        })
         await updateDoc(d, up)
+
+        if (updates.employees && updates.employees.length === 0) {
+            const c = collection(db, collectionName, GLOBAL_DOC_ID, "centrale_employees")
+            const snap = await getDocs(c)
+            const batch = writeBatch(db)
+            snap.docs.forEach(doc => batch.delete(doc.ref))
+            await batch.commit()
+        }
     }
 
     static async updateBed(bedId, updates) {
@@ -186,18 +210,24 @@ class Dispatch {
         if (!snap.exists()) return
         const data = snap.data()
 
-        const temporaryEmployees = (data.temporaryEmployees || []).filter(e => e.id !== empId)
-        const patates = (data.patates || []).filter(p => p.employeeId !== empId)
-        const interventions = (data.interventions || []).map(slot => ({
-            ...slot,
-            employees: (slot.employees || []).filter(e => e.employeeId !== empId)
-        }))
-        const centrale = {
-            ...(data.centrale || {}),
-            employees: (data.centrale?.employees || []).filter(e => e.employeeId !== empId)
-        }
+        const batch = writeBatch(db)
 
-        await updateDoc(d, { temporaryEmployees, patates, interventions, centrale })
+        const temporaryEmployees = (data.temporaryEmployees || []).filter(e => e.id !== empId)
+        batch.update(d, { temporaryEmployees })
+
+        const pSnap = await getDocs(collection(db, collectionName, GLOBAL_DOC_ID, "patates"))
+        pSnap.docs.forEach(doc => { if (doc.data().employeeId === empId) batch.delete(doc.ref) })
+
+        const iSnap = await getDocs(collection(db, collectionName, GLOBAL_DOC_ID, "interventions"))
+        iSnap.docs.forEach(doc => {
+            const emps = (doc.data().employees || []).filter(e => e.employeeId !== empId)
+            batch.update(doc.ref, { employees: emps })
+        })
+
+        const cSnap = await getDocs(collection(db, collectionName, GLOBAL_DOC_ID, "centrale_employees"))
+        cSnap.docs.forEach(doc => { if (doc.data().employeeId === empId) batch.delete(doc.ref) })
+
+        await batch.commit()
     }
 
     static async updateMorgue(section, slotKey, updates) {
@@ -211,15 +241,21 @@ class Dispatch {
         const batch = writeBatch(db)
         const globalRef = doc(db, collectionName, GLOBAL_DOC_ID)
 
-        const snap = await getDoc(globalRef)
-        const data = snap.data() || {}
+        batch.update(globalRef, {
+            hospitalStatus: 'gestion_normale',
+            lsesRadio: '',
+            communeRadio: '',
+            notepad: '',
+            nuitRadioId: null,
+            crisisZip: '',
+            radios: []
+        })
 
-        const centrale = { ...(data.centrale || {}), employees: [] }
-        const radios = (data.radios || []).map(radio => ({ ...radio, status: 'off' }))
-        const patates = []
-        const interventions = (data.interventions || []).map(slot => ({ ...slot, employees: [] }))
-
-        batch.update(globalRef, { centrale, radios, patates, interventions })
+        const colls = ["crises", "interventions", "patates", "centrale_employees"]
+        for (const cName of colls) {
+            const snap = await getDocs(collection(db, collectionName, GLOBAL_DOC_ID, cName))
+            snap.docs.forEach(d => batch.delete(d.ref))
+        }
 
         await batch.commit()
     }
@@ -227,23 +263,20 @@ class Dispatch {
     static async migrateEmployee(employeeId, srcKey, targetKey, employeeData) {
         const batch = writeBatch(db)
         const globalRef = doc(db, collectionName, GLOBAL_DOC_ID)
-        const snap = await getDoc(globalRef)
-        const data = snap.data() || {}
-
-        let currentCentraleEmployees = data.centrale?.employees || []
-        let currentPatates = data.patates || []
-        let currentInterventions = data.interventions || []
 
         if (srcKey === 'centrale') {
-            const snap = await getDoc(globalRef)
-            const emps = (snap.data()?.centrale?.employees || []).filter(e => e.employeeId !== employeeId)
-            batch.update(globalRef, { 'centrale.employees': emps })
+            const c = collection(db, collectionName, GLOBAL_DOC_ID, "centrale_employees")
+            const snap = await getDocs(c)
+            const d = snap.docs.find(doc => doc.data().employeeId === employeeId)
+            if (d) batch.delete(d.ref)
         } else if (srcKey?.startsWith('inter:')) {
             const slotId = srcKey.slice(6)
             const d = doc(db, collectionName, GLOBAL_DOC_ID, "interventions", slotId)
             const snap = await getDoc(d)
-            const emps = (snap.data()?.employees || []).filter(e => e.employeeId !== employeeId)
-            batch.update(d, { employees: emps })
+            if (snap.exists()) {
+                const emps = (snap.data().employees || []).filter(e => e.employeeId !== employeeId)
+                batch.update(d, { employees: emps })
+            }
         } else if (srcKey?.startsWith('cat:')) {
             const c = collection(db, collectionName, GLOBAL_DOC_ID, "patates")
             const snap = await getDocs(c)
@@ -252,12 +285,9 @@ class Dispatch {
         }
 
         if (targetKey === 'centrale') {
-            const snap = await getDoc(globalRef)
-            const emps = snap.data()?.centrale?.employees || []
-            if (!emps.find(e => e.employeeId === employeeId)) {
-                emps.push({ ...employeeData, employeeId, centralRole: null })
-                batch.update(globalRef, { 'centrale.employees': emps })
-            }
+            const c = collection(db, collectionName, GLOBAL_DOC_ID, "centrale_employees")
+            const newRef = doc(c)
+            batch.set(newRef, { ...employeeData, employeeId, centralRole: null })
         } else if (targetKey?.startsWith('inter:')) {
             const slotId = targetKey.slice(6)
             const d = doc(db, collectionName, GLOBAL_DOC_ID, "interventions", slotId)
@@ -273,11 +303,7 @@ class Dispatch {
             const category = targetKey.slice(4)
             const c = collection(db, collectionName, GLOBAL_DOC_ID, "patates")
             const newRef = doc(c)
-            batch.set(newRef, {
-                ...employeeData,
-                employeeId,
-                category
-            })
+            batch.set(newRef, { ...employeeData, employeeId, category })
         }
 
         await batch.commit()
@@ -300,23 +326,20 @@ class Dispatch {
         batch.delete(d)
         await batch.commit()
     }
+
     static async removeFromBoard(employeeId) {
         const batch = writeBatch(db)
-        const globalRef = doc(db, collectionName, GLOBAL_DOC_ID)
 
-        const gSnap = await getDoc(globalRef)
-        const cEmps = (gSnap.data()?.centrale?.employees || []).filter(e => e.employeeId !== employeeId)
-        batch.update(globalRef, { 'centrale.employees': cEmps })
-
-        const pSnap = await getDocs(collection(db, collectionName, GLOBAL_DOC_ID, "patates"))
-        pSnap.docs.forEach(d => {
-            if (d.data().employeeId === employeeId) batch.delete(d.ref)
-        })
+        const colls = ["patates", "centrale_employees"]
+        for (const cName of colls) {
+            const snap = await getDocs(collection(db, collectionName, GLOBAL_DOC_ID, cName))
+            snap.docs.forEach(doc => { if (doc.data().employeeId === employeeId) batch.delete(doc.ref) })
+        }
 
         const iSnap = await getDocs(collection(db, collectionName, GLOBAL_DOC_ID, "interventions"))
-        iSnap.docs.forEach(d => {
-            const emps = (d.data().employees || []).filter(e => e.employeeId !== employeeId)
-            batch.update(d.ref, { employees: emps })
+        iSnap.docs.forEach(doc => {
+            const emps = (doc.data().employees || []).filter(e => e.employeeId !== employeeId)
+            batch.update(doc.ref, { employees: emps })
         })
 
         await batch.commit()
