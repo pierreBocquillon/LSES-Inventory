@@ -7,18 +7,20 @@ export const allCategories = [
 ]
 
 export const interventionTypes = [
-    { value: 'intervention', label: 'Intervention', emoji: '🚑', color: '#c62828' },
-    { value: 'primo_inter', label: 'Primo Inter', emoji: '🔥', color: '#d84315' },
-    { value: 'patrouille', label: 'Patrouille', emoji: '🚔', color: '#1565c0' },
-    { value: 'event', label: 'Event', emoji: '🎪', color: '#6a1b9a' },
-    { value: 'rdv', label: 'Rendez-Vous', emoji: '📅', color: '#00695c' },
-    { value: 'psy', label: 'Psy', emoji: '🧠', color: '#ad1457' },
-    { value: 'otage', label: 'Banque/Bijouterie', emoji: '💰', color: '#f9a825' },
-    { value: 'bureau_admin', label: 'Bureau/Admin', emoji: '🖥️', color: '#37474f' },
-    { value: 'formation', label: 'Formation', emoji: '📚', color: '#2e7d32' },
-    { value: 'operation', label: 'Opération', emoji: '⚙️', color: '#e65100' },
+    { value: 'intervention', label: 'Intervention', emoji: '🚑', color: '#E47C7C' },
+    { value: 'primo_inter', label: 'Primo Inter', emoji: '🔥', color: '#EE7B58' },
+    { value: 'patrouille', label: 'Patrouille', emoji: '🚔', color: '#5A9EED' },
+    { value: 'event', label: 'Event', emoji: '🎪', color: '#CB92F2' },
+    { value: 'rdv', label: 'Rendez-Vous', emoji: '📅', color: '#00E0C6' },
+    { value: 'rh', label: 'RH', emoji: '📋', color: '#009BF5' },
+    { value: 'psy', label: 'Psy', emoji: '🧠', color: '#EE72A8' },
+    { value: 'bank', label: 'Banque/Bijouterie', emoji: '💰', color: '#f9a825' },
+    { value: 'otage', label: 'Prise d\'otage', emoji: '🔫', color: '#d2f925ff' },
+    { value: 'bureau_admin', label: 'Bureau/Admin', emoji: '🖥️', color: '#A2B0BE' },
+    { value: 'formation', label: 'Formation', emoji: '📚', color: '#3FAB45' },
+    { value: 'operation', label: 'Opération', emoji: '⚙️', color: '#FFB38A' },
     { value: 'vm', label: 'VM', emoji: '🩺', color: '#1acb26' },
-    { value: 'hopital', label: 'Dans l\'hopital', emoji: '🏥', color: '#1a52cb' },
+    { value: 'hopital', label: 'Dans l\'hopital', emoji: '🏥', color: '#B7CCF6' },
 ]
 
 export const returnStatuses = [
@@ -85,16 +87,16 @@ export const bcesStatusConfig = {
 
 export const crisisMedicalStatuses = [
     { value: 'reveil', label: 'Réveil après OP', emoji: '🥱', color: '#10b981' },
-    { value: 'attente_sortie', label: 'Attente de sortie', emoji: '🚪', color: '#3b82f6' },
+    { value: 'attente_sortie', label: 'Attente de sortie', emoji: '🚪', color: '#4186F6' },
     { value: 'sorti', label: 'Sorti', emoji: '✅', color: '#59AD4F' },
-    { value: 'en_observation', label: 'En observation', emoji: '👁️', color: '#AD4F87' },
-    { value: 'degrisement', label: 'Dégrisement', emoji: '🍺', color: '#658780' },
+    { value: 'en_observation', label: 'En observation', emoji: '👁️', color: '#BF73A1' },
+    { value: 'degrisement', label: 'Dégrisement', emoji: '🍺', color: '#799A94' },
     { value: 'attente_op', label: 'Attente d\'OP', emoji: '⏳', color: '#E36519' },
-    { value: 'coma_artificiel', label: 'Coma artificiel', emoji: '💤', color: '#E62C48' },
-    { value: 'equipe_nuit', label: 'Equipe de nuit / Finir soin', emoji: '🌙', color: '#263991' },
-    { value: 'nuit_chambre', label: 'Nuit en chambre', emoji: '🏨', color: '#482691' },
+    { value: 'coma_artificiel', label: 'Coma artificiel', emoji: '💤', color: '#EB5269' },
+    { value: 'equipe_nuit', label: 'Equipe de nuit / Finir soin', emoji: '🌙', color: '#A6B2E7' },
+    { value: 'nuit_chambre', label: 'Nuit en chambre', emoji: '🏨', color: '#B09AE5' },
     { value: 'inconscient', label: 'Inconscient', emoji: '😵', color: '#26BF96' },
-    { value: 'autopsie', label: 'Autopsie', emoji: '🩻', color: '#808080' },
+    { value: 'autopsie', label: 'Autopsie', emoji: '🩻', color: '#949494' },
     { value: 'decede', label: 'Décédé', emoji: '⚰️', color: '#D9D9D9' },
 ]
 
