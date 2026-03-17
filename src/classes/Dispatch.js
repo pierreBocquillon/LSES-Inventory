@@ -308,6 +308,33 @@ class Dispatch {
 
         await batch.commit()
     }
+    static async resetInterventionSlot(slotId) {
+        const d = doc(db, collectionName, GLOBAL_DOC_ID, "interventions", slotId)
+        const snap = await getDoc(d)
+        if (!snap.exists()) return
+
+        const batch = writeBatch(db)
+        const employees = snap.data().employees || []
+
+        if (employees.length) {
+            const patRef = collection(db, collectionName, GLOBAL_DOC_ID, "patates")
+            employees.forEach(emp => {
+                const nr = doc(patRef)
+                batch.set(nr, { ...emp, category: 'en_service' })
+            })
+        }
+        
+        batch.update(d, {
+            location: null,
+            complement: null,
+            type: 'intervention',
+            returnStatus: null,
+            employees: []
+        })
+        
+        await batch.commit()
+    }
+
     static async deleteInterventionSlot(slotId) {
         const d = doc(db, collectionName, GLOBAL_DOC_ID, "interventions", slotId)
         const snap = await getDoc(d)

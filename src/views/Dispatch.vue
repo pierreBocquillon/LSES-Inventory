@@ -295,8 +295,9 @@
                   </v-list-item>
                 </v-list>
               </v-menu>
-                            <v-btn v-if="hasLsesPerm" icon variant="plain" size="x-small" color="error" class="ml-auto"
-                @click="removeInterventionSlot(slot.id)" :title="(slot.employees?.length || slot.location || slot.complement || slot.returnStatus || slot.type !== 'intervention') ? 'Réinitialiser ce slot' : 'Supprimer ce slot'">
+              <v-btn v-if="hasLsesPerm" icon variant="plain" size="x-small" color="error" class="ml-auto"
+                :key="`btn-${slot.id}-${(slot.employees?.length || slot.location || slot.complement || slot.returnStatus || slot.type !== 'intervention') ? 'reset' : 'delete'}`"
+                @click="removeInterventionSlot(slot)" :title="(slot.employees?.length || slot.location || slot.complement || slot.returnStatus || slot.type !== 'intervention') ? 'Réinitialiser ce slot' : 'Supprimer ce slot'">
                 <v-icon size="11">{{ (slot.employees?.length || slot.location || slot.complement || slot.returnStatus || slot.type !== 'intervention') ? 'mdi-refresh' : 'mdi-close' }}</v-icon>
               </v-btn>
             </div>
@@ -709,7 +710,6 @@
                 class="location-input crisis-zip-input" 
                 style="width: 70px; font-weight: 900; background: transparent; border: none; outline: none; color: #fff; text-align: center; text-transform: uppercase;" 
                 placeholder="ZIP" 
-                autofocus
             />
         </div>
         <v-icon size="14" class="ml-auto">{{ crisisExpanded ? 'mdi-chevron-up' : 'mdi-chevron-down' }}</v-icon>
@@ -1383,7 +1383,8 @@ export default {
       locations: vehiclesLocations,
       _timeouts: {},
       localCrisisZip: '',
-      localBuffers: {}, // { "id-field": "value" }
+      localBuffers: {},
+      lastSyncedCentrale: { name: '', phone: '' },
     }
   },
 
@@ -1658,6 +1659,7 @@ export default {
       if (d && !this.localCrisisZip && !document.activeElement?.classList.contains('crisis-zip-input')) {
         this.localCrisisZip = d.crisisZip || ''
       }
+      this.syncCentraleGSheet(d)
     })
     this.unsubEmployees = Employee.listenAll(list => {
       this.employees = [...list].sort((a,b) => (a.name||'').localeCompare(b.name||''))
@@ -1690,16 +1692,20 @@ export default {
       this.isLightTheme = !this.isLightTheme;
     },
 
-    syncCentraleGSheet() {
-      if (!this.dispatch?.centrale?.employees) return
+    syncCentraleGSheet(d) {
+      const data = d || this.dispatch
+      if (!data?.centrale?.employees) return
 
-      const employees = this.dispatch.centrale.employees
+      const employees = data.centrale.employees
       let name = '';
       let phone = '';
       if (employees && employees.length > 0) {
         name = employees[0].name || '';
         phone = employees[0].phone || '';
       }
+
+      if (this.lastSyncedCentrale.name === name && this.lastSyncedCentrale.phone === phone) return
+      this.lastSyncedCentrale = { name, phone }
       
       try {
         const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwDWdQakJgJ22wYz2-uo6LRheJSFX7_-kox8oGBSxe808QXr9ryMg74LNDc5ufgNgKp/exec';
@@ -1880,7 +1886,6 @@ export default {
             phone: result.value.phone || '',
             validations: result.value.validations || []
           })
-          if (wasInCentrale) this.syncCentraleGSheet()
         } else if (result.isDenied) {
           const r = await Swal.fire({
             title: 'Supprimer l\'employé ?',
@@ -1895,7 +1900,6 @@ export default {
           if (r.isConfirmed) {
             const wasInCentrale = this.dispatch.centrale?.employees?.some(e => e.employeeId === realId);
             await Dispatch.removeTemporaryEmployee(realId)
-            if (wasInCentrale) this.syncCentraleGSheet()
           }
         }
       })
@@ -1904,7 +1908,6 @@ export default {
       if (!this.hasLsesPerm) return
       if (!this.dispatch) return;
       await Dispatch.resetAll()
-      this.syncCentraleGSheet();
     },
 
     onCrisisNameInput(crisis, val) {
@@ -2145,7 +2148,6 @@ export default {
       }
       
       if (targetKey === 'hs') this.autoTurnOffRadio(empId)
-      if (targetKey === 'centrale' || src === 'centrale') this.syncCentraleGSheet()
 
       await Dispatch.migrateEmployee(empId, src, targetKey === 'hs' ? null : targetKey, {
         name: emp.name || '',
@@ -2176,7 +2178,6 @@ export default {
       let wasInCentrale = this.dispatch.centrale?.employees?.some(e => e.employeeId === employeeId)
       
       this.autoTurnOffRadio(employeeId)
-      if (wasInCentrale) this.syncCentraleGSheet()
       
       await Dispatch.removeFromBoard(employeeId)
     },
@@ -2188,7 +2189,6 @@ export default {
       if (!r.isConfirmed) return
       const emptyCentrale = { location: null, complement: null, type: null, returnStatus: null, employees: [] }
       await Dispatch.updateCentrale(emptyCentrale)
-      this.syncCentraleGSheet()
     },
 
     async removeEmpFromCentrale(empId) {
@@ -2198,7 +2198,6 @@ export default {
       if (!r.isConfirmed || !this.dispatch) return
       
       await Dispatch.migrateEmployee(empId, 'centrale', null, {})
-      this.syncCentraleGSheet()
     },
     async setCentraleEmpRole(empId, role) {
       if (!this.hasLsesPerm) return
@@ -2294,9 +2293,21 @@ export default {
       }
     },
 
-    async removeInterventionSlot(slotId) {
-      if (!this.hasLsesPerm) return
-      await Dispatch.deleteInterventionSlot(slotId)
+    async removeInterventionSlot(slot) {
+      if (!this.hasLsesPerm || !slot) return
+      const hasContent = (slot.employees?.length || slot.location || slot.complement || slot.returnStatus || slot.type !== 'intervention')
+      if (hasContent) {
+        const locKey = `${slot.id}-location`
+        if (this.localBuffers[locKey] !== undefined) delete this.localBuffers[locKey]
+        if (this._timeouts[locKey]) {
+          clearTimeout(this._timeouts[locKey])
+          delete this._timeouts[locKey]
+        }
+
+        await Dispatch.resetInterventionSlot(slot.id)
+      } else {
+        await Dispatch.deleteInterventionSlot(slot.id)
+      }
     },
 
     async addCrisisSlot() {
@@ -2472,8 +2483,6 @@ export default {
         this.autoTurnOffRadio(empId)
       }
       
-      if (src === 'centrale') this.syncCentraleGSheet()
-
       await Dispatch.migrateEmployee(empId, src, categoryValue === 'hs' ? null : `cat:${categoryValue}`, {
         name: this.quickAddEmployee.name || '',
         phone: this.quickAddEmployee.phone || '',
