@@ -728,8 +728,8 @@
               <th style="padding: 8px; font-weight: 500; text-align: center; width: 40px;">Coma</th>
               <th style="padding: 8px; font-weight: 500; text-align: center; width: 60px;">Lourd / Inconscient</th>
               <th style="padding: 8px; font-weight: 500;">Nom et prénom</th>
-              <th style="padding: 8px; font-weight: 500;">Appartenance</th>
               <th style="padding: 8px; font-weight: 500;">Détails</th>
+              <th style="padding: 8px; font-weight: 500;">Appartenance</th>
               <th style="padding: 8px; font-weight: 500;">Qui rapatrie</th>
               <th style="padding: 8px; font-weight: 500;">Arrivée hôpital</th>
               <th style="padding: 8px; font-weight: 500;">Qui soigne</th>
@@ -744,16 +744,16 @@
               :style="[
                 { borderBottom: '1px solid #1e293b' },
                 crisis.canalCheckCentrale 
-                  ? { background: 'rgba(128, 90, 213, 0.2)', borderLeft: '3px solid #9333ea' } 
+                  ? { background: crisisRowColors.canalCheckCentrale.bg, borderLeft: `3px solid ${crisisRowColors.canalCheckCentrale.border}` } 
                   : crisis.medicalStatus
-                    ? { background: 'rgba(56, 189, 248, 0.15)', borderLeft: '3px solid #38bdf8' }
+                    ? { background: crisisRowColors.medicalStatus.bg, borderLeft: `3px solid ${crisisRowColors.medicalStatus.border}` }
                     : crisis.treatedBy 
-                      ? { background: 'rgba(16, 185, 129, 0.15)', borderLeft: '3px solid #10b981' }
+                      ? { background: crisisRowColors.treatedBy.bg, borderLeft: `3px solid ${crisisRowColors.treatedBy.border}` }
                       : crisis.isHeavyInjured 
-                        ? { background: 'rgba(239, 68, 68, 0.3)', borderLeft: '3px solid #ef4444' } 
+                        ? { background: crisisRowColors.isHeavyInjured.bg, borderLeft: `3px solid ${crisisRowColors.isHeavyInjured.border}` } 
                         : crisis.isComa 
-                          ? { background: 'rgba(249, 115, 22, 0.2)', borderLeft: '3px solid #f97316' } 
-                          : { background: 'rgba(255,0,0,0.05)' }
+                          ? { background: crisisRowColors.isComa.bg, borderLeft: `3px solid ${crisisRowColors.isComa.border}` } 
+                          : { background: crisisRowColors.default.bg }
               ]">
               
               <td style="padding: 6px; text-align: center;">
@@ -769,13 +769,13 @@
               </td>
 
               <td style="padding: 6px;">
-                <select v-model="crisis.affiliation" @change="Dispatch.updateCrisis(crisis.id, { affiliation: crisis.affiliation })" class="location-input font-weight-bold" style="border: 1px solid #334155; padding: 4px; border-radius: 4px; background: rgba(255,255,255,0.02); width: 100%;" :style="{ color: crisisAffiliations.find(a => a.value === crisis.affiliation)?.color || '#fff' }">
-                  <option v-for="aff in crisisAffiliations" :key="aff.value" :value="aff.value" style="background:#1a1f35" :style="{ color: aff.color || '#e2e8f0' }">{{ aff.label }}</option>
-                </select>
+                <input :value="localBuffers[`${crisis.id}-reason`] ?? crisis.reason" @input="onCrisisReasonInput(crisis, $event.target.value)" class="location-input" placeholder="Calibre // GPB // Blessures // ZIP" style="font-size: 0.75rem; background: rgba(0,0,0,0.2); padding: 5px 8px; border-radius: 4px; width: 100%; border: 1px solid #334155;" />
               </td>
 
               <td style="padding: 6px;">
-                <input :value="localBuffers[`${crisis.id}-reason`] ?? crisis.reason" @input="onCrisisReasonInput(crisis, $event.target.value)" class="location-input" placeholder="Calibre // GPB // Blessures // ZIP" style="font-size: 0.75rem; background: rgba(0,0,0,0.2); padding: 5px 8px; border-radius: 4px; width: 100%; border: 1px solid #334155;" />
+                <select v-model="crisis.affiliation" @change="Dispatch.updateCrisis(crisis.id, { affiliation: crisis.affiliation })" class="location-input font-weight-bold" style="border: 1px solid #334155; padding: 4px; border-radius: 4px; background: rgba(255,255,255,0.02); width: 100%;" :style="{ color: crisisAffiliations.find(a => a.value === crisis.affiliation)?.color || '#fff' }">
+                  <option v-for="aff in crisisAffiliations" :key="aff.value" :value="aff.value" style="background:#1a1f35" :style="{ color: aff.color || '#e2e8f0' }">{{ aff.label }}</option>
+                </select>
               </td>
               
               <td style="padding: 6px;">
@@ -1322,7 +1322,8 @@ import {
   crisisBeds,
   crisisBedGroups,
   complements,
-  morgueConfig
+  morgueConfig,
+  crisisRowColors
 } from '@/config/dispatch.js'
 import { trainingCompetencies } from '@/config/training_competencies.js'
 import { roleOrder, getRoleColor as getRoleColorConfig } from '@/config/roles.js'
@@ -1378,6 +1379,7 @@ export default {
       crisisBedGroups,
       complements,
       morgueConfig,
+      crisisRowColors,
       safdStatusConfig,
       bcesStatusConfig,
       locations: vehiclesLocations,
@@ -1450,7 +1452,12 @@ export default {
         }
         const affDiff = getAffIdx(a.affiliation) - getAffIdx(b.affiliation)
         if (affDiff !== 0) return affDiff
-        return (a.arrivalTime || 0) - (b.arrivalTime || 0)
+
+        const getBedIdx = (val) => {
+          const idx = this.crisisBeds.findIndex(bed => bed.value === val)
+          return idx === -1 ? 999 : idx
+        }
+        return getBedIdx(a.bed) - getBedIdx(b.bed)
       })
     },
     safdStatusStyle() {

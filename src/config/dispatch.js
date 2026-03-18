@@ -102,7 +102,6 @@ export const crisisMedicalStatuses = [
 
 export const crisisAffiliations = [
     { value: 'fdo', label: 'FDO', color: '#3b82f6' },
-    { value: 'ems', label: 'EMS', color: '#ef4444' },
     { value: 'civil', label: 'Civil', color: '#858585ff' },
     { value: 'ballas', label: 'Ballas', color: '#9d10b9ff' },
     { value: 'vagos', label: 'Vagos', color: '#dfdb14ff' },
@@ -112,8 +111,9 @@ export const crisisAffiliations = [
     { value: 'madz', label: 'Madz', color: '#d429b2ff' },
     { value: 'lost', label: 'Lost', color: '#b84e4e91' },
     { value: 'forsaken', label: 'Forsaken', color: '#e08312ff' },
-    { value: 'autre1', label: 'Autre 1', color: '#6b7280' },
-    { value: 'autre2', label: 'Autre 2', color: '#6b7280' },
+    { value: 'shadow', label: 'Grey Shadow', color: '#797979ff' },
+    { value: 'autre1', label: 'Autre 1', color: '#c23434ff' },
+    { value: 'autre2', label: 'Autre 2', color: '#3442c2ff' },
 ]
 
 export const crisisBeds = [
@@ -131,11 +131,11 @@ export const crisisBeds = [
     { value: 'op_3', label: 'OP 3' },
     { value: 'irm', label: 'IRM' },
     { value: 'radio', label: 'Radio' },
-    { value: 'consult_1', label: 'Consulte 1' },
-    { value: 'consult_2', label: 'Consulte 2' },
+    { value: 'consult_1', label: 'Consulte 1 (petite)' },
+    { value: 'consult_2', label: 'Consulte 2 (grande)' },
     { value: 'room_369', label: 'Chambre 369' },
     { value: 'room_370', label: 'Chambre 370' },
-    { value: 'room_371', label: 'Chambre 371' },
+    { value: 'room_374', label: 'Chambre 374' },
     { value: 'window_bed', label: 'Lit fenetre' },
     { value: 'middle_bed', label: 'Lit milieu' },
     { value: 'door_bed', label: 'Lit porte' },
@@ -217,3 +217,11 @@ export const complements = [
     { value: 'town_hall_north', label: 'Mairie nord' },
     { value: 'helicopter', label: 'FLAP-FLAP' },
 ]
+export const crisisRowColors = {
+    canalCheckCentrale: { bg: 'rgba(128, 90, 213, 0.2)', border: '#9333ea' },
+    medicalStatus: { bg: 'rgba(56, 189, 248, 0.15)', border: '#38bdf8' },
+    treatedBy: { bg: 'rgba(16, 185, 129, 0.15)', border: '#10b981' },
+    isHeavyInjured: { bg: 'rgba(239, 68, 68, 0.3)', border: '#ef4444' },
+    isComa: { bg: 'rgba(249, 115, 22, 0.2)', border: '#f97316' },
+    default: { bg: 'rgba(255,0,0,0.05)', border: 'transparent' }
+}
