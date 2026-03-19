@@ -107,7 +107,7 @@
             <td style="padding: 6px;">
               <select v-model="crisis.treatedBy" @change="Dispatch.updateCrisis(crisis.id, { treatedBy: crisis.treatedBy })" class="location-input" style="border: 1px solid #334155; padding: 4px; border-radius: 4px; width: 100%; background: rgba(255,255,255,0.02); color: #fff; font-weight: 600;">
                 <option :value="null" style="background:#1a1f35; color: #fff;">-- Sélectionner --</option>
-                <option v-for="emp in getCrisisEmployeeOptions(crisis.treatedBy)" :key="emp.id" :value="emp.id" style="background:#1a1f35">{{ emp.name }}</option>
+                <option v-for="emp in getCrisisEmployeeOptions(crisis.treatedBy, 'treatment')" :key="emp.id" :value="emp.id" style="background:#1a1f35">{{ emp.name }}</option>
               </select>
             </td>
             
@@ -260,7 +260,7 @@ export default {
         delete this._timeouts[key]
       }, delay)
     },
-    getCrisisEmployeeOptions(currentId) {
+    getCrisisEmployeeOptions(currentId, type = 'repatriation') {
       if (!this.dispatch) return []
       const ids = new Set()
       if (this.dispatch.centrale?.employees)
@@ -270,16 +270,31 @@ export default {
       
       const actives = this.allEmployees.filter(e => ids.has(e.id))
       
-      const options = [
-        ...actives,
-        { id: 'BCES', name: 'BCES', phone: '', role: '' }
-      ]
+      const specialIds = type === 'repatriation' 
+        ? ['BCES', 'Unité X', 'Consultation']
+        : ['BCES']
+        
+      const options = [...actives]
+      specialIds.forEach(id => {
+        options.push({ id, name: id, phone: '', role: '' })
+      })
+
       if (currentId && !options.find(o => o.id === currentId)) {
         const existing = this.allEmployees.find(e => e.id === currentId)
         if (existing) options.push(existing)
-        else if (currentId !== 'BCES') options.push({ id: currentId, name: 'Inconnu', phone: '', role: '' })
+        else if (!specialIds.includes(currentId)) options.push({ id: currentId, name: 'Inconnu', phone: '', role: '' })
       }
-      return options.sort((a,b) => (a.name||'').localeCompare(b.name||''))
+
+      return options.sort((a,b) => {
+        const aSpec = specialIds.indexOf(a.id)
+        const bSpec = specialIds.indexOf(b.id)
+        
+        if (aSpec !== -1 && bSpec !== -1) return aSpec - bSpec
+        if (aSpec !== -1) return 1
+        if (bSpec !== -1) return -1
+        
+        return (a.name || '').localeCompare(b.name || '')
+      })
     },
     onCrisisNameInput(crisis, val) {
       this.localBuffers[`${crisis.id}-name`] = val
