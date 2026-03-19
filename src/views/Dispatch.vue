@@ -712,9 +712,13 @@
                 placeholder="ZIP" 
             />
         </div>
-        <div v-if="treatedInjured > 0" class="ml-2 d-flex align-center" style="background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.4); border-radius: 4px; padding: 2px 8px; font-size: 0.75rem; font-weight: bold; color: #fff;" title="Temps moyen entre l'arrivée à l'hôpital et la fin des soins">
+        <div v-if="averageTreatmentTime > 0" class="ml-2 d-flex align-center" style="background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.4); border-radius: 4px; padding: 2px 8px; font-size: 0.75rem; font-weight: bold; color: #fff;" title="Temps moyen entre l'arrivée à l'hôpital et la fin des soins">
           <v-icon size="12" class="mr-1">mdi-timer-outline</v-icon>
           Soin moyen : <span class="ml-1 text-amber-lighten-2">{{ formatDuration(averageTreatmentTime) }}</span>
+        </div>
+        <div v-if="anyPatientArrived" class="ml-2 d-flex align-center" style="background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.4); border-radius: 4px; padding: 2px 8px; font-size: 0.75rem; font-weight: bold; color: #fff;" title="Durée totale de la prise en charge des patients">
+          <v-icon size="12" class="mr-1">mdi-clock-outline</v-icon>
+          Durée totale : <span class="ml-1 text-cyan-lighten-2">{{ formatDuration(totalCrisisDuration) }}</span>
         </div>
         <v-icon size="14" class="ml-auto">{{ crisisExpanded ? 'mdi-chevron-up' : 'mdi-chevron-down' }}</v-icon>
         <v-btn size="x-small" variant="plain" color="white" class="ml-1" @click.stop="addCrisisSlot">
@@ -1471,6 +1475,23 @@ export default {
       const totalMs = validCrises.reduce((sum, c) => sum + (c.statusTime - c.arrivalTime), 0)
       return totalMs / validCrises.length
     },
+    totalCrisisDuration() {
+      if (!this.dispatch || !this.dispatch.crises) return 0
+      const crises = this.dispatch.crises
+      const withArrival = crises.filter(c => c.arrivalTime)
+      if (withArrival.length === 0) return 0
+      
+      const firstArrival = Math.min(...withArrival.map(c => c.arrivalTime))
+      const isOngoing = crises.some(c => !c.medicalStatus && (c.arrivalTime || (c.name && c.name.trim() !== '')))
+      
+      if (isOngoing) {
+        return this.currentTime - firstArrival
+      } else {
+        const withStatus = crises.filter(c => c.statusTime)
+        const lastStatus = withStatus.length > 0 ? Math.max(...withStatus.map(c => c.statusTime)) : this.currentTime
+        return lastStatus - firstArrival
+      }
+    },
     safdStatusStyle() {
       const status = (this.safdStatus || '').toLowerCase()
       const mode = this.isLightTheme ? 'light' : 'dark'
@@ -1558,6 +1579,9 @@ export default {
     treatedInjured() {
       if (!this.dispatch || !this.dispatch.crises) return 0
       return this.dispatch.crises.filter(c => c.name && c.name.trim() !== '' && c.medicalStatus).length
+    },
+    anyPatientArrived() {
+      return this.dispatch?.crises?.some(c => c.arrivedAtHospital && c.arrivalTime) || false
     },
     addDialogCategory()   { return this.allCategories.find(c => c.value === this.addDialogCategoryValue) || null },
     lastRepairDateStr() {
@@ -1690,7 +1714,7 @@ export default {
     this.currentTime = Date.now()
     this.timeInterval = setInterval(() => {
       this.currentTime = Date.now()
-    }, 60000)
+    }, 1000)
   },
 
   beforeUnmount() {
