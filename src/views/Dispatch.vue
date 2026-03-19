@@ -712,6 +712,10 @@
                 placeholder="ZIP" 
             />
         </div>
+        <div v-if="treatedInjured > 0" class="ml-2 d-flex align-center" style="background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.4); border-radius: 4px; padding: 2px 8px; font-size: 0.75rem; font-weight: bold; color: #fff;" title="Temps moyen entre l'arrivée à l'hôpital et la fin des soins">
+          <v-icon size="12" class="mr-1">mdi-timer-outline</v-icon>
+          Soin moyen : <span class="ml-1 text-amber-lighten-2">{{ formatDuration(averageTreatmentTime) }}</span>
+        </div>
         <v-icon size="14" class="ml-auto">{{ crisisExpanded ? 'mdi-chevron-up' : 'mdi-chevron-down' }}</v-icon>
         <v-btn size="x-small" variant="plain" color="white" class="ml-1" @click.stop="addCrisisSlot">
           <v-icon size="13">mdi-plus</v-icon>
@@ -800,7 +804,7 @@
               </td>
               
               <td style="padding: 6px;">
-                <select v-model="crisis.medicalStatus" @change="Dispatch.updateCrisis(crisis.id, { medicalStatus: crisis.medicalStatus })" class="location-input" style="border: 1px solid #334155; padding: 4px; border-radius: 4px; background: rgba(255,255,255,0.02); font-weight: 600;" :style="{ color: crisisMedicalStatuses.find(s => s.value === crisis.medicalStatus)?.color || '#fff' }">
+                <select v-model="crisis.medicalStatus" @change="onMedicalStatusChange(crisis)" class="location-input" style="border: 1px solid #334155; padding: 4px; border-radius: 4px; background: rgba(255,255,255,0.02); font-weight: 600;" :style="{ color: crisisMedicalStatuses.find(s => s.value === crisis.medicalStatus)?.color || '#fff' }">
                   <option :value="null" style="background:#1a1f35; color: #fff;">-- Statut --</option>
                   <option v-for="stat in crisisMedicalStatuses" :key="stat.value" :value="stat.value" style="background:#1a1f35" :style="{ color: stat.color || '#e2e8f0' }">{{ stat.emoji ? stat.emoji + ' ' : '' }}{{ stat.label }}</option>
                 </select>
@@ -1459,6 +1463,13 @@ export default {
         }
         return getBedIdx(a.bed) - getBedIdx(b.bed)
       })
+    },
+    averageTreatmentTime() {
+      if (!this.dispatch || !this.dispatch.crises) return 0
+      const validCrises = this.dispatch.crises.filter(c => c.arrivalTime && c.statusTime)
+      if (validCrises.length === 0) return 0
+      const totalMs = validCrises.reduce((sum, c) => sum + (c.statusTime - c.arrivalTime), 0)
+      return totalMs / validCrises.length
     },
     safdStatusStyle() {
       const status = (this.safdStatus || '').toLowerCase()
@@ -2374,6 +2385,29 @@ export default {
         arrivedAtHospital: crisis.arrivedAtHospital, 
         arrivalTime: crisis.arrivalTime 
       })
+    },
+    async onMedicalStatusChange(crisis) {
+      if (!this.dispatch) return
+      
+      let statusTime = crisis.statusTime
+      if (crisis.medicalStatus) {
+        if (!statusTime) statusTime = Date.now()
+      } else {
+        statusTime = null
+      }
+
+      await Dispatch.updateCrisis(crisis.id, { 
+        medicalStatus: crisis.medicalStatus || null,
+        statusTime
+      })
+    },
+    formatDuration(ms) {
+      if (!ms || ms < 0) return '0s'
+      const totalSeconds = Math.floor(ms / 1000)
+      const minutes = Math.floor(totalSeconds / 60)
+      const seconds = totalSeconds % 60
+      if (minutes > 0) return `${minutes}m ${seconds}s`
+      return `${seconds}s`
     },
 
     formatTime(timestamp) {
