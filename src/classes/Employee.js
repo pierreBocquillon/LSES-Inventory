@@ -10,12 +10,12 @@ function docToInstance(document) {
     if (data.chiefSpecialty && !chiefSpecs.length) {
         chiefSpecs = [data.chiefSpecialty]
     }
-    return data ? new Employee(document.id, data.name, data.email, data.role, data.sex, data.phone, data.specialties, chiefSpecs, data.birthDate, data.arrivalDate, data.cdiDate, data.lastPromotionDate, data.medicalDegreeDate, data.helicopterTrainingDate, data.helicopterTrainingReimbursed, data.trainingRequests, data.promotionRequest, data.rankPromotionRequest, data.validatedSubCompetencies, data.competencyProgress, data.lastFollowUpDate, data.simpleFault, data.suspension, data.isTrainerTrainee, data.simulations, data.isRHTrainee, data.validatedTrainings, data.emoji, data.cid) : null
+    return data ? new Employee(document.id, data.name, data.email, data.role, data.sex, data.phone, data.specialties, chiefSpecs, data.birthDate, data.arrivalDate, data.cdiDate, data.lastPromotionDate, data.medicalDegreeDate, data.helicopterTrainingDate, data.helicopterTrainingReimbursed, data.trainingRequests, data.promotionRequest, data.rankPromotionRequest, data.validatedSubCompetencies, data.competencyProgress, data.lastFollowUpDate, data.simpleFault, data.suspension, data.isTrainerTrainee, data.simulations, data.isRHTrainee, data.validatedTrainings, data.emoji, data.cid, data.userId) : null
 }
 
 
 class Employee {
-    constructor(id, name, email, role, sex, phone, specialties, chiefSpecialties, birthDate, arrivalDate, cdiDate, lastPromotionDate, medicalDegreeDate, helicopterTrainingDate, helicopterTrainingReimbursed, trainingRequests, promotionRequest, rankPromotionRequest, validatedSubCompetencies, competencyProgress, lastFollowUpDate, simpleFault, suspension, isTrainerTrainee, simulations, isRHTrainee, validatedTrainings, emoji, cid) {
+    constructor(id, name, email, role, sex, phone, specialties, chiefSpecialties, birthDate, arrivalDate, cdiDate, lastPromotionDate, medicalDegreeDate, helicopterTrainingDate, helicopterTrainingReimbursed, trainingRequests, promotionRequest, rankPromotionRequest, validatedSubCompetencies, competencyProgress, lastFollowUpDate, simpleFault, suspension, isTrainerTrainee, simulations, isRHTrainee, validatedTrainings, emoji, cid, userId) {
         this.id = id
         this.name = name
         this.email = email
@@ -50,6 +50,7 @@ class Employee {
         this.validatedTrainings = validatedTrainings || []
         this.emoji = emoji || ''
         this.cid = cid || ''
+        this.userId = userId || null
     }
 
     static listenAll(callback) {
@@ -90,7 +91,8 @@ class Employee {
             isRHTrainee: this.isRHTrainee || false,
             validatedTrainings: this.validatedTrainings || [],
             emoji: this.emoji || '',
-            cid: this.cid || ''
+            cid: this.cid || '',
+            userId: this.userId || null
         }
 
         if (this.id) {

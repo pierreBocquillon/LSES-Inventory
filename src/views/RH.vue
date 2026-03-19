@@ -336,6 +336,13 @@
               <v-col cols="12" v-if="editedItem.specialties && editedItem.specialties.length > 0">
                 <v-select v-model="editedItem.chiefSpecialties" :items="getAvailableChiefSpecialties()" item-title="name" item-value="value" label="Spécialité Admin" variant="outlined" clearable multiple chips closable-chips></v-select>
               </v-col>
+              <v-col cols="12">
+                <v-autocomplete v-model="editedItem.userId" :items="availableProfiles" item-title="name" item-value="id" label="Lier à un compte utilisateur" variant="outlined" clearable>
+                  <template v-slot:item="{ props, item }">
+                    <v-list-item v-bind="props" :subtitle="item.raw.email"></v-list-item>
+                  </template>
+                </v-autocomplete>
+              </v-col>
             </v-row>
           </v-container>
           <v-container>
@@ -965,6 +972,7 @@
 
 <script>
 import Employee from '@/classes/Employee'
+import Profile from '@/classes/Profile'
 import Specialty from '@/classes/Specialty'
 import SharedChecklist from '@/classes/SharedChecklist'
 import Candidature from '@/classes/Candidature'
@@ -990,6 +998,7 @@ export default {
   data: () => ({
 
     userStore: useUserStore(),
+    profiles: [],
     dialog: false,
 
     // Checklists
@@ -1115,11 +1124,11 @@ export default {
       arrivalDate: null,
       cdiDate: null,
       lastPromotionDate: null,
-      lastPromotionDate: null,
       medicalDegreeDate: null,
       helicopterTrainingDate: null,
       helicopterTrainingReimbursed: false,
       cid: '',
+      userId: null,
     },
     defaultItem: {
       name: '',
@@ -1137,6 +1146,7 @@ export default {
       helicopterTrainingDate: null,
       helicopterTrainingReimbursed: false,
       cid: '',
+      userId: null,
     },
     detailsDialog: false,
     selectedEmployee: null,
@@ -1312,7 +1322,15 @@ export default {
         }]
       }
     },
+    availableProfiles() {
+      const usedUserIds = this.employees
+        .filter(e => e.id !== this.editedItem.id)
+        .map(e => e.userId)
+        .filter(id => id)
 
+      return this.profiles.filter(p => !usedUserIds.includes(p.id))
+    },
+ 
     isOverdue() {
       if (!this.lastWeekReset) return false
       const resetDate = new Date(this.lastWeekReset)
@@ -1346,6 +1364,9 @@ export default {
     this.unsub.push(Candidature.listenAll((list) => {
       this.candidatures = list
     }))
+    Profile.getActivated().then((list) => {
+      this.profiles = list
+    })
   },
 
   beforeUnmount() {
@@ -1497,10 +1518,14 @@ export default {
         let profile
         let isNew = false
         let oldRole = null
+        let originalUserId = null
 
         if (this.editedItem.id) {
           const original = this.employees.find(e => e.id === this.editedItem.id)
-          if (original) oldRole = original.role
+          if (original) {
+            oldRole = original.role
+            originalUserId = original.userId
+          }
 
           let promReq = this.editedItem.promotionRequest
           if (oldRole && oldRole !== this.editedItem.role)
@@ -1535,7 +1560,8 @@ export default {
             this.editedItem.isRHTrainee,
             this.editedItem.validatedTrainings,
             this.editedItem.emoji,
-            this.editedItem.cid
+            this.editedItem.cid,
+            this.editedItem.userId
           )
         } else {
           // Creating new
@@ -1569,11 +1595,31 @@ export default {
             false,
             [],
             '',
-            this.editedItem.cid
+            this.editedItem.cid,
+            this.editedItem.userId
           )
         }
 
         await profile.save()
+
+        if (originalUserId && originalUserId !== this.editedItem.userId) {
+          const oldP = this.profiles.find(profile => profile.id === originalUserId)
+          if (oldP && oldP.permissions && oldP.permissions.includes('lses')) {
+            oldP.permissions = oldP.permissions.filter(p => p !== 'lses')
+            await oldP.save()
+          }
+        }
+
+        if (this.editedItem.userId) {
+          const newP = this.profiles.find(profile => profile.id === this.editedItem.userId)
+          if (newP) {
+            if (!newP.permissions) newP.permissions = []
+            if (!newP.permissions.includes('lses')) {
+              newP.permissions = [...newP.permissions, 'lses']
+              await newP.save()
+            }
+          }
+        }
 
         if (isNew)
           logger.log(this.userStore.profile.id, "Ajout employés", `Ajout de l'employé ${this.editedItem.name} en tant que ${this.editedItem.role}`)
@@ -1622,7 +1668,17 @@ export default {
       }
 
       try {
+        const userIdToRemove = this.itemToDelete.userId
         await this.itemToDelete.delete()
+        
+        if (userIdToRemove) {
+          const p = this.profiles.find(profile => profile.id === userIdToRemove)
+          if (p && p.permissions && p.permissions.includes('lses')) {
+            p.permissions = p.permissions.filter(perm => perm !== 'lses')
+            await p.save()
+          }
+        }
+
         logger.log(this.userStore.profile.id, "Suppression employé", `Suppression de ${this.itemToDelete.name} pour ${this.deleteReason}`)
         Swal.fire({
           icon: 'success',
@@ -2122,7 +2178,8 @@ export default {
         false,
         [],
         '',
-        ''
+        '',
+        null
       )
 
       try {

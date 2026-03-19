@@ -266,8 +266,8 @@ export default {
       return rhNotif.value
     },
     currentEmployeeId() {
-      const profileName = this.userStore.profile?.name?.toLowerCase().trim()
-      return this.employees.find(e => e.name?.toLowerCase().trim() === profileName)?.id || null
+      const currentUserId = this.userStore.profile?.id
+      return this.employees.find(e => e.userId === currentUserId)?.id || null
     },
     myDispatchPosition() {
       if (!this.dispatch || !this.currentEmployeeId) return null
@@ -340,13 +340,13 @@ export default {
           else if (userPerms && tmp_item.permissions.some(p => userPerms.includes(p))) hasAccess = true
 
           if (tmp_item.link == '/appointments') {
-            const profileName = this.userStore.profile?.name?.toLowerCase().trim()
-            const currentEmployee = this.employees.find(e => e.name?.toLowerCase().trim() === profileName)
+            const currentUserId = this.userStore.profile?.id
+            const currentEmployee = this.employees.find(e => e.userId === currentUserId)
 
-            if (!currentEmployee) {
-              hasAccess = false
-            } else if (userPerms && userPerms.some(p => ['dev', 'admin'].includes(p))) {
+            if (userPerms && userPerms.some(p => ['dev', 'admin'].includes(p))) {
               hasAccess = true
+            } else if (!currentEmployee) {
+              hasAccess = false
             } else if (['Directeur', 'Directeur Adjoint'].includes(currentEmployee.role)) {
               hasAccess = true
             } else {
@@ -405,7 +405,8 @@ export default {
 
   methods: {
     openRequestDialog() {
-      const currentEmployee = this.employees.find(e => e.name === this.userStore.profile.name)
+      const currentUserId = this.userStore.profile?.id
+      const currentEmployee = this.employees.find(e => e.userId === currentUserId)
 
       if (!currentEmployee) {
         Swal.fire({
@@ -463,7 +464,8 @@ export default {
     },
 
     openPromotionDialog() {
-      const currentEmployee = this.employees.find(e => e.name === this.userStore.profile.name)
+      const currentUserId = this.userStore.profile?.id
+      const currentEmployee = this.employees.find(e => e.userId === currentUserId)
 
       if (!currentEmployee) {
         Swal.fire({

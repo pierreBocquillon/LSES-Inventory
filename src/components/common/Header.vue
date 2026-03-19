@@ -144,13 +144,13 @@ export default {
           else if(userPerms && tmp_item.permissions.every(p => userPerms.includes(p))) hasAccess = true
 
           if (tmp_item.link == '/appointments') {
-            const profileName = this.userStore.profile?.name?.toLowerCase().trim()
-            const currentEmployee = this.employees.find(e => e.name?.toLowerCase().trim() === profileName)
+            const currentUserId = this.userStore.profile?.id
+            const currentEmployee = this.employees.find(e => e.userId === currentUserId)
 
-            if (!currentEmployee) {
-              hasAccess = false
-            } else if (userPerms && userPerms.some(p => ['dev', 'admin'].includes(p))) {
+            if (userPerms && userPerms.some(p => ['dev', 'admin'].includes(p))) {
               hasAccess = true
+            } else if (!currentEmployee) {
+              hasAccess = false
             } else if (['Directeur', 'Directeur Adjoint'].includes(currentEmployee.role)) {
               hasAccess = true
             } else {

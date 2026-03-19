@@ -614,8 +614,8 @@ export default {
       let userPerms = this.userStore.profile?.permissions
       if(userPerms && userPerms.some(p => ['dev', 'admin'].includes(p))) return true
 
-      const profileName = this.userStore.profile?.name?.toLowerCase().trim()
-      const currentEmployee = this.employees.find(e => e.name?.toLowerCase().trim() === profileName)
+      const currentUserId = this.userStore.profile?.id
+      const currentEmployee = this.employees.find(e => e.userId === currentUserId)
       if (!currentEmployee) return false
 
       if (['Directeur', 'Directeur Adjoint'].includes(currentEmployee.role)) return true
@@ -633,8 +633,8 @@ export default {
       let userPerms = this.userStore.profile?.permissions
       if(userPerms && userPerms.some(p => ['dev', 'admin'].includes(p))) return true
 
-      const profileName = this.userStore.profile?.name?.toLowerCase().trim()
-      const currentEmployee = this.employees.find(e => e.name?.toLowerCase().trim() === profileName)
+      const currentUserId = this.userStore.profile?.id
+      const currentEmployee = this.employees.find(e => e.userId === currentUserId)
       if (!currentEmployee) return false
 
       if (['Directeur', 'Directeur Adjoint'].includes(currentEmployee.role)) return true
@@ -675,8 +675,8 @@ export default {
     filteredAppointments() {
       let appointments = this.appointments
       
-      const profileName = this.userStore.profile?.name?.toLowerCase().trim()
-      const currentEmployee = this.employees.find(e => e.name?.toLowerCase().trim() === profileName)
+      const currentUserId = this.userStore.profile?.id
+      const currentEmployee = this.employees.find(e => e.userId === currentUserId)
       let userPerms = this.userStore.profile?.permissions
       
       const isGlobalAdmin = userPerms && userPerms.some(p => ['dev', 'admin'].includes(p))

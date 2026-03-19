@@ -1406,8 +1406,8 @@ export default {
       return untreated.sort((a,b) => a.arrivalTime - b.arrivalTime)[0].id
     },
     isDirection() {
-      const profileName = this.userStore.profile?.name?.toLowerCase().trim()
-      const currentEmployee = this.employees.find(e => e.name?.toLowerCase().trim() === profileName)
+      const currentUserId = this.userStore.profile?.id
+      const currentEmployee = this.employees.find(e => e.userId === currentUserId)
 
       if (!currentEmployee) return false
       return ['Directeur', 'Directeur Adjoint'].includes(currentEmployee.role)
