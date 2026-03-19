@@ -181,7 +181,7 @@ export const crisisBedGroups = [
         icon: '🛏️',
         color: '#3b82f6',
         type: 'horizontal',
-        beds: ['room_369', 'room_370', 'room_371']
+        beds: ['room_369', 'room_370', 'room_374']
     },
     {
         id: 'common_room',
@@ -217,11 +217,12 @@ export const complements = [
     { value: 'town_hall_north', label: 'Mairie nord' },
     { value: 'helicopter', label: 'FLAP-FLAP' },
 ]
+
 export const crisisRowColors = {
-    canalCheckCentrale: { bg: 'rgba(128, 90, 213, 0.2)', border: '#9333ea' },
+    canalCheckCentrale: { bg: 'rgba(64, 208, 62, 0.2)', border: '#40D03E' },
     medicalStatus: { bg: 'rgba(56, 189, 248, 0.15)', border: '#38bdf8' },
-    treatedBy: { bg: 'rgba(16, 185, 129, 0.15)', border: '#10b981' },
-    isHeavyInjured: { bg: 'rgba(239, 68, 68, 0.3)', border: '#ef4444' },
-    isComa: { bg: 'rgba(249, 115, 22, 0.2)', border: '#f97316' },
+    treatedBy: { bg: 'rgba(247, 130, 34, 0.15)', border: '#F78222' },
+    isHeavyInjured: { bg: 'rgba(242, 13, 13, 0.3)', border: '#F20D0D' },
+    isComa: { bg: 'rgba(249, 138, 138, 0.2)', border: '#F98A8A' },
     default: { bg: 'rgba(255,0,0,0.05)', border: 'transparent' }
 }

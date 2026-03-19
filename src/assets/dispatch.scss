@@ -1,0 +1,87 @@
+/* Shared Dispatch Styles */
+
+.slot-section-title {
+  background: linear-gradient(90deg, #3b82f6 0%, #6366f1 100%);
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  letter-spacing: 0.03em;
+  text-shadow: 0 1px 3px rgba(0,0,0,.4);
+}
+
+.cnt {
+  background: rgba(255,255,255,.25);
+  border-radius: 10px;
+  padding: 0 5px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  margin-left: 5px;
+}
+
+.location-input {
+  border: none;
+  outline: none;
+  font-size: 0.63rem;
+  color: #cbd5e1;
+  width: 100%;
+  background: transparent;
+  min-width: 0;
+}
+.location-input::placeholder { color: #475569; }
+
+.crisis-zip-input::placeholder { color: rgba(255, 255, 255, 0.6) !important; opacity: 1; }
+
+.pulse-animation {
+  animation: pulse-red 2s infinite;
+}
+
+@keyframes pulse-red {
+  0% { transform: scale(0.95); opacity: 0.7; }
+  50% { transform: scale(1.05); opacity: 1; }
+  100% { transform: scale(0.95); opacity: 0.7; }
+}
+
+/* Light Theme Overrides */
+.theme--light .slot-section-title {
+  box-shadow: 0 1px 2px rgba(0,0,0,.1);
+  text-shadow: none;
+}
+
+.theme--light .cnt {
+  background: rgba(0, 0, 0, 0.1);
+  color: #1e293b;
+}
+
+.theme--light .location-input { color: #334155; }
+.theme--light .location-input::placeholder { color: #94a3b8; }
+
+/* Specific Overrides for child components */
+.theme--light .crises-bottom-section .cnt,
+.theme--light .beds-bottom-section .cnt {
+  color: #ffffff !important;
+}
+
+.theme--light .crises-bottom-section, 
+.theme--light .beds-bottom-section {
+  background: #f1f5f9 !important;
+  border-top-color: #cbd5e1 !important;
+}
+
+.theme--light table th, .theme--light table td {
+  border-color: #cbd5e1 !important;
+}
+
+.theme--light th { color: #1e293b !important; }
+.theme--light table td, .theme--light table label { color: #334155; }
+.theme--light select, .theme--light input { color: #0f172a !important; }
+
+.theme--light option, 
+.theme--light .location-input option {
+  background: #ffffff !important;
+  color: #0f172a !important;
+}

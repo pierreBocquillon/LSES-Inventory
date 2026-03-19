@@ -9,6 +9,7 @@ import { createPinia } from 'pinia'
 
 import "@/styles/styles.scss"
 import "@/styles/swal.scss"
+import "@/assets/dispatch.scss"
 
 loadFonts()
 const pinia = createPinia()

@@ -1943,19 +1943,7 @@ export default {
   gap: 4px;
 }
 
-.slot-section-title {
-  background: linear-gradient(90deg, #3b82f6 0%, #6366f1 100%);
-  color: #fff;
-  font-size: 0.68rem;
-  font-weight: 700;
-  padding: 3px 8px;
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  flex-shrink: 0;
-  letter-spacing: 0.03em;
-  text-shadow: 0 1px 3px rgba(0,0,0,.4);
-}
+
 
 .drop-slot {
   border: 2px dashed #334155;
@@ -2048,14 +2036,7 @@ export default {
   flex-shrink: 0;
   letter-spacing: 0.02em;
 }
-.cnt {
-  background: rgba(255,255,255,.25);
-  border-radius: 10px;
-  padding: 0 5px;
-  font-size: 0.65rem;
-  font-weight: 700;
-  margin-left: 5px;
-}
+
 
 .cards-grid {
   display: flex;
@@ -2254,17 +2235,7 @@ export default {
   border-radius: 4px;
   margin-bottom: 2px;
 }
-.location-input {
-  border: none;
-  outline: none;
-  font-size: 0.63rem;
-  color: #cbd5e1;
-  width: 100%;
-  background: transparent;
-  min-width: 0;
-}
-.location-input::placeholder { color: #475569; }
-.crisis-zip-input::placeholder { color: rgba(255, 255, 255, 0.6) !important; opacity: 1; }
+
 
 .return-badge {
   display: inline-flex;
@@ -2314,16 +2285,9 @@ export default {
   color: #1e293b;
   border-bottom-color: #cbd5e1;
 }
-.theme--light .cnt {
-  background: rgba(0, 0, 0, 0.1);
-  color: #1e293b;
-}
 
-.theme--light .patate-content-area .cnt,
-.theme--light .inner-bottom-categories .cnt,
-.theme--light .crises-bottom-section .cnt {
-  color: #ffffff !important;
-}
+
+
 .theme--light .th-cell { border-right-color: #cbd5e1; }
 .theme--light .left-panel { background: #e2e8f0; border-right-color: #cbd5e1; }
 .theme--light .center-panel { background: #f8fafc; border-right-color: #cbd5e1; }
@@ -2331,10 +2295,7 @@ export default {
 .theme--light .far-right-panel { background: #e2e8f0; border-left-color: #cbd5e1; }
 
 .theme--light .dispatch-body { border-bottom-color: #cbd5e1; }
-.theme--light .slot-section-title {
-  box-shadow: 0 1px 2px rgba(0,0,0,.1);
-  text-shadow: none;
-}
+
 .theme--light .person-card {
   background: #ffffff;
   border-color: rgba(0,0,0,0.1);
@@ -2344,17 +2305,12 @@ export default {
 .theme--light .person-card--hs { background: #ffffff; border-color: rgba(0,0,0,0.15); }
 .theme--light .pc-name { color: #1e293b; }
 .theme--light .pc-phone { color: #64748b; }
-.theme--light .location-input { color: #334155; }
-.theme--light .location-input::placeholder { color: #94a3b8; }
+
 .theme--light .freq-input { background: #ffffff; border-color: #cbd5e1; color: #1e293b; }
 .theme--light .inter-type-badge { background: #ffffff; border-color: #cbd5e1; color: #475569;}
 .theme--light .return-badge { background: #ffffff; border-color: #cbd5e1; color: #475569; }
 
-.theme--light .crises-bottom-section, 
 
-.theme--light table th, .theme--light table td {
-  border-color: #cbd5e1 !important;
-}
 
 .theme--light .inner-bottom-categories { background: #f1f5f9; border-top-color: #cbd5e1; }
 .theme--light .inner-bottom-panel { border-right-color: #cbd5e1; border-top-color: #cbd5e1; }
@@ -2373,9 +2329,7 @@ export default {
 .theme--light .inter-location-row { background: #ffffff; border-color: #cbd5e1; }
 
 /* Enhanced Table & Inputs color contrast for Light Theme (Crisis, Beds) */
-.theme--light th { color: #1e293b !important; }
-.theme--light table td, .theme--light table label { color: #334155; }
-.theme--light select, .theme--light input { color: #0f172a !important; }
+
 
 .theme--light .patate-content-area.drop-over { background: #e2e8f0; }
 .theme--light .right-panel.drop-over { background: #cbd5e1; }
@@ -2383,11 +2337,7 @@ export default {
 .theme--light .bottom-panel.drop-over { filter: brightness(0.95); }
 
 
-.theme--light option, 
-.theme--light .location-input option {
-  background: #ffffff !important;
-  color: #0f172a !important;
-}
+
 
 .theme--light td[style*="background: rgba(0,0,0,0.3)"] { background: rgba(0,0,0,0.06) !important; color: #334155 !important; }
 .theme--light td[style*="background: rgba(0,0,0,0.2)"] { background: rgba(0,0,0,0.03) !important; color: #334155 !important; }
@@ -2402,8 +2352,7 @@ export default {
 .theme--light td[style*="background: rgba(88,28,135,0.25)"] { background: rgba(147,51,234,0.15) !important; }
 .theme--light td[style*="background: rgba(20,83,45,0.35)"] { background: rgba(34,197,94,0.15) !important; }
 
-.theme--light table td, 
-.theme--light table th { color: #1e293b !important; }
+
 
 .theme--light input[style*="color: #9ca3af"], 
 .theme--light input[style*="color: #d1d5db"],
@@ -2483,14 +2432,6 @@ export default {
   pointer-events: none;
 }
 
-.pulse-animation {
-  animation: pulse-red 2s infinite;
-}
 
-@keyframes pulse-red {
-  0% { transform: scale(0.95); opacity: 0.7; }
-  50% { transform: scale(1.05); opacity: 1; }
-  100% { transform: scale(0.95); opacity: 0.7; }
-}
 </style>
 

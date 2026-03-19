@@ -199,31 +199,5 @@ export default {
 </script>
 
 <style>
-.theme--light .beds-bottom-section {
-  background: #f1f5f9 !important;
-  border-top-color: #cbd5e1 !important;
-}
 
-.theme--light .beds-bottom-section > div > div {
-  border-color: #cbd5e1 !important;
-  background: #f8fafc !important; 
-}
-
-.beds-bottom-section .slot-section-title {
-  color: #fff;
-  font-size: 0.68rem;
-  font-weight: 700;
-  padding: 3px 8px;
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  flex-shrink: 0;
-  letter-spacing: 0.03em;
-  text-shadow: 0 1px 3px rgba(0,0,0,.4);
-}
-
-.theme--light .beds-bottom-section .slot-section-title {
-  box-shadow: 0 1px 2px rgba(0,0,0,.1);
-  text-shadow: none;
-}
 </style>

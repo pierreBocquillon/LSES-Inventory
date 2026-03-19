@@ -261,115 +261,132 @@ class Dispatch {
     }
 
     static async migrateEmployee(employeeId, srcKey, targetKey, employeeData) {
-        const batch = writeBatch(db)
-        const globalRef = doc(db, collectionName, GLOBAL_DOC_ID)
+        await runTransaction(db, async (transaction) => {
+            let srcSlotSnap = null
+            let targetSlotSnap = null
 
-        if (srcKey === 'centrale') {
-            const c = collection(db, collectionName, GLOBAL_DOC_ID, "centrale_employees")
-            const snap = await getDocs(c)
-            const d = snap.docs.find(doc => doc.data().employeeId === employeeId)
-            if (d) batch.delete(d.ref)
-        } else if (srcKey?.startsWith('inter:')) {
-            const slotId = srcKey.slice(6)
-            const d = doc(db, collectionName, GLOBAL_DOC_ID, "interventions", slotId)
-            const snap = await getDoc(d)
-            if (snap.exists()) {
-                const emps = (snap.data().employees || []).filter(e => e.employeeId !== employeeId)
-                batch.update(d, { employees: emps })
+            if (srcKey?.startsWith('inter:')) {
+                srcSlotSnap = await transaction.get(doc(db, collectionName, GLOBAL_DOC_ID, "interventions", srcKey.slice(6)))
             }
-        } else if (srcKey?.startsWith('cat:')) {
-            const c = collection(db, collectionName, GLOBAL_DOC_ID, "patates")
-            const snap = await getDocs(c)
-            const pDoc = snap.docs.find(d => d.data().employeeId === employeeId)
-            if (pDoc) batch.delete(pDoc.ref)
-        }
-
-        if (targetKey === 'centrale') {
-            const c = collection(db, collectionName, GLOBAL_DOC_ID, "centrale_employees")
-            const newRef = doc(c)
-            batch.set(newRef, { ...employeeData, employeeId, centralRole: null })
-        } else if (targetKey?.startsWith('inter:')) {
-            const slotId = targetKey.slice(6)
-            const d = doc(db, collectionName, GLOBAL_DOC_ID, "interventions", slotId)
-            const snap = await getDoc(d)
-            if (snap.exists()) {
-                const emps = snap.data().employees || []
-                if (!emps.find(e => e.employeeId === employeeId)) {
-                    emps.push({ ...employeeData, employeeId })
-                    batch.update(d, { employees: emps })
+            if (targetKey?.startsWith('inter:')) {
+                if (srcKey === targetKey) {
+                    targetSlotSnap = srcSlotSnap
+                } else {
+                    targetSlotSnap = await transaction.get(doc(db, collectionName, GLOBAL_DOC_ID, "interventions", targetKey.slice(6)))
                 }
             }
-        } else if (targetKey?.startsWith('cat:')) {
-            const category = targetKey.slice(4)
-            const c = collection(db, collectionName, GLOBAL_DOC_ID, "patates")
-            const newRef = doc(c)
-            batch.set(newRef, { ...employeeData, employeeId, category })
-        }
 
-        await batch.commit()
+            let oldCentraleDocRef = null
+            if (srcKey === 'centrale') {
+                const c = collection(db, collectionName, GLOBAL_DOC_ID, "centrale_employees")
+                const snap = await getDocs(c)
+                oldCentraleDocRef = snap.docs.find(doc => doc.data().employeeId === employeeId)?.ref || null
+            }
+
+            let oldPatateDocRef = null
+            if (srcKey?.startsWith('cat:')) {
+                const c = collection(db, collectionName, GLOBAL_DOC_ID, "patates")
+                const snap = await getDocs(c)
+                oldPatateDocRef = snap.docs.find(d => d.data().employeeId === employeeId)?.ref || null
+            }
+
+            if (srcKey === 'centrale') {
+                if (oldCentraleDocRef) transaction.delete(oldCentraleDocRef)
+                transaction.delete(doc(db, collectionName, GLOBAL_DOC_ID, "centrale_employees", employeeId))
+            } else if (srcKey?.startsWith('inter:')) {
+                if (srcSlotSnap?.exists()) {
+                    const emps = (srcSlotSnap.data().employees || []).filter(e => e.employeeId !== employeeId)
+                    transaction.update(srcSlotSnap.ref, { employees: emps })
+                }
+            } else if (srcKey?.startsWith('cat:')) {
+                if (oldPatateDocRef) transaction.delete(oldPatateDocRef)
+                transaction.delete(doc(db, collectionName, GLOBAL_DOC_ID, "patates", employeeId))
+            }
+
+            if (targetKey === 'centrale') {
+                const d = doc(db, collectionName, GLOBAL_DOC_ID, "centrale_employees", employeeId)
+                transaction.set(d, { ...employeeData, employeeId, centralRole: null })
+            } else if (targetKey?.startsWith('inter:')) {
+                if (targetSlotSnap?.exists()) {
+                    const emps = targetSlotSnap.data().employees || []
+                    if (!emps.find(e => e.employeeId === employeeId)) {
+                        emps.push({ ...employeeData, employeeId })
+                        transaction.update(targetSlotSnap.ref, { employees: emps })
+                    }
+                }
+            } else if (targetKey?.startsWith('cat:')) {
+                const category = targetKey.slice(4)
+                const d = doc(db, collectionName, GLOBAL_DOC_ID, "patates", employeeId)
+                transaction.set(d, { ...employeeData, employeeId, category })
+            }
+        })
     }
     static async resetInterventionSlot(slotId) {
-        const d = doc(db, collectionName, GLOBAL_DOC_ID, "interventions", slotId)
-        const snap = await getDoc(d)
-        if (!snap.exists()) return
+        await runTransaction(db, async (transaction) => {
+            const d = doc(db, collectionName, GLOBAL_DOC_ID, "interventions", slotId)
+            const snap = await transaction.get(d)
+            if (!snap.exists()) return
 
-        const batch = writeBatch(db)
-        const employees = snap.data().employees || []
+            const employees = snap.data().employees || []
+            if (employees.length) {
+                const patRef = collection(db, collectionName, GLOBAL_DOC_ID, "patates")
+                employees.forEach(emp => {
+                    const empId = emp.employeeId || emp.id
+                    if (empId) {
+                        const nr = doc(patRef, empId)
+                        transaction.set(nr, { ...emp, employeeId: empId, category: 'en_service' })
+                    }
+                })
+            }
 
-        if (employees.length) {
-            const patRef = collection(db, collectionName, GLOBAL_DOC_ID, "patates")
-            employees.forEach(emp => {
-                const nr = doc(patRef)
-                batch.set(nr, { ...emp, category: 'en_service' })
+            transaction.update(d, {
+                location: null,
+                complement: null,
+                type: 'intervention',
+                returnStatus: null,
+                employees: []
             })
-        }
-        
-        batch.update(d, {
-            location: null,
-            complement: null,
-            type: 'intervention',
-            returnStatus: null,
-            employees: []
         })
-        
-        await batch.commit()
     }
 
     static async deleteInterventionSlot(slotId) {
-        const d = doc(db, collectionName, GLOBAL_DOC_ID, "interventions", slotId)
-        const snap = await getDoc(d)
-        if (!snap.exists()) return
+        await runTransaction(db, async (transaction) => {
+            const d = doc(db, collectionName, GLOBAL_DOC_ID, "interventions", slotId)
+            const snap = await transaction.get(d)
+            if (!snap.exists()) return
 
-        const batch = writeBatch(db)
-        const employees = snap.data().employees || []
-
-        if (employees.length) {
-            const patRef = collection(db, collectionName, GLOBAL_DOC_ID, "patates")
-            employees.forEach(emp => {
-                const nr = doc(patRef)
-                batch.set(nr, { ...emp, category: 'en_service' })
-            })
-        }
-        batch.delete(d)
-        await batch.commit()
+            const employees = snap.data().employees || []
+            if (employees.length) {
+                const patRef = collection(db, collectionName, GLOBAL_DOC_ID, "patates")
+                employees.forEach(emp => {
+                    const empId = emp.employeeId || emp.id
+                    if (empId) {
+                        const nr = doc(patRef, empId)
+                        transaction.set(nr, { ...emp, employeeId: empId, category: 'en_service' })
+                    }
+                })
+            }
+            transaction.delete(d)
+        })
     }
 
     static async removeFromBoard(employeeId) {
-        const batch = writeBatch(db)
+        await runTransaction(db, async (transaction) => {
+            transaction.delete(doc(db, collectionName, GLOBAL_DOC_ID, "patates", employeeId))
+            transaction.delete(doc(db, collectionName, GLOBAL_DOC_ID, "centrale_employees", employeeId))
 
-        const colls = ["patates", "centrale_employees"]
-        for (const cName of colls) {
-            const snap = await getDocs(collection(db, collectionName, GLOBAL_DOC_ID, cName))
-            snap.docs.forEach(doc => { if (doc.data().employeeId === employeeId) batch.delete(doc.ref) })
-        }
+            const colls = ["patates", "centrale_employees"]
+            for (const cName of colls) {
+                const snap = await getDocs(collection(db, collectionName, GLOBAL_DOC_ID, cName))
+                snap.docs.forEach(doc => { if (doc.data().employeeId === employeeId) transaction.delete(doc.ref) })
+            }
 
-        const iSnap = await getDocs(collection(db, collectionName, GLOBAL_DOC_ID, "interventions"))
-        iSnap.docs.forEach(doc => {
-            const emps = (doc.data().employees || []).filter(e => e.employeeId !== employeeId)
-            batch.update(doc.ref, { employees: emps })
+            const iSnap = await getDocs(collection(db, collectionName, GLOBAL_DOC_ID, "interventions"))
+            iSnap.docs.forEach(doc => {
+                const emps = (doc.data().employees || []).filter(e => e.employeeId !== employeeId)
+                transaction.update(doc.ref, { employees: emps })
+            })
         })
-
-        await batch.commit()
     }
 }
 
