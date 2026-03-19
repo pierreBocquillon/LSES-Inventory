@@ -30,6 +30,7 @@ export const rhChecklists = [
             { text: 'Aller dans "21-LSES-Interne-Résident-Médecin" et ajouter l\'adresse mail (accès ancien dispatch).', link: { text: 'Groupes', url: 'https://groups.google.com/g/21-lses-interne-resident-medecin/members' } },
             { text: 'Donner le lien du dispatch', link: { text: 'Dispatch', url: 'https://lses-inventory.web.app/dispatch' } },
             { text: 'Donner le lien de l\'ancien dispatch (au cas où)', link: { text: 'Dispatch', url: 'https://docs.google.com/spreadsheets/d/1Vho76MbebIo4d1RgpVL0wGFqbMjeK1e3HcirZV_C7Uk/edit?gid=180456797#gid=180456797' } },
+            'Lier le compte LSES-Inventory à l\'employé en le modifiant dans l\'onglet RH',
 
             { header: 'Mettre à jour tous les documents RH' },
             { link: { text: 'Trombinoscope', url: 'https://www.canva.com/design/DAGzQCSaqAY/ASNs1-k_xRGAXdlg_oL1xw/edit' } },
