@@ -139,10 +139,11 @@
           <input
             class="location-input"
             style="flex: 1;"
-            :value="dispatch?.centrale?.location || ''"
+            :value="localBuffers['centrale-location'] ?? dispatch?.centrale?.location ?? ''"
             placeholder="Code ZIP / Position"
             :disabled="!hasLsesPerm"
-            @change="setCentraleLocation($event.target.value)"
+            @input="onCentraleLocationInput($event.target.value)"
+            @change="onCentraleLocationInput($event.target.value)"
             @keyup.enter="$event.target.blur()"
           />
           <select
@@ -1567,6 +1568,14 @@ export default {
       const r = await Swal.fire({ icon:'question', title:'Vider la centrale ?',
         showCancelButton:true, confirmButtonText:'Vider', cancelButtonText:'Annuler' })
       if (!r.isConfirmed) return
+
+      const locKey = 'centrale-location'
+      if (this.localBuffers[locKey] !== undefined) delete this.localBuffers[locKey]
+      if (this._timeouts[locKey]) {
+        clearTimeout(this._timeouts[locKey])
+        delete this._timeouts[locKey]
+      }
+
       const emptyCentrale = { location: null, complement: null, type: null, returnStatus: null, employees: [] }
       await Dispatch.updateCentrale(emptyCentrale)
     },
@@ -1606,6 +1615,15 @@ export default {
       if (!this.dispatch.centrale) this.dispatch.centrale = { location: null, complement: null, type: null, returnStatus: null, employees: [] }
       this.dispatch.centrale.location = loc
       await Dispatch.updateCentrale({ location: loc })
+    },
+    onCentraleLocationInput(val) {
+      if (!this.hasLsesPerm) return
+      this.localBuffers['centrale-location'] = val
+      this.debounceUpdate('centrale', 'location', () => {
+        Dispatch.updateCentrale({ location: val.trim() || null }).then(() => {
+          if (this.localBuffers['centrale-location'] === val) delete this.localBuffers['centrale-location']
+        })
+      })
     },
 
     getCentralRole(v) { return this.centralRoles.find(cr => cr.value === v) || null },
