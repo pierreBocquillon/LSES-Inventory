@@ -39,7 +39,12 @@
           <tr style="border-bottom: 1px solid #334155; color: #cbd5e1; font-size: 0.75rem;">
             <th style="padding: 8px; font-weight: 500; text-align: center; width: 40px;">Coma</th>
             <th style="padding: 8px; font-weight: 500; text-align: center; width: 60px;">Lourd / Inconscient</th>
-            <th style="padding: 8px; font-weight: 500;">Nom et prénom</th>
+            <th style="padding: 8px; font-weight: 500;">
+              <div class="d-flex align-center">
+                <div style="width: 20px; flex-shrink: 0;" class="mr-1"></div>
+                Nom et prénom
+              </div>
+            </th>
             <th style="padding: 8px; font-weight: 500;">Détails</th>
             <th style="padding: 8px; font-weight: 500;">Appartenance</th>
             <th style="padding: 8px; font-weight: 500;">Qui rapatrie</th>
@@ -77,7 +82,12 @@
             </td>
 
             <td style="padding: 6px;">
-              <input :value="localBuffers[`${crisis.id}-name`] ?? crisis.name" @input="onCrisisNameInput(crisis, $event.target.value)" class="location-input font-weight-bold text-red-lighten-2" style="font-size: 0.8rem; width: 100%; border-bottom: 1px solid transparent;" placeholder="Nom" />
+              <div class="d-flex align-center">
+                <div style="width: 20px; flex-shrink: 0; display: flex; justify-content: center;" class="mr-1">
+                  <v-icon v-if="crisis.treatedBy && crisis.treatedBy === currentUserEmployeeId && !crisis.medicalStatus" size="14" color="orange" class="pulse-orange" title="En cours de soin">mdi-stethoscope</v-icon>
+                </div>
+                <input :value="localBuffers[`${crisis.id}-name`] ?? crisis.name" @input="onCrisisNameInput(crisis, $event.target.value)" class="location-input font-weight-bold text-red-lighten-2" style="font-size: 0.8rem; width: 100%; border-bottom: 1px solid transparent;" placeholder="Nom et prénom" />
+              </div>
             </td>
 
             <td style="padding: 6px;">
@@ -164,7 +174,8 @@ export default {
     dispatch: { type: Object, required: false },
     isLightTheme: { type: Boolean, default: false },
     currentTime: { type: Number, required: true },
-    allEmployees: { type: Array, required: true }
+    allEmployees: { type: Array, required: true },
+    currentUserEmployeeId: { type: String, required: false }
   },
   data() {
     return {

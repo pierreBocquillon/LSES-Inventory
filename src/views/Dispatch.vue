@@ -701,6 +701,7 @@
       :isLightTheme="isLightTheme"
       :currentTime="currentTime"
       :allEmployees="allEmployees"
+      :currentUserEmployeeId="currentUserEmployeeId"
     />
 
     <DispatchBeds :dispatch="dispatch" :isLightTheme="isLightTheme" />
@@ -854,6 +855,12 @@ export default {
 
       if (!currentEmployee) return false
       return ['Directeur', 'Directeur Adjoint'].includes(currentEmployee.role)
+    },
+
+    currentUserEmployeeId() {
+      const currentUserId = this.userStore.profile?.id
+      const currentEmployee = this.employees.find(e => e.userId === currentUserId)
+      return currentEmployee ? currentEmployee.id : null
     },
 
     hasLsesPerm() {
@@ -1863,6 +1870,11 @@ export default {
           if (this.localBuffers['global-notepad'] === val) delete this.localBuffers['global-notepad']
         })
       })
+    },
+    formatDateTime(ts) {
+      if (!ts) return ''
+      const date = new Date(ts)
+      return date.toLocaleDateString('fr-FR') + ' ' + date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
     },
 
 
