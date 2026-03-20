@@ -50,15 +50,17 @@
           </div>
         </div>
 
-        <div class="status-pill ml-3" :style="bcesStatusStyle.wrapper">
-          <div class="pill-icon" :style="bcesStatusStyle.brand">
-            <v-icon size="14" color="white" class="mr-1">{{ bcesStatusConfig.brand.icon }}</v-icon>
-            <span class="text-white font-weight-black" style="font-size: 0.65rem;">{{ bcesStatusConfig.brand.label }}</span>
+        <a href="https://docs.google.com/spreadsheets/d/1Vho76MbebIo4d1RgpVL0wGFqbMjeK1e3HcirZV_C7Uk/edit?pli=1&gid=1466825062#gid=1466825062" target="_blank" style="text-decoration: none;" title="Ouvrir le suivi BCES">
+          <div class="status-pill ml-3" :style="bcesStatusStyle.wrapper" style="cursor: pointer;">
+            <div class="pill-icon" :style="bcesStatusStyle.brand">
+              <v-icon size="14" color="white" class="mr-1">{{ bcesStatusConfig.brand.icon }}</v-icon>
+              <span class="text-white font-weight-black" style="font-size: 0.65rem;">{{ bcesStatusConfig.brand.label }}</span>
+            </div>
+            <div class="pill-text" :style="bcesStatusStyle.status">
+              {{ bcesStatus || 'Inconnu' }}
+            </div>
           </div>
-          <div class="pill-text" :style="bcesStatusStyle.status">
-            {{ bcesStatus || 'Inconnu' }}
-          </div>
-        </div>
+        </a>
 
       </div>
       <div class="th-cell">
