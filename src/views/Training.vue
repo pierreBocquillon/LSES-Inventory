@@ -70,7 +70,7 @@
         </v-card-text>
     </v-card>
 
-    <div class="mb-4" v-if="!isRestrictedTrainer">
+    <div class="mb-4" v-if="canSeeGuides">
         <h2 class="text-h5 mb-2">Procédures</h2>
         <v-row>
             <v-col cols="12" sm="6" md="3" v-for="guide in visibleGuides" :key="guide.id">
@@ -182,7 +182,7 @@
                     </div>
 
                     <v-select
-                        if="selectedScenarioObjectives.length > 0"
+                        v-if="selectedScenarioObjectives.length > 0"
                         v-model="selectedScenarios"
                         :items="availableScenarios"
                         label="Simulations possibles"
@@ -1112,8 +1112,7 @@ export default {
         if (profile.permissions && (
             profile.permissions.includes('admin') || 
             profile.permissions.includes('trainer') || 
-            profile.permissions.includes('dev') ||
-            profile.permissions.includes('restricted_trainer')
+            profile.permissions.includes('dev')
         ))
             return false
         return true
@@ -1124,11 +1123,18 @@ export default {
         return this.employees.find(e => e.userId === this.userStore.uid)
     },
 
+    canSeeGuides() {
+        const permissions = this.userStore.profile?.permissions || []
+        const canSee = !this.isRestrictedTrainer || permissions.includes('restricted_trainer')
+
+        return canSee
+    },
+
     visibleGuides() {
         const permissions = this.userStore.profile?.permissions || []
         const isAdminDev = permissions.some(p => ['admin', 'dev'].includes(p))
 
-        return this.sortedGuides.filter(guide => {
+        const filtered = this.sortedGuides.filter(guide => {
             if (guide.id === 'offroad' || guide.id === 'qualif_offroad') 
                 return isAdminDev || permissions.includes('restricted_trainer')
             
@@ -1139,8 +1145,9 @@ export default {
             if (classicGuides.includes(guide.id)) 
                 return isAdminDev || permissions.includes('trainer')
             
-            return true
+            return isAdminDev
         })
+        return filtered
     },
     trainees() {
       return this.employees.filter(e => ['Interne', 'Résident'].includes(e.role)).sort((a, b) => a.name.localeCompare(b.name))
@@ -1181,7 +1188,14 @@ export default {
     },
     sortedGuides() {
         const order = ['introduction', 'qa', 'resident', 'titulaire', 'grenouille', 'conduite', 'offroad', 'qualif_offroad', 'medicoptere', 'qualif_medicoptere']
-        return this.guides.sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id))
+        return [...this.guides].sort((a, b) => {
+            const indexA = order.indexOf(a.id)
+            const indexB = order.indexOf(b.id)
+            if (indexA === -1 && indexB === -1) return 0
+            if (indexA === -1) return 1
+            if (indexB === -1) return -1
+            return indexA - indexB
+        })
     },
     groupedSteps() {
         if (!this.currentGuide || !this.currentGuide.steps) return []
@@ -1793,8 +1807,7 @@ export default {
         
         const hasNormal = emp.specialties && emp.specialties.includes(specValue)
         const hasChief = emp.chiefSpecialties && emp.chiefSpecialties.includes(specValue)
-        
-        console.log(hasNormal, hasChief, emp.specialties, emp.chiefSpecialties)
+
         return hasNormal || hasChief
     },
 
