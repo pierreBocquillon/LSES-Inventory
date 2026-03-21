@@ -60,8 +60,8 @@
                             </div>
 
                             <div class="d-flex gap-2">
-                                <v-btn color="success" variant="app" size="small" prepend-icon="mdi-thumb-up" @click="vote(req.employeeObj, 'pour')" class="flex-grow-1">Pour</v-btn>
-                                <v-btn color="error" variant="app" size="small" prepend-icon="mdi-thumb-down" @click="vote(req.employeeObj, 'contre')" class="flex-grow-1">Contre</v-btn>
+                                <v-btn color="success" variant="tonal" size="small" prepend-icon="mdi-thumb-up" @click="vote(req.employeeObj, 'pour')" class="flex-grow-1">Pour</v-btn>
+                                <v-btn color="error" variant="tonal" size="small" prepend-icon="mdi-thumb-down" @click="vote(req.employeeObj, 'contre')" class="flex-grow-1">Contre</v-btn>
                             </div>
                         </v-card-text>
                     </v-card>
@@ -73,7 +73,7 @@
     <div class="mb-4" v-if="!isRestrictedTrainer">
         <h2 class="text-h5 mb-2">Procédures</h2>
         <v-row>
-            <v-col cols="12" sm="6" md="3" v-for="guide in sortedGuides" :key="guide.id">
+            <v-col cols="12" sm="6" md="3" v-for="guide in visibleGuides" :key="guide.id">
                 <v-card 
                     @click="openGuide(guide)" 
                     hover 
@@ -1109,9 +1109,38 @@ export default {
     isRestrictedTrainer() {
         const profile = this.userStore.profile
         if (!profile) return true
-        if (profile.permissions && (profile.permissions.includes('admin') || profile.permissions.includes('trainer') || profile.permissions.includes('dev')))
+        if (profile.permissions && (
+            profile.permissions.includes('admin') || 
+            profile.permissions.includes('trainer') || 
+            profile.permissions.includes('dev') ||
+            profile.permissions.includes('restricted_trainer')
+        ))
             return false
         return true
+    },
+
+    currentUserEmployee() {
+        if (!this.userStore.uid) return null
+        return this.employees.find(e => e.userId === this.userStore.uid)
+    },
+
+    visibleGuides() {
+        const permissions = this.userStore.profile?.permissions || []
+        const isAdminDev = permissions.some(p => ['admin', 'dev'].includes(p))
+
+        return this.sortedGuides.filter(guide => {
+            if (guide.id === 'offroad' || guide.id === 'qualif_offroad') 
+                return isAdminDev || permissions.includes('restricted_trainer')
+            
+            if (guide.id === 'medicoptere' || guide.id === 'qualif_medicoptere') 
+                return isAdminDev || permissions.includes('restricted_trainer')
+            
+            const classicGuides = ['introduction', 'qa', 'resident', 'titulaire', 'grenouille', 'conduite']
+            if (classicGuides.includes(guide.id)) 
+                return isAdminDev || permissions.includes('trainer')
+            
+            return true
+        })
     },
     trainees() {
       return this.employees.filter(e => ['Interne', 'Résident'].includes(e.role)).sort((a, b) => a.name.localeCompare(b.name))
@@ -1151,7 +1180,7 @@ export default {
             }))
     },
     sortedGuides() {
-        const order = ['introduction', 'qa', 'resident', 'titulaire', 'grenouille', 'conduite']
+        const order = ['introduction', 'qa', 'resident', 'titulaire', 'grenouille', 'conduite', 'offroad', 'qualif_offroad', 'medicoptere', 'qualif_medicoptere']
         return this.guides.sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id))
     },
     groupedSteps() {
@@ -1248,7 +1277,20 @@ export default {
     availableTrainingsToAdd() {
         if (!this.selectedTrainingEmployee) return []
         const emp = this.selectedTrainingEmployee
-        const allowedTrainings = ['Formation Grenouille', 'Formation Conduite']
+        const currentUserEmp = this.currentUserEmployee
+        if (!currentUserEmp) return []
+
+        const permissions = this.userStore.profile?.permissions || []
+        const isAdminDev = permissions.some(p => ['admin', 'dev'].includes(p))
+
+        const allowedTrainings = []
+        if (isAdminDev || permissions.includes('trainer'))
+            allowedTrainings.push('Formation Grenouille', 'Formation Conduite')
+        
+        if (isAdminDev || permissions.includes('restricted_trainer'))
+            allowedTrainings.push('Formation Off Road', 'Qualification Off-Road', 'Formation Médicoptère', 'Qualification Médicoptère')
+        if (allowedTrainings.length === 0) return []
+        
         if (!emp.validatedTrainings) return allowedTrainings
         return allowedTrainings.filter(t => !emp.validatedTrainings.includes(t))
     },
@@ -1312,6 +1354,42 @@ export default {
                     []
                  )
                  await grenouille.save()
+            }
+            if (!this.guides.find(g => g.id === 'offroad')) {
+                 const offroad = new Guide(
+                    'offroad', 
+                    'Formation Off Road', 
+                    'Procédure pour la formation Off Road.', 
+                    []
+                 )
+                 await offroad.save()
+            }
+            if (!this.guides.find(g => g.id === 'medicoptere')) {
+                 const medicoptere = new Guide(
+                    'medicoptere', 
+                    'Formation Médicoptère', 
+                    'Procédure pour la formation Médicoptère.', 
+                    []
+                 )
+                 await medicoptere.save()
+            }
+            if (!this.guides.find(g => g.id === 'qualif_offroad')) {
+                 const qualif_offroad = new Guide(
+                    'qualif_offroad', 
+                    'Qualification Off-Road', 
+                    'Procédure pour la qualification Off-Road.', 
+                    []
+                 )
+                 await qualif_offroad.save()
+            }
+            if (!this.guides.find(g => g.id === 'qualif_medicoptere')) {
+                 const qualif_medicoptere = new Guide(
+                    'qualif_medicoptere', 
+                    'Qualification Médicoptère', 
+                    'Procédure pour la qualification Médicoptère.', 
+                    []
+                 )
+                 await qualif_medicoptere.save()
             }
         }
     }))
@@ -1620,7 +1698,16 @@ export default {
 
     async removeRequest(req) {
         try {
-            const validableTrainings = ['Formation Grenouille', 'Formation Conduite']
+            const permissions = this.userStore.profile?.permissions || []
+            const isAdminDev = permissions.some(p => ['admin', 'dev'].includes(p))
+            const validableTrainings = []
+
+            if (isAdminDev || permissions.includes('trainer')) 
+                validableTrainings.push('Formation Grenouille', 'Formation Conduite')
+            
+            if (isAdminDev || permissions.includes('restricted_trainer')) 
+                validableTrainings.push('Formation Off Road', 'Qualification Off-Road', 'Formation Médicoptère', 'Qualification Médicoptère')
+
             const isValidable = validableTrainings.includes(req.training)
 
             let result
@@ -1695,9 +1782,20 @@ export default {
     getTrainingShortName(training) {
         if (training === 'Formation Grenouille') return '🐸'
         if (training === 'Formation Conduite') return '🚗'
-        if (training === 'Formation Off Road') return '⛰️'
-        if (training === 'Formation Médicoptère') return '🚁'
+        if (training === 'Formation Off Road' || training === 'Qualification Off-Road') return '⛰️'
+        if (training === 'Formation Médicoptère' || training === 'Qualification Médicoptère') return '🚁'
         return training
+    },
+
+    hasSpecialty(specValue) {
+        const emp = this.currentUserEmployee
+        if (!emp) return false
+        
+        const hasNormal = emp.specialties && emp.specialties.includes(specValue)
+        const hasChief = emp.chiefSpecialties && emp.chiefSpecialties.includes(specValue)
+        
+        console.log(hasNormal, hasChief, emp.specialties, emp.chiefSpecialties)
+        return hasNormal || hasChief
     },
 
     openAddTrainingDialog(employee) {
@@ -1991,12 +2089,16 @@ export default {
     getGuideTheme(id) {
         if (['introduction', 'qa', 'grenouille'].includes(id)) return 'green'
         if (id === 'conduite') return 'orange'
+        if (id === 'offroad' || id === 'qualif_offroad') return 'brown'
+        if (id === 'medicoptere' || id === 'qualif_medicoptere') return 'indigo'
         return 'blue'
     },
 
     getGuideIcon(id) {
         if (id === 'grenouille') return '🐸'
         if (id === 'conduite') return '🚗'
+        if (id === 'offroad' || id === 'qualif_offroad') return '⛰️'
+        if (id === 'medicoptere' || id === 'qualif_medicoptere') return '🚁'
         return 'mdi-text-box-check-outline'
     },
 
