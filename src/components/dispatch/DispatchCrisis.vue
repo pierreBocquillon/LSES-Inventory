@@ -35,9 +35,16 @@
       <v-menu v-model="showFilterMenu" :close-on-content-click="false" location="bottom end" offset="5">
         <template v-slot:activator="{ props }">
           <v-btn v-bind="props" size="x-small" variant="tonal" :color="isFiltered ? 'amber' : 'white'" class="ml-4" @click.stop style="height: 24px; text-transform: none; font-size: 0.7rem;">
-            <v-icon size="12" class="mr-1">mdi-filter-variant</v-icon>
-            Filtres
-            <v-badge v-if="isFiltered" color="amber" content="!" offset-x="-2" offset-y="-2" />
+            <v-badge v-if="isFiltered" color="amber" dot floating offset-x="-4" offset-y="2">
+              <div class="d-flex align-center">
+                <v-icon size="12" class="mr-1">mdi-filter-variant</v-icon>
+                Filtres
+              </div>
+            </v-badge>
+            <div v-else class="d-flex align-center">
+              <v-icon size="12" class="mr-1">mdi-filter-variant</v-icon>
+              Filtres
+            </div>
           </v-btn>
         </template>
         <div style="background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 12px; min-width: 200px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.5);">
