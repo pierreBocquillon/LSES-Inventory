@@ -31,6 +31,55 @@
       <v-btn size="x-small" variant="plain" color="white" class="ml-1" @click.stop="confirmClearCrises" title="Réinitialiser le dispatch de crise">
         <v-icon size="13">mdi-refresh</v-icon>
       </v-btn>
+
+      <v-menu v-model="showFilterMenu" :close-on-content-click="false" location="bottom end" offset="5">
+        <template v-slot:activator="{ props }">
+          <v-btn v-bind="props" size="x-small" variant="tonal" :color="isFiltered ? 'amber' : 'white'" class="ml-4" @click.stop style="height: 24px; text-transform: none; font-size: 0.7rem;">
+            <v-icon size="12" class="mr-1">mdi-filter-variant</v-icon>
+            Filtres
+            <v-badge v-if="isFiltered" color="amber" content="!" offset-x="-2" offset-y="-2" />
+          </v-btn>
+        </template>
+        <div style="background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 12px; min-width: 200px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.5);">
+          <div class="mb-3">
+            <label style="display: block; font-size: 0.7rem; color: #94a3b8; margin-bottom: 4px; font-weight: bold; text-transform: uppercase;">Groupe / Affiliation</label>
+            <select v-model="filterAffiliation" class="location-input" style="width: 100%; font-size: 0.8rem; background: rgba(0,0,0,0.2); border: 1px solid #334155; border-radius: 4px; padding: 4px 8px; color: #fff; height: 32px; outline: none;">
+              <option :value="null" style="background:#1a1f35">Tous les groupes</option>
+              <option v-for="aff in crisisAffiliations" :key="aff.value" :value="aff.value" style="background:#1a1f35">{{ aff.label }}</option>
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label style="display: block; font-size: 0.7rem; color: #94a3b8; margin-bottom: 4px; font-weight: bold; text-transform: uppercase;">Qui rapatrie</label>
+            <select v-model="filterRepatriatedBy" class="location-input" style="width: 100%; font-size: 0.8rem; background: rgba(0,0,0,0.2); border: 1px solid #334155; border-radius: 4px; padding: 4px 8px; color: #fff; height: 32px; outline: none;">
+              <option :value="null" style="background:#1a1f35">Tous</option>
+              <option value="none" style="background:#1a1f35">-- Aucun --</option>
+              <option v-for="emp in getCrisisEmployeeOptions()" :key="emp.id" :value="emp.id" style="background:#1a1f35">{{ emp.name }}</option>
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label style="display: block; font-size: 0.7rem; color: #94a3b8; margin-bottom: 4px; font-weight: bold; text-transform: uppercase;">Qui soigne</label>
+            <select v-model="filterTreatedBy" class="location-input" style="width: 100%; font-size: 0.8rem; background: rgba(0,0,0,0.2); border: 1px solid #334155; border-radius: 4px; padding: 4px 8px; color: #fff; height: 32px; outline: none;">
+              <option :value="null" style="background:#1a1f35">Tous</option>
+              <option value="none" style="background:#1a1f35">-- Personne --</option>
+              <option v-for="emp in getCrisisEmployeeOptions(null, 'treatment')" :key="emp.id" :value="emp.id" style="background:#1a1f35">{{ emp.name }}</option>
+            </select>
+          </div>
+
+          <div class="mb-3 d-flex align-center">
+            <label class="d-flex align-center cursor-pointer" style="font-size: 0.8rem; color: #e2e8f0; user-select: none;">
+              <input type="checkbox" v-model="hideCompleted" class="mr-2" style="width: 14px; height: 14px;" />
+              Masquer les patients terminés
+            </label>
+          </div>
+          <v-divider class="mb-2" color="white" style="opacity: 0.1"></v-divider>
+          <div class="d-flex justify-space-between align-center">
+            <v-btn variant="text" size="x-small" color="grey-lighten-1" @click="resetFilters" style="text-transform: none;">Réinitialiser</v-btn>
+            <v-btn variant="tonal" size="x-small" color="blue" @click="showFilterMenu = false" style="text-transform: none;">Fermer</v-btn>
+          </div>
+        </div>
+      </v-menu>
     </div>
 
     <div v-if="crisisExpanded" class="crises-list" style="margin-top: 10px;">
@@ -57,7 +106,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="crisis in sortedCrises" :key="crisis.id" 
+          <tr v-for="crisis in filteredCrises" :key="crisis.id" 
             :style="[
               { borderBottom: '1px solid #1e293b' },
               crisis.canalCheckCentrale 
@@ -187,7 +236,12 @@ export default {
       crisisRowColors,
       crisisMedicalStatuses,
       crisisAffiliations,
-      crisisBeds
+      crisisBeds,
+      filterAffiliation: null,
+      hideCompleted: false,
+      showFilterMenu: false,
+      filterRepatriatedBy: null,
+      filterTreatedBy: null
     }
   },
   computed: {
@@ -210,8 +264,33 @@ export default {
           const idx = this.crisisBeds.findIndex(bed => bed.value === val)
           return idx === -1 ? 999 : idx
         }
-        return getBedIdx(a.bed) - getBedIdx(b.bed)
+        const bedDiff = getBedIdx(a.bed) - getBedIdx(b.bed)
+        if (bedDiff !== 0) return bedDiff
+
+        // Secondary sort by arrival time
+        return (a.arrivalTime || 0) - (b.arrivalTime || 0)
       })
+    },
+    filteredCrises() {
+      let list = this.sortedCrises
+      if (this.filterAffiliation) {
+        list = list.filter(c => c.affiliation === this.filterAffiliation)
+      }
+      if (this.hideCompleted) {
+        list = list.filter(c => !c.medicalStatus)
+      }
+      if (this.filterRepatriatedBy) {
+        if (this.filterRepatriatedBy === 'none') list = list.filter(c => !c.repatriatedBy)
+        else list = list.filter(c => c.repatriatedBy === this.filterRepatriatedBy)
+      }
+      if (this.filterTreatedBy) {
+        if (this.filterTreatedBy === 'none') list = list.filter(c => !c.treatedBy)
+        else list = list.filter(c => c.treatedBy === this.filterTreatedBy)
+      }
+      return list
+    },
+    isFiltered() {
+      return this.filterAffiliation !== null || this.hideCompleted || this.filterRepatriatedBy !== null || this.filterTreatedBy !== null
     },
     averageTreatmentTime() {
       if (!this.dispatch || !this.dispatch.crises) return 0
@@ -413,6 +492,12 @@ export default {
     onZipChange() {
       if (!this.dispatch) return
       DispatchLib.updateField('crisisZip', this.localCrisisZip.toUpperCase())
+    },
+    resetFilters() {
+      this.filterAffiliation = null
+      this.hideCompleted = false
+      this.filterRepatriatedBy = null
+      this.filterTreatedBy = null
     }
   }
 }
