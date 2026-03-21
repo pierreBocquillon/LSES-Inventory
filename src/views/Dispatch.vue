@@ -1182,8 +1182,6 @@ export default {
         cancelButtonColor: '#3085d6',
         confirmButtonText: 'Oui, réinitialiser',
         cancelButtonText: 'Annuler',
-        background: '#1e293b',
-        color: '#fff'
       }).then((result) => {
         if (result.isConfirmed) {
           this.resetDispatch();

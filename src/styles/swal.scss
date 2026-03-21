@@ -5,7 +5,7 @@
   grid-template-columns: 1fr 99fr 1fr;
   padding: 1em;
   overflow-y: hidden;
-  background: rgb(var(--v-theme-surface));
+  background: #102129 !important;
   box-shadow: 0 0 1px rgba(0, 0, 0, 0.075), 0 1px 2px rgba(0, 0, 0, 0.075), 1px 2px 4px rgba(0, 0, 0, 0.075), 1px 3px 8px rgba(0, 0, 0, 0.075), 2px 4px 16px rgba(0, 0, 0, 0.075);
   pointer-events: all;
 }
@@ -198,7 +198,7 @@
 .swal2-container {
   display: grid;
   position: fixed;
-  z-index: 9999;
+  z-index: 999999 !important;
   top: 0;
   right: 0;
   bottom: 0;
@@ -327,8 +327,8 @@
   padding: 0 0 1.25em;
   border: none;
   border-radius: 15px;
-  background: rgb(var(--v-theme-surface));
-  color: white;
+  background: #102129 !important;
+  color: #ffffff !important;
   font-family: "Inter", sans-serif;
   font-size: 1rem;
   box-shadow: rgb(0 0 0 / 15%) 0px 5px 15px
@@ -410,8 +410,8 @@
   border: 0;
   border-radius: 0.25em;
   background: initial;
-  background-color: rgb(var(--v-theme-primary));
-  color: rgb(var(--v-theme-surface));
+  background-color: #2196F3 !important;
+  color: #ffffff !important;
   font-size: 1em;
 }
 
@@ -419,8 +419,8 @@
   border: 0;
   border-radius: 0.25em;
   background: initial;
-  background-color: rgb(var(--v-theme-error));
-  color: rgb(var(--v-theme-surface));
+  background-color: #FF5252 !important;
+  color: #ffffff !important;
   font-size: 1em;
 }
 
@@ -428,8 +428,8 @@
   border: 0;
   border-radius: 0.25em;
   background: initial;
-  background-color: rgb(var(--v-theme-secondary));
-  color: rgb(var(--v-theme-surface));
+  background-color: #424242 !important;
+  color: #ffffff !important;
   font-size: 1em;
 }
 
