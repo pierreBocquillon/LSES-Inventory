@@ -753,7 +753,7 @@
       </v-card>
     </v-dialog>
 
-    <v-dialog v-model="candidatureDialog" max-width="900px" persistent>
+    <v-dialog v-model="candidatureDialog" max-width="1200px" persistent>
       <v-card>
         <v-card-title class="bg-deep-purple text-white d-flex align-center">
           <span class="text-h5">Gestion des Candidatures</span>
@@ -764,6 +764,18 @@
         </v-card-title>
         <v-card-text class="pt-4">
           <v-data-table class="candidature-table" :headers="candidatureHeaders" :items="candidatures" items-per-page="5">
+            <template v-slot:item.pour="{ item }">
+              <v-chip v-if="item.status === 'Entretien en cours d\'analyse'" color="success" size="small" variant="tonal" prepend-icon="mdi-thumb-up">
+                {{ Object.values(item.votes || {}).filter(v => v === 'pour').length }}
+              </v-chip>
+              <span v-else class="text-grey-lighten-1">-</span>
+            </template>
+            <template v-slot:item.contre="{ item }">
+              <v-chip v-if="item.status === 'Entretien en cours d\'analyse'" color="error" size="small" variant="tonal" prepend-icon="mdi-thumb-down">
+                {{ Object.values(item.votes || {}).filter(v => v === 'contre').length }}
+              </v-chip>
+              <span v-else class="text-grey-lighten-1">-</span>
+            </template>
             <template v-slot:item.status="{ item }">
               <v-chip :color="getCandidatureStatusColor(item.status)" size="small">
                 {{ item.status }}
@@ -1088,6 +1100,8 @@ export default {
     candidatureHeaders: [
       { title: 'Nom', key: 'name' },
       { title: 'Statut', key: 'status' },
+      { title: 'Pour', key: 'pour', sortable: false, align: 'center' },
+      { title: 'Contre', key: 'contre', sortable: false, align: 'center' },
       { title: 'Téléphone', key: 'phone' },
       { title: 'Email', key: 'email' },
       { title: 'Disponibilités', key: 'availabilities' },

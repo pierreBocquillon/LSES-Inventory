@@ -142,22 +142,22 @@
                 <div style="width: 20px; flex-shrink: 0; display: flex; justify-content: center;" class="mr-1">
                   <v-icon v-if="crisis.treatedBy && crisis.treatedBy === currentUserEmployeeId && !crisis.medicalStatus" size="14" color="orange" class="pulse-orange" title="En cours de soin">mdi-stethoscope</v-icon>
                 </div>
-                <input :value="localBuffers[`${crisis.id}-name`] ?? crisis.name" @input="onCrisisNameInput(crisis, $event.target.value)" class="location-input font-weight-bold text-red-lighten-2" style="font-size: 0.8rem; width: 100%; border-bottom: 1px solid transparent;" placeholder="Nom et prénom" />
+                <input :value="localBuffers[`${crisis.id}-name`] ?? crisis.name" @input="onCrisisNameInput(crisis, $event.target.value)" class="location-input font-weight-bold text-red-lighten-2" style="font-size: 0.85rem; width: 100%; border-bottom: 1px solid transparent;" placeholder="Nom et prénom" />
               </div>
             </td>
 
             <td style="padding: 6px;">
-              <input :value="localBuffers[`${crisis.id}-reason`] ?? crisis.reason" @input="onCrisisReasonInput(crisis, $event.target.value)" class="location-input" placeholder="Calibre // GPB // Blessures // ZIP" style="font-size: 0.75rem; background: rgba(0,0,0,0.2); padding: 5px 8px; border-radius: 4px; width: 100%; border: 1px solid #334155;" />
+              <input :value="localBuffers[`${crisis.id}-reason`] ?? crisis.reason" @input="onCrisisReasonInput(crisis, $event.target.value)" class="location-input" placeholder="Calibre // GPB // Blessures // ZIP" style="font-size: 0.8rem; background: rgba(0,0,0,0.2); padding: 5px 8px; border-radius: 4px; width: 100%; border: 1px solid #334155;" />
             </td>
 
             <td style="padding: 6px;">
-              <select v-model="crisis.affiliation" @change="Dispatch.updateCrisis(crisis.id, { affiliation: crisis.affiliation })" class="location-input font-weight-bold" style="border: 1px solid #334155; padding: 4px; border-radius: 4px; background: rgba(255,255,255,0.02); width: 100%;" :style="{ color: crisisAffiliations.find(a => a.value === crisis.affiliation)?.color || '#fff' }">
+              <select v-model="crisis.affiliation" @change="Dispatch.updateCrisis(crisis.id, { affiliation: crisis.affiliation })" class="location-input font-weight-bold" style="border: 1px solid #334155; padding: 4px; border-radius: 4px; background: rgba(255,255,255,0.02); width: 100%; font-size: 0.8rem;" :style="{ color: crisisAffiliations.find(a => a.value === crisis.affiliation)?.color || '#fff' }">
                 <option v-for="aff in crisisAffiliations" :key="aff.value" :value="aff.value" style="background:#1a1f35" :style="{ color: aff.color || '#e2e8f0' }">{{ aff.label }}</option>
               </select>
             </td>
             
             <td style="padding: 6px;">
-              <select v-model="crisis.repatriatedBy" @change="Dispatch.updateCrisis(crisis.id, { repatriatedBy: crisis.repatriatedBy })" class="location-input" style="border: 1px solid #334155; padding: 4px; border-radius: 4px; width: 100%; background: rgba(255,255,255,0.02); color: #fff; font-weight: 600;">
+              <select v-model="crisis.repatriatedBy" @change="Dispatch.updateCrisis(crisis.id, { repatriatedBy: crisis.repatriatedBy })" class="location-input" style="border: 1px solid #334155; padding: 4px; border-radius: 4px; width: 100%; background: rgba(255,255,255,0.02); color: #fff; font-weight: 600; font-size: 0.8rem;">
                 <option :value="null" style="background:#1a1f35; color: #fff;">-- Sélectionner --</option>
                 <option v-for="emp in getCrisisEmployeeOptions(crisis.repatriatedBy)" :key="emp.id" :value="emp.id" style="background:#1a1f35">{{ emp.name }}</option>
               </select>
@@ -171,21 +171,21 @@
             </td>
             
             <td style="padding: 6px;">
-              <select v-model="crisis.treatedBy" @change="Dispatch.updateCrisis(crisis.id, { treatedBy: crisis.treatedBy })" class="location-input" style="border: 1px solid #334155; padding: 4px; border-radius: 4px; width: 100%; background: rgba(255,255,255,0.02); color: #fff; font-weight: 600;">
+              <select v-model="crisis.treatedBy" @change="Dispatch.updateCrisis(crisis.id, { treatedBy: crisis.treatedBy })" class="location-input" style="border: 1px solid #334155; padding: 4px; border-radius: 4px; width: 100%; background: rgba(255,255,255,0.02); color: #fff; font-weight: 600; font-size: 0.8rem;">
                 <option :value="null" style="background:#1a1f35; color: #fff;">-- Sélectionner --</option>
                 <option v-for="emp in getCrisisEmployeeOptions(crisis.treatedBy, 'treatment')" :key="emp.id" :value="emp.id" style="background:#1a1f35">{{ emp.name }}</option>
               </select>
             </td>
             
             <td style="padding: 6px;">
-              <select v-model="crisis.medicalStatus" @change="onMedicalStatusChange(crisis)" class="location-input" style="border: 1px solid #334155; padding: 4px; border-radius: 4px; background: rgba(255,255,255,0.02); font-weight: 600;" :style="{ color: crisisMedicalStatuses.find(s => s.value === crisis.medicalStatus)?.color || '#fff' }">
+              <select v-model="crisis.medicalStatus" @change="onMedicalStatusChange(crisis)" class="location-input" style="border: 1px solid #334155; padding: 4px; border-radius: 4px; background: rgba(255,255,255,0.02); font-weight: 600; font-size: 0.85rem;" :style="{ color: crisisMedicalStatuses.find(s => s.value === crisis.medicalStatus)?.color || '#fff' }">
                 <option :value="null" style="background:#1a1f35; color: #fff;">-- Statut --</option>
                 <option v-for="stat in crisisMedicalStatuses" :key="stat.value" :value="stat.value" style="background:#1a1f35" :style="{ color: stat.color || '#e2e8f0' }">{{ stat.emoji ? stat.emoji + ' ' : '' }}{{ stat.label }}</option>
               </select>
             </td>
             
             <td style="padding: 6px;">
-              <select v-model="crisis.bed" @change="Dispatch.updateCrisis(crisis.id, { bed: crisis.bed })" class="location-input" style="border: 1px solid #334155; padding: 4px; border-radius: 4px; background: rgba(255,255,255,0.02); color: #fff; font-weight: 600;">
+              <select v-model="crisis.bed" @change="Dispatch.updateCrisis(crisis.id, { bed: crisis.bed })" class="location-input" style="border: 1px solid #334155; padding: 4px; border-radius: 4px; background: rgba(255,255,255,0.02); color: #fff; font-weight: 600; font-size: 0.8rem;">
                 <option :value="null" style="background:#1a1f35; color: #fff;">-- Lit --</option>
                 <option v-for="bed in crisisBeds" :key="bed.value" :value="bed.value" style="background:#1a1f35">{{ bed.label }}</option>
               </select>

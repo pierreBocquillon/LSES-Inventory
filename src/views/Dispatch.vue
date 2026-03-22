@@ -218,7 +218,6 @@
                 <span v-for="sv in (emp.allSpecialties||[])" :key="sv" class="spec-emoji" :title="getSpecialtyName(sv)">{{ getSpecialtyIcon(sv) }}</span>
               </div>
 
-              <!-- Central Role Badge Selection -->
               <template v-if="(dispatch?.centrale?.employees||[]).indexOf(emp) > 0">
                 <v-menu location="top start" :close-on-content-click="true" :disabled="!hasLsesPerm">
                   <template v-slot:activator="{ props: roleProps }">
@@ -232,12 +231,12 @@
                     <v-list-subheader>Rôle à la centrale</v-list-subheader>
                     <v-list-item v-for="cr in centralRoles" :key="cr.value"
                       :active="emp.centralRole===cr.value"
-                      @click="setCentraleEmpRole(emp, cr.value)">
+                      @click="setCentraleEmpRole(emp.employeeId || emp.id, cr.value)">
                       <template v-slot:prepend><span class="mr-1">{{ cr.emoji }}</span></template>
                       <v-list-item-title :style="`color:${cr.color}`">{{ cr.label }}</v-list-item-title>
                     </v-list-item>
                     <v-divider></v-divider>
-                    <v-list-item v-if="emp.centralRole" @click="setCentraleEmpRole(emp, null)">
+                    <v-list-item v-if="emp.centralRole" @click="setCentraleEmpRole(emp.employeeId || emp.id, null)">
                       <template v-slot:prepend><v-icon size="13" color="grey">mdi-close</v-icon></template>
                       <v-list-item-title class="text-grey">Effacer</v-list-item-title>
                     </v-list-item>
