@@ -21,25 +21,25 @@
                   <h2>Le {{ new Date(note.date).toLocaleString().slice(0, 16) }}</h2>
                 </div>
                 <h2 class="pl-3 text-white">
-                  <span>{{ getProfileInfo(note.user).name }} - </span>
-                  <span v-if="note.reason == 'buy'">{{ getCompagnyInfo(getHystoryInfo(note.data)).icon }} {{ getCompagnyInfo(getHystoryInfo(note.data)).name }} : ({{formatMoney(note.price)}})</span>
+                  <span>{{ getProfileInfo(note.user)?.name }} - </span>
+                  <span v-if="note.reason == 'buy'">{{ getCompagnyInfo(getHystoryInfo(note.data))?.icon }} {{ getCompagnyInfo(getHystoryInfo(note.data))?.name }} : ({{formatMoney(note.price)}})</span>
                   <span v-else-if="note.reason == 'vehicle'">🚗 Fourière : ({{formatMoney(note.price)}})</span>
                   <span v-else>❓ Autre dépense : ({{formatMoney(note.price)}})</span>
                 </h2>
                 <div class="py-2 pl-5">
                   <template v-if="note.reason == 'buy'">
                     <div class="py-3" style="border-left: 2px #FFFFFF33 solid;">
-                      <div class="pl-3 d-flex flex-row align-center justify-start mb-2 text-white" v-for="item in getHystoryInfo(note.data).items">
+                      <div class="pl-3 d-flex flex-row align-center justify-start mb-2 text-white" v-for="item in getHystoryInfo(note.data)?.items">
                         {{ getItemInfo(item.id)?.icon }} {{ getItemInfo(item.id)?.name }} - {{ item.amount }}
                       </div>
                     </div>
                     <div class="mt-3 text-white">
-                      <h4>Commande du {{ new Date(getHystoryInfo(note.data).payDate).toLocaleString().slice(0, 16) }} - {{getHystoryInfo(note.data).weight}} Kg</h4>
+                      <h4>Commande du {{ new Date(getHystoryInfo(note.data)?.payDate).toLocaleString().slice(0, 16) }} - {{getHystoryInfo(note.data)?.weight}} Kg</h4>
                     </div>
                   </template>
                   <div class="py-3" style="border-left: 2px #FFFFFF33 solid;" v-else-if="note.reason == 'vehicle'">
                     <div class="pl-3 d-flex flex-row align-center justify-start mb-2 text-white">
-                      {{getVehichleInfo(getVehichleHistoryInfo(note.data)).icon + ' ' + getVehichleInfo(getVehichleHistoryInfo(note.data)).name}}
+                      {{ (getVehichleInfo(note.data) || getVehichleInfo(getVehichleHistoryInfo(note.data)))?.icon + ' ' + (getVehichleInfo(note.data) || getVehichleInfo(getVehichleHistoryInfo(note.data)))?.name }}
                     </div>
                   </div>
                   <div class="py-3" style="border-left: 2px #FFFFFF33 solid;" v-else>
@@ -171,22 +171,32 @@ export default {
       return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(value).replace('€', '$').replace(",00", "")
     },
     getProfileInfo(id){
-      return this.profiles.find(p => p.id == id)
+      if (!id) return null
+      return this.profiles.find(p => p.id == id) || null
     },
     getCompagnyInfo(history){
-      return this.companies.find(c => c.id == history.company)
+      if (!history) return null
+      return this.companies.find(c => c.id == history.company) || null
     },
-    getVehichleInfo(history){
-      return this.vehicles.find(v => v.id == history.vehicle)
+    getVehichleInfo(data){
+      if (!data) return null
+      // Handle history object (compatibility)
+      if (data.vehicle) return this.vehicles.find(v => v.id == data.vehicle) || null
+      // Handle direct vehicle ID string
+      if (typeof data === 'string') return this.vehicles.find(v => v.id == data) || null
+      return null
     },
-    getVehichleHistoryInfo(history){
-      return this.vehicleHistories.find(h => h.id == history)
+    getVehichleHistoryInfo(historyId){
+      if (!historyId || typeof historyId !== 'string') return null
+      return this.vehicleHistories.find(h => h.id == historyId) || null
     },
     getHystoryInfo(history){
-      return this.histories.find(h => h.id == history)
+      if (!history) return null
+      return this.histories.find(h => h.id == history) || null
     },
     getItemInfo(item){
-      return this.items.find(i => i.id == item)
+      if (!item) return null
+      return this.items.find(i => i.id == item) || null
     },
   },
   beforeUnmount() {
