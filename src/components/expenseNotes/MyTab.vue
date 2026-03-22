@@ -241,6 +241,15 @@ export default {
       this.newExpenseNoteDialog = false
     },
     async sendExpenseNote() {
+      if (this.selectedReason == 'vehicle' && !this.expenseNoteData.vehicle) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Véhicule manquant',
+          text: 'Veuillez sélectionner un véhicule pour cette note de frais.',
+        })
+        return
+      }
+
       let newExpenseNote = ExpenseNote.initOne()
       newExpenseNote.user = this.userStore.profile.id
       newExpenseNote.date = new Date().getTime()
