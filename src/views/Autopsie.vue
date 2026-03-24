@@ -30,6 +30,14 @@
             <div class="d-flex flex-row align-center justify-center">
               <v-text-field label="Nom" class="mx-1 w-100" color="cyan" base-color="cyan" variant="outlined" hide-details v-model="doctor"></v-text-field>
             </div>
+            <h3 class="mb-3 mt-4">Médecin(s) légiste(s) :</h3>
+            <div v-for="(leg, index) in legists" :key="index" class="d-flex flex-row align-center mb-2">
+              <v-select :label="'Légiste' + (legists.length > 1 ? ' ' + (index + 1) : '')" class="mx-1 w-100" color="cyan" base-color="cyan" variant="outlined" hide-details :items="profiles" v-model="legists[index]" clearable></v-select>
+              <v-btn icon="mdi-minus" color="red" variant="text" density="compact" class="ml-1" @click="removeLegist(index)" :disabled="legists.length <= 1"></v-btn>
+            </div>
+            <div class="d-flex justify-end mt-1">
+              <v-btn color="cyan" variant="tonal" density="compact" prepend-icon="mdi-plus" @click="addLegist">Ajouter un légiste</v-btn>
+            </div>
           </v-card>
         </v-col>
       </v-row>
@@ -118,6 +126,7 @@ import colors from 'vuetify/lib/util/colors'
 import Swal from 'sweetalert2/dist/sweetalert2.js'
 
 import Autopsie from '../classes/Autopsie.js'
+import Profile from '../classes/Profile.js'
 
 import logger from '../functions/logger'
 import { generateReport } from '../functions/autopsieManager'
@@ -139,7 +148,7 @@ export default {
       cid: '',
       doctor: '',
       genderIsMale: false,
-      legist: '',
+      legists: [],
       injuries: [],
       selectedInjury: 0,
       draggingPoint: null,
@@ -149,10 +158,12 @@ export default {
       eventChronology: '',
       autopsySummary: '',
       autopsyDate: 0,
+      profiles: [],
     }
   },
 
   mounted() {
+    Profile.getActivated().then(list => { this.profiles = list.map(p => p.name).sort() })
     if(this.$route.params.id){
       this.loadReport(this.$route.params.id)
     } else {
@@ -374,13 +385,21 @@ export default {
         }
         this.drawCanvas()
       },
+      addLegist() {
+        this.legists.push(null)
+      },
+      removeLegist(index) {
+        if (this.legists.length > 1) {
+          this.legists.splice(index, 1)
+        }
+      },
       async loadReport(id){
         const report = await Autopsie.getById(id)
         this.name = report.name
         this.cid = report.cid
         this.genderIsMale = report.genderIsMale
         this.doctor = report.doctor
-        this.legist = report.legist
+        this.legists = Array.isArray(report.legists) ? report.legists : (report.legist ? [report.legist] : [''])
         this.injuries = report.injuries
         this.bloodBilan = report.bloodBilan
         this.diagnostic = report.diagnostic
@@ -402,7 +421,7 @@ export default {
         this.cid = ''
         this.genderIsMale = false
         this.doctor = ''
-        this.legist = this.userStore.profile?.name || ''
+        this.legists = [this.userStore.profile?.name || '']
         this.injuries = [
           {
             externalAnalysis: '',
@@ -429,7 +448,7 @@ export default {
         report.cid = this.cid
         report.genderIsMale = this.genderIsMale
         report.doctor = this.doctor
-        report.legist = this.legist
+        report.legists = this.legists
         report.injuries = this.injuries
         report.bloodBilan = this.bloodBilan
         report.diagnostic = this.diagnostic
@@ -447,7 +466,7 @@ export default {
           cid: this.cid,
           genderIsMale: this.genderIsMale,
           doctor: this.doctor,
-          legist: this.legist,
+          legists: this.legists,
           injuries: this.injuries,
           bloodBilan: this.bloodBilan,
           diagnostic: this.diagnostic,

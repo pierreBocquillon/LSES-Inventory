@@ -23,6 +23,14 @@
               Date(item.autopsyDate).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) }}
           </template>
 
+          <template v-slot:item.doctor="{ item }">
+            {{ item.doctor ? 'Dr ' + item.doctor : '' }}
+          </template>
+
+          <template v-slot:item.legists="{ item }">
+            {{ (Array.isArray(item.legists) ? item.legists : (item.legist ? [item.legist] : [])).filter(Boolean).map(l => 'Dr ' + l).join(', ') }}
+          </template>
+
           <template v-slot:item.actions="{ item }">
             <div class="d-flex">
               <v-btn color="cyan" variant="text" icon="mdi-pencil" @click="viewReport(item)"
@@ -147,8 +155,8 @@ export default {
         { title: 'Date', key: 'autopsyDate', align: 'start' },
         { title: 'Nom', key: 'name', align: 'start' },
         { title: 'CID', key: 'cid', align: 'start' },
-        { title: 'Médecin intervenant', key: 'doctor', align: 'start' },
-        { title: 'Médecin légiste', key: 'legist', align: 'start' },
+        { title: 'Médecin intervenant', key: 'doctor', align: 'start', sortable: false },
+        { title: 'Médecin(s) légiste(s)', key: 'legists', align: 'start', sortable: false },
         { title: '', key: 'actions', sortable: false, align: 'end' },
       ],
     }
