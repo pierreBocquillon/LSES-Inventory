@@ -144,7 +144,7 @@ export async function generateReport(data, canvasElement = null) {
     cid, 
     genderIsMale, 
     doctor, 
-    legist, 
+    legists, 
     injuries, 
     bloodBilan, 
     diagnostic, 
@@ -154,6 +154,10 @@ export async function generateReport(data, canvasElement = null) {
     autopsyDate,
     colors
   } = data
+
+  // Compat anciens rapports avec legist (string)
+  const legistsArr = Array.isArray(legists) ? legists : (data.legist ? [data.legist] : [])
+  const legistsDisplay = legistsArr.filter(Boolean).map(l => `Dr ${l}`).join(', ') || 'Médecin légiste'
 
   try {
     const doc = new jsPDF()
@@ -221,21 +225,22 @@ export async function generateReport(data, canvasElement = null) {
     doc.setFont('helvetica', 'bold')
     doc.text('Victime :', margin, yPosition)
     doc.setFont('helvetica', 'normal')
-    doc.text(` ${name} (${cid})`, margin + 4 + doc.getTextWidth('Victime :'), yPosition)
+    const civility = genderIsMale ? 'Mr' : 'Mme'
+    doc.text(` ${civility} ${name} (${cid})`, margin + 4 + doc.getTextWidth('Victime :'), yPosition)
     yPosition += 8
 
     // Médecin légiste
     doc.setFont('helvetica', 'bold')
     doc.text('Médecin légiste :', margin, yPosition)
     doc.setFont('helvetica', 'normal')
-    doc.text(` Dr ${legist}`, margin + 4 + doc.getTextWidth('Médecin légiste :'), yPosition)
+    doc.text(` ${legistsDisplay}`, margin + 4 + doc.getTextWidth('Médecin légiste :'), yPosition)
     yPosition += 8
 
     // Médecin intervenant
     doc.setFont('helvetica', 'bold')
     doc.text('Médecin intervenant :', margin, yPosition)
     doc.setFont('helvetica', 'normal')
-    doc.text(` ${doctor}`, margin + 4 + doc.getTextWidth('Médecin intervenant :'), yPosition)
+    doc.text(` Dr ${doctor}`, margin + 4 + doc.getTextWidth('Médecin intervenant :'), yPosition)
     yPosition += 15
 
     // Schéma et Blessures côte à côte
@@ -408,7 +413,7 @@ export async function generateReport(data, canvasElement = null) {
     doc.setTextColor(255, 255, 255)
     doc.setFontSize(10)
     doc.setFont('helvetica', 'normal')
-    doc.text('Signature :', margin, yPosition, { align: 'left' })
+    doc.text('Signature(s) :', margin, yPosition, { align: 'left' })
     
     // Signature manuscrite avec rotation
     yPosition += 20
@@ -423,34 +428,26 @@ export async function generateReport(data, canvasElement = null) {
     })
     doc.addFileToVFS('Caveat-Regular.ttf', caveatBase64)
     doc.addFont('Caveat-Regular.ttf', 'Caveat', 'normal')
-    
+
     doc.setFontSize(32)
     doc.setFont('Caveat', 'normal')
-    const signature = legist || 'Médecin légiste'
-    
-    // Appliquer rotation de 5 degrés antihoraire
-    const angle = 5 * Math.PI / 180
-    const x = margin + 10
-    const y = yPosition
-    doc.saveGraphicsState()
     doc.setTextColor(255, 255, 255)
-    
-    // Transformer: translate -> rotate -> translate back
-    const cos = Math.cos(angle)
-    const sin = Math.sin(angle)
-    doc.text(signature, x, y, { 
-      angle: 5,
-      align: 'left' 
+
+    const signatureNames = legistsArr.filter(Boolean)
+    const x = margin + 10
+    signatureNames.forEach((name_legist, i) => {
+      const y = yPosition + i * 22
+      doc.text(name_legist, x, y, { angle: 5, align: 'left' })
     })
-    doc.restoreGraphicsState()
 
     // Stamp image à droite avec rotation de 20° sens horaire
     const stampImg = new Image()
     stampImg.src = require('@/assets/images/stamp_white.png')
     const stampWidth = 50
     const stampHeight = 50
+    const lastSigY = yPosition + (signatureNames.length - 1) * 22
     const stampX = x + 70
-    const stampY = y - 40
+    const stampY = lastSigY - 40
     
     // Ajouter l'image avec rotation et opacité 80%
     doc.saveGraphicsState()
@@ -468,6 +465,7 @@ export async function generateReport(data, canvasElement = null) {
         addHeader()
       }
       
+      doc.setFont('helvetica', 'normal')
       doc.setFontSize(9)
       doc.setTextColor(180, 180, 180)
       const dateStr = new Date(autopsyDate).toLocaleDateString('fr-FR')
@@ -478,7 +476,6 @@ export async function generateReport(data, canvasElement = null) {
     }
 
     // Save PDF
-    const civility = genderIsMale ? 'Mr' : 'Mme'
     const dateFile = new Date(autopsyDate).toLocaleDateString('fr-FR').replace(/\//g, '-')
     const fileName = `LSES - Rapport d'autopsie ${civility} ${name} (${cid}) - ${dateFile}.pdf`
     doc.save(fileName)

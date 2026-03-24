@@ -5,17 +5,19 @@ let collectionName = "autopsies"
 
 function docToInstance(document) {
   let data = document.data()
-  return data ? new Autopsie(document.id, data.name, data.cid, data.genderIsMale, data.doctor, data.legist, data.injuries, data.bloodBilan, data.diagnostic, data.interventionReport, data.eventChronology, data.autopsySummary, data.autopsyDate) : null
+  if (!data) return null
+  const legists = Array.isArray(data.legists) ? data.legists : (data.legist ? [data.legist] : [])
+  return new Autopsie(document.id, data.name, data.cid, data.genderIsMale, data.doctor, legists, data.injuries, data.bloodBilan, data.diagnostic, data.interventionReport, data.eventChronology, data.autopsySummary, data.autopsyDate)
 }
 
 class Autopsie {
-  constructor(id, name, cid, genderIsMale, doctor, legist, injuries, bloodBilan, diagnostic, interventionReport, eventChronology, autopsySummary, autopsyDate) {
+  constructor(id, name, cid, genderIsMale, doctor, legists, injuries, bloodBilan, diagnostic, interventionReport, eventChronology, autopsySummary, autopsyDate) {
     this.id = id
     this.name = name
     this.cid = cid
     this.genderIsMale = genderIsMale
     this.doctor = doctor
-    this.legist = legist
+    this.legists = legists
     this.injuries = injuries
     this.bloodBilan = bloodBilan
     this.diagnostic = diagnostic
@@ -31,7 +33,7 @@ class Autopsie {
       internalAnalysis: '',
       points: []
     }]
-    const newAutopsie = new Autopsie(null, '', '', false, '', '', injuries, ``, ``, ``, ``, ``, 0)
+    const newAutopsie = new Autopsie(null, '', '', false, '', [], injuries, ``, ``, ``, ``, ``, 0)
     return newAutopsie
   }
 
@@ -67,7 +69,7 @@ class Autopsie {
       cid: this.cid,
       genderIsMale: this.genderIsMale,
       doctor: this.doctor,
-      legist: this.legist,
+      legists: this.legists,
       injuries: this.injuries,
       bloodBilan: this.bloodBilan,
       diagnostic: this.diagnostic,
