@@ -14,7 +14,6 @@ export const interventionTypes = [
     { value: 'rdv', label: 'Rendez-Vous', emoji: '📅', color: '#00E0C6' },
     { value: 'rh', label: 'RH', emoji: '📋', color: '#009BF5' },
     { value: 'psy', label: 'Psy', emoji: '🧠', color: '#EE72A8' },
-    { value: 'bank', label: 'Banque/Bijouterie', emoji: '💰', color: '#f9a825' },
     { value: 'otage', label: 'Prise d\'otage', emoji: '🔫', color: '#d2f925ff' },
     { value: 'bureau_admin', label: 'Bureau/Admin', emoji: '🖥️', color: '#A2B0BE' },
     { value: 'formation', label: 'Formation', emoji: '📚', color: '#3FAB45' },
