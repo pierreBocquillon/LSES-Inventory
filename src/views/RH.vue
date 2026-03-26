@@ -445,14 +445,15 @@
         <v-card-text>
           <v-container>
             <v-row class="align-center">
-              <v-col cols="3">
+              <v-col cols="2">
                 <v-text-field v-model="newSpecialty.icon" label="Emoji" variant="outlined" hide-details></v-text-field>
               </v-col>
-              <v-col cols="7">
-                <v-text-field v-model="newSpecialty.name" label="Nom de la spécialité" variant="outlined" hide-details></v-text-field>
+              <v-col cols="6">
+                <v-text-field v-model="newSpecialty.name" label="Nom" variant="outlined" hide-details></v-text-field>
               </v-col>
-              <v-col cols="2">
-                <v-btn color="primary" icon="mdi-plus" @click="addSpecialty"></v-btn>
+              <v-col cols="4" class="d-flex align-center">
+                <v-btn :color="newSpecialty.id ? 'success' : 'primary'" :icon="newSpecialty.id ? 'mdi-check' : 'mdi-plus'" @click="saveSpecialty"></v-btn>
+                <v-btn v-if="newSpecialty.id" icon="mdi-close" variant="text" color="grey" class="ml-2" @click="resetSpecialtyForm"></v-btn>
               </v-col>
             </v-row>
             <v-row>
@@ -471,7 +472,8 @@
                   <v-chip v-if="spec.canTakeAppointments" size="x-small" color="success" class="ml-2">Gère RDV</v-chip>
                 </v-list-item-title>
                 <template v-slot:append>
-                  <v-btn icon="mdi-calendar-check" size="small" variant="text" :color="spec.canTakeAppointments ? 'success' : 'grey'" class="mr-2" @click="toggleSpecialtyAppointments(spec)" title="Activer/Désactiver RDV"></v-btn>
+                  <v-btn icon="mdi-pencil" size="small" variant="text" color="primary" class="mr-1" @click="editSpecialty(spec)" title="Modifier"></v-btn>
+                  <v-btn icon="mdi-calendar-check" size="small" variant="text" :color="spec.canTakeAppointments ? 'success' : 'grey'" class="mr-1" @click="toggleSpecialtyAppointments(spec)" title="Activer/Désactiver RDV"></v-btn>
                   <v-btn icon="mdi-delete" size="small" variant="text" color="error" @click="removeSpecialty(spec)"></v-btn>
                 </template>
               </v-list-item>
@@ -1053,8 +1055,11 @@ export default {
     search: '',
     specialties: [],
     newSpecialty: {
+      id: null,
       name: '',
-      icon: ''
+      icon: '',
+      value: null,
+      canTakeAppointments: false
     },
 
     // Checklists
@@ -1763,15 +1768,41 @@ export default {
       this.specialtiesDialog = true
     },
 
-    async addSpecialty() {
+    async saveSpecialty() {
       if (!this.newSpecialty.name || !this.newSpecialty.icon) return
       try {
-        const spec = new Specialty(null, this.newSpecialty.name, this.newSpecialty.icon, null, this.newSpecialty.canTakeAppointments)
+        const spec = new Specialty(
+          this.newSpecialty.id || null,
+          this.newSpecialty.name,
+          this.newSpecialty.icon,
+          this.newSpecialty.value || null,
+          this.newSpecialty.canTakeAppointments
+        )
         await spec.save()
-        this.newSpecialty = { name: '', icon: '', canTakeAppointments: false }
+        this.resetSpecialtyForm()
       } catch (e) {
         console.error(e)
-        Swal.fire({ icon: 'error', title: 'Erreur', text: "Erreur lors de l'ajout" })
+        Swal.fire({ icon: 'error', title: 'Erreur', text: "Erreur lors de l'enregistrement" })
+      }
+    },
+
+    editSpecialty(spec) {
+      this.newSpecialty = {
+        id: spec.id,
+        name: spec.name,
+        icon: spec.icon,
+        value: spec.value,
+        canTakeAppointments: spec.canTakeAppointments
+      }
+    },
+
+    resetSpecialtyForm() {
+      this.newSpecialty = {
+        id: null,
+        name: '',
+        icon: '',
+        value: null,
+        canTakeAppointments: false
       }
     },
 
