@@ -133,7 +133,7 @@
           </v-menu>
           <v-btn v-if="hasLsesPerm" icon variant="plain" size="x-small" color="error" class="ml-auto"
             @click="clearCentrale" title="Vider la centrale">
-            <v-icon size="11">mdi-delete-sweep</v-icon>
+            <v-icon size="11">mdi-refresh</v-icon>
           </v-btn>
         </div>
         <div class="inter-location-row d-flex align-center">
@@ -1579,19 +1579,32 @@ export default {
 
     async clearCentrale() {
       if (!this.hasLsesPerm) return
-      const r = await Swal.fire({ icon:'question', title:'Vider la centrale ?',
-        showCancelButton:true, confirmButtonText:'Vider', cancelButtonText:'Annuler' })
-      if (!r.isConfirmed) return
+      if (!this.dispatch?.centrale) return
 
-      const locKey = 'centrale-location'
-      if (this.localBuffers[locKey] !== undefined) delete this.localBuffers[locKey]
-      if (this._timeouts[locKey]) {
-        clearTimeout(this._timeouts[locKey])
-        delete this._timeouts[locKey]
+      const c = this.dispatch.centrale
+      const hasFields = !!(c.location || c.complement || c.type || c.returnStatus)
+
+      if (hasFields) {
+        const locKey = 'centrale-location'
+        if (this.localBuffers[locKey] !== undefined) delete this.localBuffers[locKey]
+        if (this._timeouts[locKey]) {
+          clearTimeout(this._timeouts[locKey])
+          delete this._timeouts[locKey]
+        }
+        await Dispatch.updateCentrale({ location: null, complement: null, type: null, returnStatus: null })
+      } else {
+        const emps = c.employees || []
+        if (emps.length === 0) return
+        
+        for (const emp of emps) {
+          await Dispatch.migrateEmployee(emp.employeeId || emp.id, 'centrale', 'cat:en_service', {
+            name: emp.name,
+            phone: emp.phone,
+            role: emp.role,
+            allSpecialties: emp.allSpecialties || []
+          })
+        }
       }
-
-      const emptyCentrale = { location: null, complement: null, type: null, returnStatus: null, employees: [] }
-      await Dispatch.updateCentrale(emptyCentrale)
     },
 
     async removeEmpFromCentrale(empId) {
