@@ -5,16 +5,17 @@ let collectionName = "specialties"
 
 function docToInstance(document) {
     let data = document.data()
-    return data ? new Specialty(document.id, data.name, data.icon, data.value, data.canTakeAppointments) : null
+    return data ? new Specialty(document.id, data.name, data.icon, data.value, data.canTakeAppointments, data.linkedPermission) : null
 }
 
 class Specialty {
-    constructor(id, name, icon, value, canTakeAppointments) {
+    constructor(id, name, icon, value, canTakeAppointments, linkedPermission) {
         this.id = id
         this.name = name
         this.icon = icon
         this.value = value
         this.canTakeAppointments = canTakeAppointments || false
+        this.linkedPermission = linkedPermission || null
     }
 
     static listenAll(callback) {
@@ -32,7 +33,8 @@ class Specialty {
             name: this.name,
             icon: this.icon,
             value: this.value,
-            canTakeAppointments: this.canTakeAppointments || false
+            canTakeAppointments: this.canTakeAppointments || false,
+            linkedPermission: this.linkedPermission || null
         }
 
         if (this.id) {

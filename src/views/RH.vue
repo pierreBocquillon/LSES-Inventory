@@ -459,6 +459,7 @@
             <v-row>
               <v-col cols="12">
                 <v-checkbox v-model="newSpecialty.canTakeAppointments" label="Peut prendre des RDV" density="compact" hide-details></v-checkbox>
+                <v-select v-model="newSpecialty.linkedPermission" :items="linkablePermissions" item-title="name" item-value="value" label="Permission liée" variant="outlined" clearable hide-details class="mt-4"></v-select>
               </v-col>
             </v-row>
             <v-divider class="my-4"></v-divider>
@@ -470,6 +471,14 @@
                 <v-list-item-title>
                   {{ spec.name }}
                   <v-chip v-if="spec.canTakeAppointments" size="x-small" color="success" class="ml-2">Gère RDV</v-chip>
+                  <v-tooltip v-if="spec.linkedPermission" location="top">
+                    <template v-slot:activator="{ props }">
+                      <v-chip size="x-small" variant="tonal" color="deep-purple" class="ml-2 cursor-pointer" v-bind="props">
+                        🔗 {{ linkablePermissions.find(p => p.value === spec.linkedPermission)?.icon || '?' }}
+                      </v-chip>
+                    </template>
+                    <span>{{ linkablePermissions.find(p => p.value === spec.linkedPermission)?.name || spec.linkedPermission }}</span>
+                  </v-tooltip>
                 </v-list-item-title>
                 <template v-slot:append>
                   <v-btn icon="mdi-pencil" size="small" variant="text" color="primary" class="mr-1" @click="editSpecialty(spec)" title="Modifier"></v-btn>
@@ -988,6 +997,7 @@
 import Employee from '@/classes/Employee'
 import Profile from '@/classes/Profile'
 import Specialty from '@/classes/Specialty'
+import permissions from '@/config/permissions.js'
 import SharedChecklist from '@/classes/SharedChecklist'
 import Candidature from '@/classes/Candidature'
 import Swal from 'sweetalert2/dist/sweetalert2.js'
@@ -1196,6 +1206,9 @@ export default {
   }),
 
   computed: {
+    linkablePermissions() {
+      return permissions.filter(p => p.linkable)
+    },
     rhEmployees() {
       return this.employees.filter(e => !e.isRHTrainee).sort((a, b) => a.name.localeCompare(b.name))
     },
@@ -1623,8 +1636,9 @@ export default {
 
         if (originalUserId && originalUserId !== this.editedItem.userId) {
           const oldP = this.profiles.find(profile => profile.id === originalUserId)
-          if (oldP && oldP.permissions && oldP.permissions.includes('lses')) {
-            oldP.permissions = oldP.permissions.filter(p => p !== 'lses')
+          if (oldP && oldP.permissions) {
+            const allLinkablePerms = this.linkablePermissions.map(p => p.value)
+            oldP.permissions = oldP.permissions.filter(p => p !== 'lses' && !allLinkablePerms.includes(p))
             await oldP.save()
           }
         }
@@ -1633,8 +1647,35 @@ export default {
           const newP = this.profiles.find(profile => profile.id === this.editedItem.userId)
           if (newP) {
             if (!newP.permissions) newP.permissions = []
-            if (!newP.permissions.includes('lses')) {
-              newP.permissions = [...newP.permissions, 'lses']
+            
+            const requiredPerms = ['lses']
+            if (this.editedItem.specialties) {
+              for (const specVal of this.editedItem.specialties) {
+                const specObj = this.specialties.find(s => s.value === specVal)
+                if (specObj && specObj.linkedPermission && !requiredPerms.includes(specObj.linkedPermission)) {
+                  requiredPerms.push(specObj.linkedPermission)
+                }
+              }
+            }
+            
+            const allLinkablePerms = this.linkablePermissions.map(p => p.value)
+            const permsToRemove = allLinkablePerms.filter(p => !requiredPerms.includes(p))
+            
+            let changed = false
+            for (const rp of requiredPerms) {
+              if (!newP.permissions.includes(rp)) {
+                newP.permissions.push(rp)
+                changed = true
+              }
+            }
+            for (const pr of permsToRemove) {
+              if (newP.permissions.includes(pr)) {
+                newP.permissions = newP.permissions.filter(p => p !== pr)
+                changed = true
+              }
+            }
+            
+            if (changed) {
               await newP.save()
             }
           }
@@ -1692,8 +1733,9 @@ export default {
         
         if (userIdToRemove) {
           const p = this.profiles.find(profile => profile.id === userIdToRemove)
-          if (p && p.permissions && p.permissions.includes('lses')) {
-            p.permissions = p.permissions.filter(perm => perm !== 'lses')
+          if (p && p.permissions) {
+            const allLinkablePerms = this.linkablePermissions.map(perm => perm.value)
+            p.permissions = p.permissions.filter(perm => perm !== 'lses' && !allLinkablePerms.includes(perm))
             await p.save()
           }
         }
@@ -1776,7 +1818,8 @@ export default {
           this.newSpecialty.name,
           this.newSpecialty.icon,
           this.newSpecialty.value || null,
-          this.newSpecialty.canTakeAppointments
+          this.newSpecialty.canTakeAppointments,
+          this.newSpecialty.linkedPermission || null
         )
         await spec.save()
         this.resetSpecialtyForm()
@@ -1792,7 +1835,8 @@ export default {
         name: spec.name,
         icon: spec.icon,
         value: spec.value,
-        canTakeAppointments: spec.canTakeAppointments
+        canTakeAppointments: spec.canTakeAppointments,
+        linkedPermission: spec.linkedPermission || null
       }
     },
 
@@ -1802,13 +1846,14 @@ export default {
         name: '',
         icon: '',
         value: null,
-        canTakeAppointments: false
+        canTakeAppointments: false,
+        linkedPermission: null
       }
     },
 
     async toggleSpecialtyAppointments(spec) {
       try {
-        const updatedSpec = new Specialty(spec.id, spec.name, spec.icon, spec.value, !spec.canTakeAppointments)
+        const updatedSpec = new Specialty(spec.id, spec.name, spec.icon, spec.value, !spec.canTakeAppointments, spec.linkedPermission || null)
         await updatedSpec.save()
       } catch (e) {
         console.error(e)
