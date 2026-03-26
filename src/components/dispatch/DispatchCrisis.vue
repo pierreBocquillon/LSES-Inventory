@@ -102,7 +102,7 @@
       </v-btn>
     </div>
 
-    <v-dialog v-model="showAffiliationManager" max-width="500">
+    <v-dialog v-model="showAffiliationManager" max-width="500" :retain-focus="false">
       <v-card class="rounded-xl" style="background: #1e293b; color: #fff;">
         <v-card-title class="pa-4 d-flex align-center bg-amber-darken-3 text-white">
           <v-icon class="mr-2">mdi-cog</v-icon>
@@ -506,7 +506,8 @@ export default {
         confirmButtonText: 'Oui, vider',
         cancelButtonText: 'Annuler',
         background: '#1e293b',
-        color: '#fff'
+        color: '#fff',
+        target: '#app'
       })
       if (r.isConfirmed) {
         this.localCrisisZip = ''
@@ -582,6 +583,10 @@ export default {
         focusConfirm: false,
         background: '#1e293b',
         color: '#fff',
+        target: '#app',
+        didOpen: () => {
+          document.getElementById('swal-input1')?.focus()
+        },
         showCancelButton: true,
         confirmButtonText: 'Ajouter',
         cancelButtonText: 'Annuler',
@@ -613,6 +618,10 @@ export default {
         focusConfirm: false,
         background: '#1e293b',
         color: '#fff',
+        target: '#app',
+        didOpen: () => {
+          document.getElementById('swal-input1')?.focus()
+        },
         showCancelButton: true,
         confirmButtonText: 'Sauvegarder',
         cancelButtonText: 'Annuler',
@@ -641,7 +650,8 @@ export default {
         confirmButtonText: 'Oui, supprimer',
         cancelButtonText: 'Annuler',
         background: '#1e293b',
-        color: '#fff'
+        color: '#fff',
+        target: '#app'
       })
       if (r.isConfirmed) {
         await DispatchLib.deleteAffiliation(aff.id)
