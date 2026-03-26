@@ -266,18 +266,17 @@ class Dispatch {
     static async resetAll() {
         const batch = writeBatch(db)
         const globalRef = doc(db, collectionName, GLOBAL_DOC_ID)
+        const snap = await getDoc(globalRef)
+        const data = snap.data() || {}
+
+        const radios = (data.radios || []).map(r => ({ ...r, status: 'off' }))
 
         batch.update(globalRef, {
-            hospitalStatus: 'gestion_normale',
-            lsesRadio: '',
-            communeRadio: '',
-            notepad: '',
-            nuitRadioId: null,
-            crisisZip: '',
-            radios: []
+            hospitalStatus: 'hopital_ferme',
+            radios: radios
         })
 
-        const colls = ["crises", "interventions", "patates", "centrale_employees"]
+        const colls = ["interventions", "patates", "centrale_employees"]
         for (const cName of colls) {
             const snap = await getDocs(collection(db, collectionName, GLOBAL_DOC_ID, cName))
             snap.docs.forEach(d => batch.delete(d.ref))

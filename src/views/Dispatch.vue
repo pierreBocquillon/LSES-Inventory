@@ -10,13 +10,13 @@
            <div class="d-flex align-center">
              <v-icon size="13" color="cyan" class="mr-1">mdi-radio-handheld</v-icon>
              <span class="mr-1 text-grey-lighten-1">LSES:</span>
-             <input v-if="isDirection && dispatch" v-model="dispatch.lsesRadio" @change="Dispatch.updateField('lsesRadio', dispatch.lsesRadio)" class="freq-input" placeholder="---" />
+             <input v-if="isDirection && dispatch" :value="dispatch.lsesRadio" @change="Dispatch.updateField('lsesRadio', $event.target.value)" class="freq-input" placeholder="---" />
              <span v-else class="freq-display text-cyan font-weight-bold">{{ dispatch?.lsesRadio || '---' }}</span>
            </div>
            <div class="d-flex align-center">
              <v-icon size="13" color="orange" class="mr-1">mdi-radio-tower</v-icon>
              <span class="mr-1 text-grey-lighten-1">Commune:</span>
-             <input v-if="isDirection && dispatch" v-model="dispatch.communeRadio" @change="Dispatch.updateField('communeRadio', dispatch.communeRadio)" class="freq-input" placeholder="---" />
+             <input v-if="isDirection && dispatch" :value="dispatch.communeRadio" @change="Dispatch.updateField('communeRadio', $event.target.value)" class="freq-input" placeholder="---" />
              <span v-else class="freq-display text-orange font-weight-bold">{{ dispatch?.communeRadio || '---' }}</span>
            </div>
         </div>
@@ -150,15 +150,15 @@
           />
           <select
             v-if="dispatch?.centrale"
-            v-model="dispatch.centrale.complement"
-            @change="Dispatch.updateCentrale({ complement: dispatch.centrale.complement })"
+            :value="dispatch.centrale.complement || ''"
+            @change="Dispatch.updateCentrale({ complement: $event.target.value || null })"
             class="location-input ml-2"
             style="width: 85px; border-left: 2px solid #64748b; padding-left: 8px;"
             :style="{ color: dispatch?.centrale?.complement ? (complements.find(c => c.value === dispatch?.centrale?.complement)?.color || '#fff') : '#64748b' }"
             :disabled="!hasLsesPerm"
             title="Complément"
           >
-            <option :value="null" style="background:#1a1f35; color:#64748b">Complément</option>
+            <option value="" style="background:#1a1f35; color:#64748b">Complément</option>
             <option v-for="c in complements" :key="c.value" :value="c.value" style="background:#1a1f35">{{ c.label }}</option>
           </select>
         </div>
@@ -317,15 +317,15 @@
                 @keyup.enter="$event.target.blur()"
               />
               <select
-                v-model="slot.complement"
-                @change="Dispatch.updateIntervention(slot.id, { complement: slot.complement })"
+                :value="slot.complement || ''"
+                @change="Dispatch.updateIntervention(slot.id, { complement: $event.target.value || null })"
                 class="location-input ml-2"
                 style="width: 85px; border-left: 2px solid #64748b; padding-left: 8px;"
                 :style="{ color: slot.complement ? (complements.find(c => c.value === slot.complement)?.color || '#fff') : '#64748b' }"
                 :disabled="!hasLsesPerm"
                 title="Complément"
               >
-                <option :value="null" style="background:#1a1f35; color:#64748b">Complément</option>
+                <option value="" style="background:#1a1f35; color:#64748b">Complément</option>
                 <option v-for="c in complements" :key="c.value" :value="c.value" style="background:#1a1f35">{{ c.label }}</option>
               </select>
             </div>
@@ -619,7 +619,7 @@
 
       <div class="far-right-panel">
 
-        <div class="radios-wrapper mt-auto pa-2" style="border-top: 1px solid #334155; background: rgba(0,0,0,0.15)">
+        <div class="radios-wrapper pa-2" style="border-top: 1px solid #334155; background: rgba(0,0,0,0.15)">
           <div class="text-caption font-weight-bold text-grey-lighten-1 mb-2 d-flex align-center flex-shrink-0">
             <v-icon size="14" class="mr-1">mdi-radio-handheld</v-icon> Stock Radios
             <span class="cnt ml-2" title="Radios standards prises / total">{{ standardRadios.filter(r => r.employeeId).length }} / {{ standardRadios.length }}</span>
@@ -643,8 +643,8 @@
           </div>
           <div class="mb-2 d-flex align-center bg-transparent flex-shrink-0" v-if="(dispatch?.radios||[]).length && isDirection">
              <span class="text-caption font-weight-bold text-grey-lighten-1 mr-2"><v-icon size="12" class="mr-1">mdi-weather-night</v-icon> Nuit:</span>
-             <select v-if="isDirection" v-model="dispatch.nuitRadioId" @change="Dispatch.updateField('nuitRadioId', dispatch.nuitRadioId)" class="location-input mx-1" style="border: 1px solid #334155; padding:2px; border-radius:4px; max-width:130px; font-weight:bold;">
-                <option :value="null" style="background:#1a1f35">-- Aucune --</option>
+             <select v-if="isDirection && dispatch" :value="dispatch.nuitRadioId || ''" @change="Dispatch.updateField('nuitRadioId', $event.target.value || null)" class="location-input mx-1" style="border: 1px solid #334155; padding:2px; border-radius:4px; max-width:130px; font-weight:bold;">
+                <option value="" style="background:#1a1f35">-- Aucune --</option>
                 <option v-for="rad in dispatch?.radios||[]" :key="rad.id" :value="rad.id" style="background:#1a1f35">{{ rad.serial || rad.id.slice(0,4) }}</option>
              </select>
              <span v-else class="text-caption font-weight-bold text-amber-lighten-2 mx-1 px-2 py-1" style="border: 1px solid #334155; border-radius:4px;">
@@ -659,7 +659,7 @@
               <template v-if="group.radios.length">
                 <div :class="['text-caption font-weight-bold mt-1 mb-1', group.color]" style="font-size: 0.65rem; letter-spacing: 0.05em;">{{ group.title.toUpperCase() }}</div>
                 <div v-for="radio in group.radios" :key="radio.id" class="radio-item d-flex align-center mb-1 pa-1" :style="['background: rgba(255,255,255,0.05); border-radius: 4px; border: 1px solid', radio.id === dispatch?.nuitRadioId ? '#f59e0b' : '#334155'].join(' ')">
-                  <input v-if="isDirection && hasLsesPerm" v-model="radio.serial" @change="Dispatch.updateRadio(radio.id, { serial: radio.serial })" class="location-input" style="width:50px; font-weight:bold" placeholder="# Série" />
+                  <input v-if="isDirection && hasLsesPerm" :value="radio.serial" @change="Dispatch.updateRadio(radio.id, { serial: $event.target.value })" class="location-input" style="width:50px; font-weight:bold" placeholder="# Série" />
                   <span v-else class="text-caption font-weight-bold mx-1" style="width:50px; display:inline-block; color:#94a3b8; text-align:center;">{{ radio.serial || '---' }}</span>
                    <select :disabled="radio.category === 'direction' && !isDirection" :value="radio.employeeId" @change="onRadioAssign(radio, $event.target.value)" class="location-input mx-1" style="border-left:1px solid #334155; padding-left:4px; max-width: 120px;">
                      <option :value="''" style="background:#1a1f35">-- Assigner --</option>
@@ -840,6 +840,7 @@ export default {
   computed: {
     isDirection() {
       const currentUserId = this.userStore.profile?.id
+      if (!currentUserId || !this.employees) return false
       const currentEmployee = this.employees.find(e => e.userId === currentUserId)
 
       if (!currentEmployee) return false
