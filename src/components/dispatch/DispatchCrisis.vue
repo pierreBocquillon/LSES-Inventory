@@ -111,6 +111,14 @@
         <v-card-text class="pa-4 pt-2">
           <div style="max-height: 600px; overflow-y: auto; padding-right: 8px;" class="custom-scrollbar">
             <div v-for="aff in affiliations" :key="aff.id" class="d-flex align-center mb-2 pa-2 rounded" style="background: rgba(0,0,0,0.2); border: 1px solid #334155;">
+              <div class="d-flex flex-column mr-2 align-center justify-center">
+                <v-btn icon variant="plain" size="x-small" color="grey" @click="moveAffiliationUp(aff)" :disabled="isFirstAffiliation(aff)" style="height: 16px; width: 16px;">
+                  <v-icon size="16">mdi-chevron-up</v-icon>
+                </v-btn>
+                <v-btn icon variant="plain" size="x-small" color="grey" @click="moveAffiliationDown(aff)" :disabled="isLastAffiliation(aff)" style="height: 16px; width: 16px; margin-top: 2px;">
+                  <v-icon size="16">mdi-chevron-down</v-icon>
+                </v-btn>
+              </div>
               <div :style="`width: 12px; height: 12px; border-radius: 50%; background: ${aff.color}; margin-right: 12px;`" title="Couleur"></div>
               <div class="flex-grow-1 font-weight-bold">{{ aff.label }}</div>
               <v-btn icon variant="plain" size="x-small" color="blue" @click="promptEditAffiliation(aff)" class="mr-1">
@@ -637,6 +645,38 @@ export default {
       })
       if (r.isConfirmed) {
         await DispatchLib.deleteAffiliation(aff.id)
+      }
+    },
+    isFirstAffiliation(aff) {
+      if (!this.affiliations || this.affiliations.length === 0) return true
+      return this.affiliations[0].id === aff.id
+    },
+    isLastAffiliation(aff) {
+      if (!this.affiliations || this.affiliations.length === 0) return true
+      return this.affiliations[this.affiliations.length - 1].id === aff.id
+    },
+    async moveAffiliationUp(aff) {
+      const idx = this.affiliations.findIndex(a => a.id === aff.id)
+      if (idx > 0) {
+        const list = [...this.affiliations]
+        const temp = list[idx]
+        list[idx] = list[idx - 1]
+        list[idx - 1] = temp
+        
+        const promises = list.map((a, i) => DispatchLib.updateAffiliation(a.id, { order: i }))
+        await Promise.all(promises)
+      }
+    },
+    async moveAffiliationDown(aff) {
+      const idx = this.affiliations.findIndex(a => a.id === aff.id)
+      if (idx < this.affiliations.length - 1) {
+        const list = [...this.affiliations]
+        const temp = list[idx]
+        list[idx] = list[idx + 1]
+        list[idx + 1] = temp
+        
+        const promises = list.map((a, i) => DispatchLib.updateAffiliation(a.id, { order: i }))
+        await Promise.all(promises)
       }
     }
   }
