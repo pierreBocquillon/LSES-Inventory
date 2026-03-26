@@ -58,9 +58,9 @@
                       @change="updateMorgueSlot('lockers', i, 'affiliation', $event.target.value)"
                       class="location-input w-100 h-100 text-center"
                       style="font-size: 0.72rem; font-weight: 600; border: none; outline: none; background: transparent; cursor: pointer; text-align-last: center;"
-                      :style="{ color: crisisAffiliations.find(a => a.value === getMorgueSlot('lockers', i).affiliation)?.color || '#6b7280' }">
+                      :style="{ color: affiliations.find(a => a.id === getMorgueSlot('lockers', i).affiliation)?.color || '#6b7280' }">
                       <option value="" style="background:#111827; color:#6b7280;">—</option>
-                      <option v-for="aff in crisisAffiliations" :key="aff.value" :value="aff.value" style="background:#111827" :style="{ color: aff.color }">{{ aff.label }}</option>
+                      <option v-for="aff in affiliations" :key="aff.id" :value="aff.id" style="background:#111827" :style="{ color: aff.color }">{{ aff.label }}</option>
                     </select>
                   </td>
                 </tr>
@@ -317,7 +317,6 @@
 import DispatchLib from '@/classes/Dispatch.js'
 import {
   morgueConfig,
-  crisisAffiliations,
 } from '@/config/dispatch.js'
 
 export default {
@@ -327,13 +326,16 @@ export default {
       type: Object,
       required: false,
       default: null
+    },
+    affiliations: {
+      type: Array,
+      default: () => []
     }
   },
   data() {
     return {
       morgueExpanded: localStorage.getItem('dispatch_morgue_expanded') === 'true',
       morgueConfig,
-      crisisAffiliations,
       localBuffers: {},
       _timeouts: {}
     }

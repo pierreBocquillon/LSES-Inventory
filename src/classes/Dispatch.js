@@ -388,6 +388,25 @@ class Dispatch {
             })
         })
     }
+    static listenAffiliations(callback) {
+        const c = collection(db, "affiliations")
+        return onSnapshot(query(c, orderBy("order")), snapshot => {
+            const list = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }))
+            callback(list)
+        })
+    }
+    static async addAffiliation(data) {
+        const c = collection(db, "affiliations")
+        await addDoc(c, data)
+    }
+    static async updateAffiliation(id, data) {
+        const d = doc(db, "affiliations", id)
+        await updateDoc(d, data)
+    }
+    static async deleteAffiliation(id) {
+        const d = doc(db, "affiliations", id)
+        await deleteDoc(d)
+    }
 }
 
 export default Dispatch

@@ -703,11 +703,13 @@
       :currentTime="currentTime"
       :allEmployees="allEmployees"
       :currentUserEmployeeId="currentUserEmployeeId"
+      :affiliations="affiliations"
+      :isDirection="isDirection"
     />
 
     <DispatchBeds :dispatch="dispatch" :isLightTheme="isLightTheme" />
 
-    <DispatchMorgue :dispatch="dispatch" />
+    <DispatchMorgue :dispatch="dispatch" :affiliations="affiliations" />
 
 
     <v-dialog v-model="quickAddDialog" max-width="360">
@@ -778,7 +780,6 @@ import {
   safdStatusConfig,
   bcesStatusConfig,
   crisisMedicalStatuses,
-  crisisAffiliations,
   crisisBeds,
   crisisBedGroups,
   complements,
@@ -813,6 +814,7 @@ export default {
       unsubSpecialties: null,
       unsubVehicles: null,
       unsubCompanies: null,
+      unsubAffiliations: null,
       currentTime: Date.now(),
       timeInterval: null,
 
@@ -835,7 +837,7 @@ export default {
       centralRoles,
       hospitalStatuses,
       crisisMedicalStatuses,
-      crisisAffiliations,
+      affiliations: [],
       crisisBeds,
       crisisBedGroups,
       complements,
@@ -1094,6 +1096,7 @@ export default {
     this.unsubSpecialties = Specialty.listenAll(list => { this.specialties = list })
     this.unsubVehicles = Vehicle.listenAll(list => { this.vehicles = list })
     this.unsubCompanies = Company.listenAll(list => { this.companies = list })
+    this.unsubAffiliations = Dispatch.listenAffiliations(list => { this.affiliations = list })
     initNotifManager()
 
     this.currentTime = Date.now()
@@ -1110,6 +1113,7 @@ export default {
     if (this.unsubSpecialties) this.unsubSpecialties()
     if (this.unsubVehicles) this.unsubVehicles()
     if (this.unsubCompanies) this.unsubCompanies()
+    if (this.unsubAffiliations) this.unsubAffiliations()
     stopNotifManager()
     if (this.timeInterval) clearInterval(this.timeInterval)
   },

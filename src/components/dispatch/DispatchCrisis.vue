@@ -1,6 +1,6 @@
 <template>
-  <div class="crises-bottom-section" style="border-top: 2px solid #334155; background: #0f172a; padding: 10px; width: 100%; box-sizing: border-box; flex-shrink: 0;">
-    <div class="slot-section-title" style="background: #b91c1c; cursor: pointer;" @click="crisisExpanded = !crisisExpanded">
+  <div class="crises-bottom-section" style="border-top: 2px solid #334155; background: #0f172a; padding: 6px; width: 100%; box-sizing: border-box; flex-shrink: 0;">
+    <div class="slot-section-title" style="background: #b91c1c; cursor: pointer; height: 32px; padding: 0 10px; font-size: 0.85rem;" @click="crisisExpanded = !crisisExpanded">
       🚨 Dispatch de crises
       <span class="cnt ml-2">
         {{ treatedInjured }} / {{ totalInjured }}
@@ -52,7 +52,7 @@
             <label style="display: block; font-size: 0.7rem; color: #94a3b8; margin-bottom: 4px; font-weight: bold; text-transform: uppercase;">Groupe / Affiliation</label>
             <select v-model="filterAffiliation" class="location-input" style="width: 100%; font-size: 0.8rem; background: rgba(0,0,0,0.2); border: 1px solid #334155; border-radius: 4px; padding: 4px 8px; color: #fff; height: 32px; outline: none;">
               <option :value="null" style="background:#1a1f35">Tous les groupes</option>
-              <option v-for="aff in crisisAffiliations" :key="aff.value" :value="aff.value" style="background:#1a1f35">{{ aff.label }}</option>
+              <option v-for="aff in affiliations" :key="aff.id" :value="aff.id" style="background:#1a1f35">{{ aff.label }}</option>
             </select>
           </div>
 
@@ -96,7 +96,41 @@
           </div>
         </div>
       </v-menu>
+
+      <v-btn v-if="isDirection" icon variant="text" size="x-small" class="ml-1" @click.stop="showAffiliationManager = true" style="color: #94a3b8;" title="Gérer les affiliations">
+        <v-icon size="14">mdi-cog</v-icon>
+      </v-btn>
     </div>
+
+    <v-dialog v-model="showAffiliationManager" max-width="500">
+      <v-card class="rounded-xl" style="background: #1e293b; color: #fff;">
+        <v-card-title class="pa-4 d-flex align-center bg-amber-darken-3 text-white">
+          <v-icon class="mr-2">mdi-cog</v-icon>
+          Gestion des affiliations
+        </v-card-title>
+        <v-card-text class="pa-4 pt-2">
+          <div style="max-height: 600px; overflow-y: auto; padding-right: 8px;" class="custom-scrollbar">
+            <div v-for="aff in affiliations" :key="aff.id" class="d-flex align-center mb-2 pa-2 rounded" style="background: rgba(0,0,0,0.2); border: 1px solid #334155;">
+              <div :style="`width: 12px; height: 12px; border-radius: 50%; background: ${aff.color}; margin-right: 12px;`" title="Couleur"></div>
+              <div class="flex-grow-1 font-weight-bold">{{ aff.label }}</div>
+              <v-btn icon variant="plain" size="x-small" color="blue" @click="promptEditAffiliation(aff)" class="mr-1">
+                <v-icon size="14">mdi-pencil</v-icon>
+              </v-btn>
+              <v-btn icon variant="plain" size="x-small" color="error" @click="confirmDeleteAffiliation(aff)">
+                <v-icon size="14">mdi-delete</v-icon>
+              </v-btn>
+            </div>
+          </div>
+          <v-btn block color="amber-darken-2" variant="tonal" class="mt-4" @click="promptAddAffiliation">
+            <v-icon class="mr-2">mdi-plus</v-icon> Ajouter une affiliation
+          </v-btn>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn variant="text" @click="showAffiliationManager = false">Fermer</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
 
     <div v-if="crisisExpanded" class="crises-list" style="margin-top: 10px;">
       <table style="width: 100%; border-collapse: collapse; text-align: left;">
@@ -160,8 +194,9 @@
             </td>
 
             <td style="padding: 6px;">
-              <select v-model="crisis.affiliation" @change="Dispatch.updateCrisis(crisis.id, { affiliation: crisis.affiliation })" class="location-input font-weight-bold" style="border: 1px solid #334155; padding: 4px; border-radius: 4px; background: rgba(255,255,255,0.02); width: 100%; font-size: 0.8rem;" :style="{ color: crisisAffiliations.find(a => a.value === crisis.affiliation)?.color || '#fff' }">
-                <option v-for="aff in crisisAffiliations" :key="aff.value" :value="aff.value" style="background:#1a1f35" :style="{ color: aff.color || '#e2e8f0' }">{{ aff.label }}</option>
+              <select v-model="crisis.affiliation" @change="Dispatch.updateCrisis(crisis.id, { affiliation: crisis.affiliation })" class="location-input font-weight-bold" style="border: 1px solid #334155; padding: 4px; border-radius: 4px; background: rgba(255,255,255,0.02); width: 100%; font-size: 0.8rem;" :style="{ color: affiliations.find(a => a.id === crisis.affiliation)?.color || '#fff' }">
+                <option :value="null" style="background:#1a1f35; color:#94a3b8;">Aucune</option>
+                <option v-for="aff in affiliations" :key="aff.id" :value="aff.id" style="background:#1a1f35" :style="{ color: aff.color || '#e2e8f0' }">{{ aff.label }}</option>
               </select>
             </td>
             
@@ -229,7 +264,6 @@ import Swal from 'sweetalert2'
 import {
   crisisRowColors,
   crisisMedicalStatuses,
-  crisisAffiliations,
   crisisBeds
 } from '@/config/dispatch.js'
 
@@ -240,7 +274,9 @@ export default {
     isLightTheme: { type: Boolean, default: false },
     currentTime: { type: Number, required: true },
     allEmployees: { type: Array, required: true },
-    currentUserEmployeeId: { type: String, required: false }
+    currentUserEmployeeId: { type: String, required: false },
+    affiliations: { type: Array, default: () => [] },
+    isDirection: { type: Boolean, default: false }
   },
   data() {
     return {
@@ -251,14 +287,14 @@ export default {
       Dispatch: DispatchLib,
       crisisRowColors,
       crisisMedicalStatuses,
-      crisisAffiliations,
       crisisBeds,
       filterAffiliation: null,
       hideCompleted: false,
       showFilterMenu: false,
       filterRepatriatedBy: null,
       filterTreatedBy: null,
-      filterCanalCheck: 'all'
+      filterCanalCheck: 'all',
+      showAffiliationManager: false
     }
   },
   computed: {
@@ -272,7 +308,7 @@ export default {
       if (!this.dispatch || !this.dispatch.crises) return []
       return [...this.dispatch.crises].sort((a, b) => {
         const getAffIdx = (val) => {
-          const idx = this.crisisAffiliations.findIndex(aff => aff.value === val)
+          const idx = this.affiliations.findIndex(aff => aff.id === val)
           return idx === -1 ? 999 : idx
         }
         const affDiff = getAffIdx(a.affiliation) - getAffIdx(b.affiliation)
@@ -433,7 +469,7 @@ export default {
         name: '',
         isComa: false,
         isHeavyInjured: false,
-        affiliation: 'civil',
+        affiliation: null,
         reason: '',
         repatriatedBy: null,
         treatedBy: null,
@@ -520,6 +556,85 @@ export default {
       this.filterRepatriatedBy = null
       this.filterTreatedBy = null
       this.filterCanalCheck = 'all'
+    },
+    async promptAddAffiliation() {
+      const { value: formValues } = await Swal.fire({
+        title: 'Ajoute une affiliation',
+        html:
+          `<div style="text-align: left; padding: 0 5px;">
+            <label style="display: block; font-size: 0.8rem; color: #94a3b8; margin-bottom: 4px; font-weight: bold;">NOM DU GROUPE / AFFILIATION</label>
+            <input id="swal-input1" class="swal2-input" placeholder="ex: Ballas" style="margin: 0 0 15px 0; width: 100%; height: 45px; background: rgba(0,0,0,0.2); color: #fff; border: 1px solid #334155;">
+            
+            <label style="display: block; font-size: 0.8rem; color: #94a3b8; margin-bottom: 4px; font-weight: bold;">COULEUR DISTINCTIVE</label>
+            <input id="swal-input2" class="swal2-input" type="color" value="#3b82f6" style="margin: 0; width: 100%; height: 45px; cursor: pointer; background: rgba(0,0,0,0.2); border: 1px solid #334155; padding: 4px;">
+          </div>`,
+        focusConfirm: false,
+        background: '#1e293b',
+        color: '#fff',
+        showCancelButton: true,
+        confirmButtonText: 'Ajouter',
+        cancelButtonText: 'Annuler',
+        preConfirm: () => {
+          const label = document.getElementById('swal-input1').value.trim()
+          const color = document.getElementById('swal-input2').value
+          if (!label) {
+            Swal.showValidationMessage("Le nom est obligatoire")
+            return false
+          }
+          return { label, color }
+        }
+      })
+      if (formValues) {
+        await DispatchLib.addAffiliation({ ...formValues, order: Date.now() })
+      }
+    },
+    async promptEditAffiliation(aff) {
+      const { value: formValues } = await Swal.fire({
+        title: 'Modifier l\'affiliation',
+        html:
+          `<div style="text-align: left; padding: 0 5px;">
+            <label style="display: block; font-size: 0.8rem; color: #94a3b8; margin-bottom: 4px; font-weight: bold;">NOM DU GROUPE / AFFILIATION</label>
+            <input id="swal-input1" class="swal2-input" placeholder="Label" value="${aff.label}" style="margin: 0 0 15px 0; width: 100%; height: 45px; background: rgba(0,0,0,0.2); color: #fff; border: 1px solid #334155;">
+            
+            <label style="display: block; font-size: 0.8rem; color: #94a3b8; margin-bottom: 4px; font-weight: bold;">COULEUR DISTINCTIVE</label>
+            <input id="swal-input2" class="swal2-input" type="color" value="${aff.color}" style="margin: 0; width: 100%; height: 45px; cursor: pointer; background: rgba(0,0,0,0.2); border: 1px solid #334155; padding: 4px;">
+          </div>`,
+        focusConfirm: false,
+        background: '#1e293b',
+        color: '#fff',
+        showCancelButton: true,
+        confirmButtonText: 'Sauvegarder',
+        cancelButtonText: 'Annuler',
+        preConfirm: () => {
+          const label = document.getElementById('swal-input1').value.trim()
+          const color = document.getElementById('swal-input2').value
+          if (!label) {
+            Swal.showValidationMessage("Le nom est obligatoire")
+            return false
+          }
+          return { label, color }
+        }
+      })
+      if (formValues) {
+        await DispatchLib.updateAffiliation(aff.id, formValues)
+      }
+    },
+    async confirmDeleteAffiliation(aff) {
+      const r = await Swal.fire({
+        title: 'Supprimer l\'affiliation ?',
+        text: `Voulez-vous vraiment supprimer "${aff.label}" ?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Oui, supprimer',
+        cancelButtonText: 'Annuler',
+        background: '#1e293b',
+        color: '#fff'
+      })
+      if (r.isConfirmed) {
+        await DispatchLib.deleteAffiliation(aff.id)
+      }
     }
   }
 }
@@ -528,5 +643,19 @@ export default {
 <style>
 .crises-bottom-section .slot-section-title {
   margin-bottom: 0;
+}
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgb(var(--v-theme-primary));
+  border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
 }
 </style>

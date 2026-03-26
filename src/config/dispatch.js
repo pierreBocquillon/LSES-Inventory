@@ -99,22 +99,6 @@ export const crisisMedicalStatuses = [
     { value: 'decede', label: 'Décédé', emoji: '⚰️', color: '#D9D9D9' },
 ]
 
-export const crisisAffiliations = [
-    { value: 'fdo', label: 'FDO', color: '#3b82f6' },
-    { value: 'civil', label: 'Civil', color: '#858585ff' },
-    { value: 'ballas', label: 'Ballas', color: '#9d10b9ff' },
-    { value: 'vagos', label: 'Vagos', color: '#dfdb14ff' },
-    { value: 'aztecas', label: 'Aztecas', color: '#4cb3e2ff' },
-    { value: 'ghost', label: 'Ghost', color: '#ebf0f3ff' },
-    { value: 'locura', label: 'Locura', color: '#22ae5aff' },
-    { value: 'madz', label: 'Madz', color: '#d429b2ff' },
-    { value: 'lost', label: 'Lost', color: '#b84e4e91' },
-    { value: 'forsaken', label: 'Forsaken', color: '#e08312ff' },
-    { value: 'shadow', label: 'Grey Shadow', color: '#797979ff' },
-    { value: 'autre1', label: 'Autre 1', color: '#c23434ff' },
-    { value: 'autre2', label: 'Autre 2', color: '#3442c2ff' },
-]
-
 export const crisisBeds = [
     { value: 'bed_1', label: 'Lit 1' },
     { value: 'bed_2', label: 'Lit 2' },
