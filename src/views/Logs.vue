@@ -52,7 +52,7 @@ export default {
       pageSize: 50,
       loading: false,
       userList: {},
-      typeList: ['INVENTAIRE', 'COMMANDES', 'VEHICULES', 'NOTES DE FRAIS', 'PASSWORD', 'ENTREPRISES' , 'ITEMS', 'UTILISATEURS', 'FORMATION', 'RADIOS', 'Ajout employés', 'Changement de grade', 'Suppression employé', 'Ajout faute', 'Mise a pied', 'Retrait de mise a pied']
+      typeList: ['INVENTAIRE', 'COMMANDES', 'VEHICULES', 'NOTES DE FRAIS', 'PASSWORD', 'ENTREPRISES' , 'ITEMS', 'UTILISATEURS', 'FORMATION', 'RADIOS', 'DISPATCH', 'RH', 'Ajout employés', 'Changement de grade', 'Suppression employé', 'Ajout faute', 'Mise a pied', 'Retrait de mise a pied']
     }
   },
   mounted() {

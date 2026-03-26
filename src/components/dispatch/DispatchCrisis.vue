@@ -266,6 +266,7 @@ import {
   crisisMedicalStatuses,
   crisisBeds
 } from '@/config/dispatch.js'
+import logger from '@/functions/logger.js'
 
 export default {
   name: 'DispatchCrisis',
@@ -276,7 +277,8 @@ export default {
     allEmployees: { type: Array, required: true },
     currentUserEmployeeId: { type: String, required: false },
     affiliations: { type: Array, default: () => [] },
-    isDirection: { type: Boolean, default: false }
+    isDirection: { type: Boolean, default: false },
+    currentUserProfileId: { type: String, required: false }
   },
   data() {
     return {
@@ -502,6 +504,7 @@ export default {
         this.localCrisisZip = ''
         await DispatchLib.clearAllCrises()
         await DispatchLib.updateField('crisisZip', '')
+        logger.log(this.currentUserProfileId, 'DISPATCH', 'Le dispatch de crise a été réinitialisé')
       }
     },
     async onCrisisArrivalChange(crisis) {

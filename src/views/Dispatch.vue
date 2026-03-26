@@ -703,6 +703,7 @@
       :currentTime="currentTime"
       :allEmployees="allEmployees"
       :currentUserEmployeeId="currentUserEmployeeId"
+      :currentUserProfileId="userStore.profile?.id"
       :affiliations="affiliations"
       :isDirection="isDirection"
     />
@@ -1320,6 +1321,7 @@ export default {
       if (!this.hasLsesPerm) return
       if (!this.dispatch) return;
       await Dispatch.resetAll()
+      logger.log(this.userStore.profile.id, 'DISPATCH', 'Le dispatch a été réinitialisé')
     },
 
 
@@ -1812,6 +1814,7 @@ export default {
         category
       })
       await Dispatch.updateField('radios', radios)
+      logger.log(this.userStore.profile.id, 'RADIOS', `Nouvelle radio ajoutée (${category === 'direction' ? 'Direction' : 'Standard'})`)
     },
     async onRadioAssign(radio, newEmpId) {
       if (!this.hasLsesPerm) return
@@ -1861,8 +1864,10 @@ export default {
       const radios = JSON.parse(JSON.stringify(this.dispatch.radios || []))
       const idx = radios.findIndex(x => x.id === radio.id)
       if (idx !== -1) {
+        const serial = radios[idx].serial || 'sans matricule'
         radios.splice(idx, 1)
         await Dispatch.updateField('radios', radios)
+        logger.log(this.userStore.profile.id, 'RADIOS', `Radio ${serial} supprimée`)
       }
     },
     autoTurnOffRadio(employeeId) {

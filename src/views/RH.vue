@@ -1822,6 +1822,7 @@ export default {
       if (!this.newWeeklyTask) return
       try {
         await this.weeklyChecklistManager.addTask(this.weeklyTasks, this.lastWeekReset, this.newWeeklyTask, this.newWeeklyTaskLink || null)
+        logger.log(this.userStore.profile.id, 'RH', `Ajout tâche hebdo: ${this.newWeeklyTask}`)
         this.newWeeklyTask = ''
         this.newWeeklyTaskLink = ''
       } catch (e) { console.error(e) }
@@ -1843,7 +1844,10 @@ export default {
       }).then(async (result) => {
         if (result.isConfirmed) {
           try {
+            const task = this.weeklyTasks.find(t => t.id === taskId)
+            const taskName = task ? task.text : taskId
             await this.weeklyChecklistManager.removeTask(this.weeklyTasks, this.lastWeekReset, taskId)
+            logger.log(this.userStore.profile.id, 'RH', `Suppression tâche hebdo: ${taskName}`)
           } catch (e) { console.error(e) }
         }
       })
@@ -1855,7 +1859,10 @@ export default {
     },
     async updateWeeklyTaskDate(taskId) {
       try {
+        const task = this.weeklyTasks.find(t => t.id === taskId)
+        const taskName = task ? task.text : taskId
         await this.weeklyChecklistManager.updateTaskDate(this.weeklyTasks, this.lastWeekReset, taskId)
+        logger.log(this.userStore.profile.id, 'RH', `Accomplissement tâche hebdo: ${taskName}`)
       } catch (e) { console.error(e) }
     },
 
@@ -1865,6 +1872,7 @@ export default {
       if (!this.newMonthlyTask) return
       try {
         await this.monthlyChecklistManager.addTask(this.monthlyTasks, this.lastMonthReset, this.newMonthlyTask, this.newMonthlyTaskLink || null)
+        logger.log(this.userStore.profile.id, 'RH', `Ajout tâche mensuelle: ${this.newMonthlyTask}`)
         this.newMonthlyTask = ''
         this.newMonthlyTaskLink = ''
       } catch (e) { console.error(e) }
@@ -1886,7 +1894,10 @@ export default {
       }).then(async (result) => {
         if (result.isConfirmed) {
           try {
+            const task = this.monthlyTasks.find(t => t.id === taskId)
+            const taskName = task ? task.text : taskId
             await this.monthlyChecklistManager.removeTask(this.monthlyTasks, this.lastMonthReset, taskId)
+            logger.log(this.userStore.profile.id, 'RH', `Suppression tâche mensuelle: ${taskName}`)
           } catch (e) { console.error(e) }
         }
       })
@@ -1898,7 +1909,10 @@ export default {
     },
     async updateMonthlyTaskDate(taskId) {
       try {
+        const task = this.monthlyTasks.find(t => t.id === taskId)
+        const taskName = task ? task.text : taskId
         await this.monthlyChecklistManager.updateTaskDate(this.monthlyTasks, this.lastMonthReset, taskId)
+        logger.log(this.userStore.profile.id, 'RH', `Accomplissement tâche mensuelle: ${taskName}`)
       } catch (e) { console.error(e) }
     },
 
