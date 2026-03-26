@@ -125,6 +125,18 @@ class Dispatch {
         await updateDoc(doc(db, collectionName, GLOBAL_DOC_ID), { [field]: value })
     }
 
+    static async updateRadio(radioId, updates) {
+        const d = doc(db, collectionName, GLOBAL_DOC_ID)
+        const snap = await getDoc(d)
+        if (!snap.exists()) return
+        const list = snap.data().radios || []
+        const idx = list.findIndex(r => r.id === radioId)
+        if (idx !== -1) {
+            list[idx] = { ...list[idx], ...updates }
+            await updateDoc(d, { radios: list })
+        }
+    }
+
     static async updateCrisis(crisisId, updates) {
         const d = doc(db, collectionName, GLOBAL_DOC_ID, "crises", crisisId)
         await updateDoc(d, updates)
@@ -150,7 +162,7 @@ class Dispatch {
 
     static async updateIntervention(slotId, updates) {
         const d = doc(db, collectionName, GLOBAL_DOC_ID, "interventions", slotId)
-        await updateDoc(d, updates)
+        await setDoc(d, updates, { merge: true })
     }
 
     static async addInterventionSlot(slotData) {
@@ -190,6 +202,20 @@ class Dispatch {
         const up = {}
         Object.keys(updates).forEach(k => { up[`beds.${bedId}.${k}`] = updates[k] })
         await updateDoc(d, up)
+    }
+
+    static async addTemporaryEmployee(empData) {
+        const d = doc(db, collectionName, GLOBAL_DOC_ID)
+        const snap = await getDoc(d)
+        if (!snap.exists()) return
+        const list = snap.data().temporaryEmployees || []
+        const newEmp = {
+            id: 'temp_' + Date.now().toString() + Math.random().toString(36).slice(2, 6),
+            ...empData
+        }
+        list.push(newEmp)
+        await setDoc(d, { temporaryEmployees: list }, { merge: true })
+        return newEmp.id
     }
 
     static async updateTemporaryEmployee(empId, updates) {

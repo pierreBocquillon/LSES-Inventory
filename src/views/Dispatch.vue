@@ -830,21 +830,7 @@ export default {
       quickMoveSourceKey: null,
 
       isLightTheme: localStorage.getItem('dispatch_light_theme') === 'true',
-      Dispatch,
-      allCategories,
-      interventionTypes,
-      returnStatuses,
-      centralRoles,
-      hospitalStatuses,
-      crisisMedicalStatuses,
       affiliations: [],
-      crisisBeds,
-      crisisBedGroups,
-      complements,
-      crisisRowColors,
-      safdStatusConfig,
-      bcesStatusConfig,
-      locations: vehiclesLocations,
       _timeouts: {},
       localBuffers: {},
       lastSyncedCentrale: { name: '', phone: '' },
@@ -1074,6 +1060,23 @@ export default {
       this.localCrisisZip = newVal || ''
     },
     isLightTheme(val) { localStorage.setItem('dispatch_light_theme', val) },
+  },
+
+  created() {
+    this.Dispatch = Dispatch;
+    this.allCategories = allCategories;
+    this.interventionTypes = interventionTypes;
+    this.returnStatuses = returnStatuses;
+    this.centralRoles = centralRoles;
+    this.hospitalStatuses = hospitalStatuses;
+    this.crisisMedicalStatuses = crisisMedicalStatuses;
+    this.crisisBeds = crisisBeds;
+    this.crisisBedGroups = crisisBedGroups;
+    this.complements = complements;
+    this.crisisRowColors = crisisRowColors;
+    this.safdStatusConfig = safdStatusConfig;
+    this.bcesStatusConfig = bcesStatusConfig;
+    this.locations = vehiclesLocations;
   },
 
   mounted() {
