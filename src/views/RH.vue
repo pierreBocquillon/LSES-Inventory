@@ -765,13 +765,13 @@
         <v-card-text class="pt-4">
           <v-data-table class="candidature-table" :headers="candidatureHeaders" :items="candidatures" items-per-page="5">
             <template v-slot:item.pour="{ item }">
-              <v-chip v-if="item.status === 'Entretien en cours d\'analyse'" color="success" size="small" variant="tonal" prepend-icon="mdi-thumb-up">
+              <v-chip v-if="Object.keys(item.votes || {}).length > 0" color="success" size="small" variant="tonal" prepend-icon="mdi-thumb-up">
                 {{ Object.values(item.votes || {}).filter(v => v === 'pour').length }}
               </v-chip>
               <span v-else class="text-grey-lighten-1">-</span>
             </template>
             <template v-slot:item.contre="{ item }">
-              <v-chip v-if="item.status === 'Entretien en cours d\'analyse'" color="error" size="small" variant="tonal" prepend-icon="mdi-thumb-down">
+              <v-chip v-if="Object.keys(item.votes || {}).length > 0" color="error" size="small" variant="tonal" prepend-icon="mdi-thumb-down">
                 {{ Object.values(item.votes || {}).filter(v => v === 'contre').length }}
               </v-chip>
               <span v-else class="text-grey-lighten-1">-</span>
