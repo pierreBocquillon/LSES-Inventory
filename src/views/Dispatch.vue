@@ -1446,7 +1446,7 @@ export default {
     async setHospitalStatus(value) {
       if (!this.hasLsesPerm) return
       if (!this.dispatch) return
-      this.dispatch.hospitalStatus = value
+
       await Dispatch.updateField('hospitalStatus', value)
 
       const meta = this.hospitalStatuses.find(s => s.value === value) || this.hospitalStatuses[0]
@@ -1555,20 +1555,6 @@ export default {
       })
     },
 
-    _removeFromSource(sourceKey, employeeId) {
-      if (!this.dispatch) return
-      if (sourceKey === 'centrale') {
-        this.dispatch.centrale.employees = (this.dispatch.centrale?.employees||[]).filter(e => e.employeeId !== employeeId)
-      } else if (sourceKey?.startsWith('inter:')) {
-        const slotId = sourceKey.slice(6)
-        const slot = this.dispatch.interventions.find(s=>s.id===slotId)
-        if (slot) slot.employees = (slot.employees||[]).filter(e => e.employeeId !== employeeId)
-      } else if (sourceKey?.startsWith('cat:')) {
-        this.dispatch.patates = this.dispatch.patates.filter(p=>p.employeeId!==employeeId)
-      }
-      
-    },
-
     async removeFromDispatch(employeeId) {
       if (!this.hasLsesPerm) return
       if (!this.dispatch) return
@@ -1626,24 +1612,18 @@ export default {
     async setCentraleType(typeValue) {
       if (!this.hasLsesPerm) return
       if (!this.dispatch) return
-      if (!this.dispatch.centrale) this.dispatch.centrale = { location: null, complement: null, type: null, returnStatus: null, employees: [] }
-      this.dispatch.centrale.type = typeValue
       await Dispatch.updateCentrale({ type: typeValue })
     },
 
     async setCentraleReturnStatus(statusValue) {
       if (!this.hasLsesPerm) return
       if (!this.dispatch) return
-      if (!this.dispatch.centrale) this.dispatch.centrale = { location: null, complement: null, type: null, returnStatus: null, employees: [] }
-      this.dispatch.centrale.returnStatus = statusValue || null
       await Dispatch.updateCentrale({ returnStatus: statusValue || null })
     },
 
     async setCentraleLocation(loc) {
       if (!this.hasLsesPerm) return
       if (!this.dispatch) return
-      if (!this.dispatch.centrale) this.dispatch.centrale = { location: null, complement: null, type: null, returnStatus: null, employees: [] }
-      this.dispatch.centrale.location = loc
       await Dispatch.updateCentrale({ location: loc })
     },
     onCentraleLocationInput(val) {
