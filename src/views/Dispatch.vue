@@ -873,7 +873,7 @@ export default {
           })
         }
       })
-      return locs
+      return Object.freeze(locs)
     },
     hospitalStatusStyle() {
       const meta = this.hospitalStatusMeta
@@ -943,7 +943,7 @@ export default {
         allSpecialties: [],
         displayLabel: e.phone ? `${e.name || ''} — ${e.phone}` : (e.name || ''),
       }))
-      return [...dbEmps, ...tempEmps]
+      return Object.freeze([...dbEmps, ...tempEmps])
     },
 
     usedEmployeeIds() {
@@ -1087,19 +1087,20 @@ export default {
     this.bcesInterval = setInterval(this.fetchBcesStatus, 60000)
 
     this.unsub = Dispatch.listenGlobal(d => {
-      this.dispatch = d
+      this.dispatch = Object.freeze(d)
       if (d && !this.localCrisisZip && !document.activeElement?.classList.contains('crisis-zip-input')) {
         this.localCrisisZip = d.crisisZip || ''
       }
       this.syncCentraleGSheet(d)
     })
     this.unsubEmployees = Employee.listenAll(list => {
-      this.employees = [...list].sort((a,b) => (a.name||'').localeCompare(b.name||''))
+      this.employees = Object.freeze([...list].sort((a,b) => (a.name||'').localeCompare(b.name||'')))
     })
-    this.unsubSpecialties = Specialty.listenAll(list => { this.specialties = list })
-    this.unsubVehicles = Vehicle.listenAll(list => { this.vehicles = list })
-    this.unsubCompanies = Company.listenAll(list => { this.companies = list })
-    this.unsubAffiliations = Dispatch.listenAffiliations(list => { this.affiliations = list })
+    this.unsubSpecialties = Specialty.listenAll(list => { this.specialties = Object.freeze(list) })
+    this.unsubVehicles = Vehicle.listenAll(list => { this.vehicles = Object.freeze(list) })
+    this.unsubCompanies = Company.listenAll(list => { this.companies = Object.freeze(list) })
+    this.unsubAffiliations = Dispatch.listenAffiliations(list => { this.affiliations = Object.freeze(list) })
+
     initNotifManager()
 
     this.currentTime = Date.now()
