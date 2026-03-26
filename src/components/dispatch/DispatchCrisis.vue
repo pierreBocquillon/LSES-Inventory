@@ -74,6 +74,15 @@
             </select>
           </div>
 
+          <div class="mb-3">
+            <label style="display: block; font-size: 0.7rem; color: #94a3b8; margin-bottom: 4px; font-weight: bold; text-transform: uppercase;">Canal check centrale</label>
+            <select v-model="filterCanalCheck" class="location-input" style="width: 100%; font-size: 0.8rem; background: rgba(0,0,0,0.2); border: 1px solid #334155; border-radius: 4px; padding: 4px 8px; color: #fff; height: 32px; outline: none;">
+              <option value="all" style="background:#1a1f35">Tous</option>
+              <option value="checked" style="background:#1a1f35">Coché</option>
+              <option value="unchecked" style="background:#1a1f35">Non coché</option>
+            </select>
+          </div>
+
           <div class="mb-3 d-flex align-center">
             <label class="d-flex align-center cursor-pointer" style="font-size: 0.8rem; color: #e2e8f0; user-select: none;">
               <input type="checkbox" v-model="hideCompleted" class="mr-2" style="width: 14px; height: 14px;" />
@@ -248,7 +257,8 @@ export default {
       hideCompleted: false,
       showFilterMenu: false,
       filterRepatriatedBy: null,
-      filterTreatedBy: null
+      filterTreatedBy: null,
+      filterCanalCheck: 'all'
     }
   },
   computed: {
@@ -294,10 +304,14 @@ export default {
         if (this.filterTreatedBy === 'none') list = list.filter(c => !c.treatedBy)
         else list = list.filter(c => c.treatedBy === this.filterTreatedBy)
       }
+      if (this.filterCanalCheck !== 'all') {
+        const wantChecked = this.filterCanalCheck === 'checked'
+        list = list.filter(c => !!c.canalCheckCentrale === wantChecked)
+      }
       return list
     },
     isFiltered() {
-      return this.filterAffiliation !== null || this.hideCompleted || this.filterRepatriatedBy !== null || this.filterTreatedBy !== null
+      return this.filterAffiliation !== null || this.hideCompleted || this.filterRepatriatedBy !== null || this.filterTreatedBy !== null || this.filterCanalCheck !== 'all'
     },
     averageTreatmentTime() {
       if (!this.dispatch || !this.dispatch.crises) return 0
@@ -505,6 +519,7 @@ export default {
       this.hideCompleted = false
       this.filterRepatriatedBy = null
       this.filterTreatedBy = null
+      this.filterCanalCheck = 'all'
     }
   }
 }
