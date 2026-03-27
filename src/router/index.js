@@ -136,6 +136,16 @@ const routes = [
     }
   },
   {
+    name: 'Emploi du temps',
+    path: '/schedule',
+    component: () => import("@/views/Schedule.vue"),
+    meta: {
+      needAccount: true,
+      showNav: true,
+      permissions: ['lses']
+    }
+  },
+  {
     name: 'Connexion',
     path: '/login',
     component: () => import("@/views/Login.vue"),
