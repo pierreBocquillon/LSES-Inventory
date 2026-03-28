@@ -56,7 +56,7 @@
                   </v-btn-toggle>
               </v-col>
               <v-col cols="12" v-else>
-                 <div class="text-h6 text-primary mb-2">Nouvel Évènement Direction</div>
+                 <div class="text-h6 text-primary mb-2">Nouvel Évènement</div>
               </v-col>
             </v-row>
 
@@ -142,7 +142,7 @@
               <v-col cols="12">
                 <v-textarea 
                   v-model="currentAbsence.reason" 
-                  :label="currentAbsence.type === 'event' ? 'Titre de l\'évènement *' : 'Motif ou Commentaire'" 
+                  :label="currentAbsence.type === 'event' ? 'Titre de l\'évènement *' : 'Motif'" 
                   rows="2" 
                   hide-details
                   :required="currentAbsence.type === 'event'"
