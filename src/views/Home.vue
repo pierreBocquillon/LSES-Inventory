@@ -148,7 +148,7 @@
           <v-container>
             <v-row>
               <v-col cols="12" md="6">
-                <v-text-field v-model="editedCandidature.name" label="Nom complet" variant="outlined"></v-text-field>
+                <v-text-field v-model="editedCandidature.name" label="Prénom et nom" variant="outlined"></v-text-field>
               </v-col>
               <v-col cols="12" md="6">
                 <v-text-field v-model="editedCandidature.phone" label="Téléphone" variant="outlined"></v-text-field>

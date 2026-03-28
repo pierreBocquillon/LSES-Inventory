@@ -15,12 +15,13 @@ let navItems = [
     { title: 'Stocks', icon: 'mdi-package-variant', img: require('@/assets/images/nav/Stocks.png'), link: '/stocks' },
     { title: 'Autopsie', icon: 'mdi-coffin', img: require('@/assets/images/nav/Autopsie.png'), link: '/autopsie-reports' },
     { title: 'Ressources Humaines', icon: 'mdi-account-tie', img: require('@/assets/images/nav/Rh.png'), link: '/rh' },
+    { title: 'Rendez-vous', icon: 'mdi-calendar-multiselect', img: require('@/assets/images/nav/Appointments.png'), link: '/appointments' },
   ],
   [
     { title: 'Utilisateurs', icon: 'mdi-account-group', img: require('@/assets/images/nav/Users.png'), link: '/users' },
     { title: 'Logs', icon: 'mdi-account-group', img: require('@/assets/images/nav/Logs.png'), link: '/logs' },
     { title: 'Formation', icon: 'mdi-school', img: require('@/assets/images/nav/Trainings.png'), link: '/training' },
-    { title: 'Rendez-vous', icon: 'mdi-calendar-multiselect', img: require('@/assets/images/nav/Appointments.png'), link: '/appointments' },
+    { title: 'Emploi du temps', icon: 'mdi-calendar-clock', img: require('@/assets/images/nav/schedule.png'), link: '/schedule' },
   ],
 ]
 
