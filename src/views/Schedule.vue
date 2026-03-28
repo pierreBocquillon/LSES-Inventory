@@ -255,6 +255,7 @@ export default {
             right: 'dayGridMonth,timeGridWeek,timeGridDay'
         },
         events: [],
+        eventDisplay: 'block',
         locales: [frLocale],
         locale: 'fr',
         height: 'calc(100vh - 180px)',
@@ -846,6 +847,7 @@ export default {
   font-weight: 500 !important;
   margin: 1px 2px !important;
   cursor: pointer;
+  color: #fff !important;
   box-shadow: 0 1px 3px rgba(0,0,0,0.12);
   transition: transform 0.1s, box-shadow 0.1s;
 }
@@ -866,8 +868,11 @@ export default {
   background-color: var(--fc-event-bg-color);
   border: 1px solid rgba(255,255,255,0.1) !important;
 }
-:deep(.fc-daygrid-event-dot) {
-  display: none;
+:deep(.fc-daygrid-event-dot), :deep(.fc-daygrid-event-time) {
+  display: none !important;
+}
+:deep(.fc-daygrid-block-event .fc-event-main) {
+  padding: 2px 4px !important;
 }
 :deep(.fc-timegrid-event .fc-event-main) {
   padding: 2px 4px;
