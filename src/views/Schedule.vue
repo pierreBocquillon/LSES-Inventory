@@ -74,12 +74,20 @@
                     density="compact"
                   ></v-select>
               </v-col>
-              <v-col cols="12" sm="6">
+              <v-col cols="12" :sm="currentAbsence.isFullDay ? 12 : 6">
                 <v-text-field v-model="currentAbsence.startDate" label="Date de début" type="date" variant="outlined" density="compact"></v-text-field>
               </v-col>
               <v-col cols="12" sm="6" v-if="!currentAbsence.isFullDay">
-                <v-text-field v-model="currentAbsence.startTime" label="Heure" type="time" variant="outlined" density="compact"></v-text-field>
+                <v-text-field v-model="currentAbsence.startTime" label="Heure de début" type="time" variant="outlined" density="compact"></v-text-field>
               </v-col>
+
+              <v-col cols="12" :sm="currentAbsence.isFullDay ? 12 : 6">
+                <v-text-field v-model="currentAbsence.endDate" label="Date de fin" type="date" variant="outlined" density="compact"></v-text-field>
+              </v-col>
+              <v-col cols="12" sm="6" v-if="!currentAbsence.isFullDay">
+                <v-text-field v-model="currentAbsence.endTime" label="Heure de fin" type="time" variant="outlined" density="compact"></v-text-field>
+              </v-col>
+
               <v-col cols="12">
                   <v-checkbox v-model="currentAbsence.isFullDay" label="Journée complète" hide-details density="compact"></v-checkbox>
               </v-col>
@@ -252,7 +260,12 @@ export default {
         height: 'calc(100vh - 180px)',
         slotMinTime: '00:00:00',
         slotMaxTime: '24:00:00',
+        slotEventOverlap: false,
+        eventOrder: "start,-duration,allDay,title",
         eventClick: this.handleEventClick,
+        eventDidMount: (info) => {
+          info.el.title = info.event.title;
+        },
         nowIndicator: true,
         dayMaxEvents: true,
         allDayText: 'Journée',
@@ -385,43 +398,37 @@ export default {
            })
         } 
         else if (abs.recurrence === 'weekly') {
-           const d = new Date(abs.startDate)
-           const dayOfWeek = [d.getDay()] 
-           const time = abs.isFullDay ? null : (abs.startTime || '00:00')
-
-           eventList.push({
-              id: abs.id,
-              title: eventTitle,
-              daysOfWeek: dayOfWeek,
-              startTime: time,
-              allDay: abs.isFullDay,
-              backgroundColor: color,
-              opacity: opacity,
-              extendedProps: { absence: abs }
-           })
-        }
-        else if (abs.recurrence === 'monthly') {
-           const baseDate = new Date(abs.startDate)
-           for (let i = 0; i < 12; i++) {
-              const d = new Date(baseDate)
-              d.setMonth(baseDate.getMonth() + i)
+           const baseStart = new Date(abs.startDate)
+           const baseEnd = abs.endDate ? new Date(abs.endDate) : baseStart
+           const diffInMs = baseEnd - baseStart
+           
+           for (let i = 0; i < 52; i++) {
+              const dStart = new Date(baseStart)
+              dStart.setDate(baseStart.getDate() + (i * 7))
+              const dEnd = new Date(dStart.getTime() + diffInMs)
               
-              const y = d.getFullYear()
-              const m = String(d.getMonth() + 1).padStart(2, '0')
-              const day = String(d.getDate()).padStart(2, '0')
-              let occStart = `${y}-${m}-${day}`
-              let occEnd = occStart
+              const yS = dStart.getFullYear()
+              const mS = String(dStart.getMonth() + 1).padStart(2, '0')
+              const dayS = String(dStart.getDate()).padStart(2, '0')
+              let occStart = `${yS}-${mS}-${dayS}`
+              
+              const yE = dEnd.getFullYear()
+              const mE = String(dEnd.getMonth() + 1).padStart(2, '0')
+              const dayE = String(dEnd.getDate()).padStart(2, '0')
+              let occEnd = `${yE}-${mE}-${dayE}`
 
-              if (!abs.isFullDay)
+              if (!abs.isFullDay) {
                   occStart += `T${abs.startTime || '00:00'}:00`
+                  occEnd += `T${abs.endTime || abs.startTime || '23:59'}:00`
+              }
               else {
-                  const de = new Date(d)
+                  const de = new Date(occEnd)
                   de.setDate(de.getDate() + 1)
                   occEnd = `${de.getFullYear()}-${String(de.getMonth()+1).padStart(2, '0')}-${String(de.getDate()).padStart(2, '0')}`
               }
 
               eventList.push({
-                id: `${abs.id}_${i}`,
+                id: `${abs.id}_w_${i}`,
                 title: eventTitle,
                 start: occStart,
                 end: occEnd,
@@ -431,6 +438,49 @@ export default {
                 extendedProps: { absence: abs }
               })
            }
+        }
+        else if (abs.recurrence === 'monthly') {
+            const baseDate = new Date(abs.startDate)
+            const baseEnd = abs.endDate ? new Date(abs.endDate) : baseDate
+            const diffInDays = Math.floor((baseEnd - baseDate) / (1000 * 60 * 60 * 24))
+
+            for (let i = 0; i < 12; i++) {
+               const d = new Date(baseDate)
+               d.setMonth(baseDate.getMonth() + i)
+               
+               const y = d.getFullYear()
+               const m = String(d.getMonth() + 1).padStart(2, '0')
+               const day = String(d.getDate()).padStart(2, '0')
+               let occStart = `${y}-${m}-${day}`
+               
+               let occEnd = occStart
+               if (diffInDays > 0) {
+                 const de = new Date(d)
+                 de.setDate(de.getDate() + diffInDays)
+                 occEnd = `${de.getFullYear()}-${String(de.getMonth()+1).padStart(2, '0')}-${String(de.getDate()).padStart(2, '0')}`
+               }
+
+               if (!abs.isFullDay) {
+                   occStart += `T${abs.startTime || '00:00'}:00`
+                   occEnd += `T${abs.endTime || abs.startTime || '23:59'}:00`
+               }
+               else {
+                   const de = new Date(occEnd)
+                   de.setDate(de.getDate() + 1)
+                   occEnd = `${de.getFullYear()}-${String(de.getMonth()+1).padStart(2, '0')}-${String(de.getDate()).padStart(2, '0')}`
+               }
+
+               eventList.push({
+                 id: `${abs.id}_${i}`,
+                 title: eventTitle,
+                 start: occStart,
+                 end: occEnd,
+                 allDay: abs.isFullDay,
+                 backgroundColor: color,
+                 opacity: opacity,
+                 extendedProps: { absence: abs }
+               })
+            }
         }
       })
       
@@ -593,9 +643,18 @@ export default {
         let isFullDay = this.currentAbsence.isFullDay
 
         if (this.currentAbsence.type === 'event') {
-          if (this.currentAbsence.startTime && !isFullDay) {
-            finalStart = `${this.currentAbsence.startDate}T${this.currentAbsence.startTime}:00`
-            finalEnd = finalStart
+          if (!isFullDay) {
+            finalStart = `${this.currentAbsence.startDate}T${this.currentAbsence.startTime || '00:00'}:00`
+            if (this.currentAbsence.endTime) {
+              finalEnd = `${this.currentAbsence.endDate || this.currentAbsence.startDate}T${this.currentAbsence.endTime}:00`
+            } else if (this.currentAbsence.endDate && this.currentAbsence.endDate !== this.currentAbsence.startDate) {
+              finalEnd = `${this.currentAbsence.endDate}T23:59:59`
+            } else {
+              finalEnd = finalStart
+            }
+          } else {
+            finalStart = this.currentAbsence.startDate
+            finalEnd = this.currentAbsence.endDate || finalStart
           }
         } else if (this.currentAbsence.type === 'leave') {
           isFullDay = this.currentAbsence.slot === 'full'
@@ -770,11 +829,29 @@ export default {
   border: none !important;
   border-radius: 4px !important;
   padding: 2px 4px !important;
-  font-size: 0.8125rem !important;
+  font-size: 0.75rem !important;
   font-weight: 500 !important;
-  margin: 1px 4px !important;
+  margin: 1px 2px !important;
   cursor: pointer;
   box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+:deep(.fc-event:hover) {
+  transform: scale(1.02);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  z-index: 5 !important;
+}
+:deep(.fc-event-main) {
+  white-space: normal !important;
+  word-break: break-word;
+  line-height: 1.2;
+}
+:deep(.fc-timegrid-event) {
+  min-height: 20px;
+}
+:deep(.fc-v-event) {
+  background-color: var(--fc-event-bg-color);
+  border: 1px solid rgba(255,255,255,0.1) !important;
 }
 :deep(.fc-daygrid-event-dot) {
   display: none;
