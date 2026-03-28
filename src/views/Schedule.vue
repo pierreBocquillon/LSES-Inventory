@@ -82,7 +82,7 @@
               </v-col>
 
               <v-col cols="12" :sm="currentAbsence.isFullDay ? 12 : 6">
-                <v-text-field v-model="currentAbsence.endDate" label="Date de fin" type="date" variant="outlined" density="compact"></v-text-field>
+                <v-text-field v-model="currentAbsence.endDate" label="Date de fin" type="date" variant="outlined" density="compact" :min="currentAbsence.startDate"></v-text-field>
               </v-col>
               <v-col cols="12" sm="6" v-if="!currentAbsence.isFullDay">
                 <v-text-field v-model="currentAbsence.endTime" label="Heure de fin" type="time" variant="outlined" density="compact"></v-text-field>
@@ -106,7 +106,7 @@
               </v-col>
 
               <v-col cols="12" :sm="currentAbsence.isFullDay ? 12 : 6">
-                <v-text-field v-model="currentAbsence.endDate" label="Date de fin *" type="date" required></v-text-field>
+                <v-text-field v-model="currentAbsence.endDate" label="Date de fin *" type="date" required :min="currentAbsence.startDate"></v-text-field>
               </v-col>
               <v-col cols="12" sm="6" v-if="!currentAbsence.isFullDay">
                 <v-text-field v-model="currentAbsence.endTime" label="Heure de fin *" type="time" required></v-text-field>
@@ -308,6 +308,11 @@ export default {
         this.updateCalendarEvents()
       },
       deep: true
+    },
+    'currentAbsence.startDate': function(newVal) {
+      if (this.currentAbsence.endDate && newVal > this.currentAbsence.endDate) {
+        this.currentAbsence.endDate = newVal
+      }
     }
   },
   computed: {
@@ -637,6 +642,19 @@ export default {
     async saveAbsence() {
       if (!this.currentAbsence.startDate && this.currentAbsence.type !== 'event') {
         Swal.fire({ icon: 'error', title: 'Oups', text: 'La date de début est obligatoire.', target: '#app' })
+        return
+      }
+
+      const startDateTime = new Date(`${this.currentAbsence.startDate || this.getDefaultDate()}T${this.currentAbsence.startTime || '00:00'}`)
+      const endDateTime = new Date(`${this.currentAbsence.endDate || this.currentAbsence.startDate}T${this.currentAbsence.endTime || '23:59'}`)
+
+      if (this.currentAbsence.type !== 'leave' && endDateTime < startDateTime) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Dates invalides',
+          text: 'La date de fin ne peut pas être antérieure à la date de début.',
+          target: '#app'
+        })
         return
       }
 
