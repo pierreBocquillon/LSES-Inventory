@@ -34,7 +34,7 @@ export const rhChecklists = [
 
             { header: 'Mettre à jour tous les documents RH' },
             { link: { text: 'Trombinoscope', url: 'https://www.canva.com/design/DAGzQCSaqAY/ASNs1-k_xRGAXdlg_oL1xw/edit' } },
-            { link: { text: 'Annuaire', url: 'https://www.canva.com/design/DAGzivD6iCM/IAypIsutJJhUXMjhxitILw/edit' } },
+            { link: { text: 'Annuaire', url: 'https://discord.com/channels/751385237220491295/784066072436801546' } },
         ]
     },
     {
@@ -47,7 +47,7 @@ export const rhChecklists = [
             'Écrire le message de promotion',
             'Mettre à jour le suivi effectif (ne pas oublier la date de signature du CDI)',
             { text: 'Modifier le trombinoscope et l\'envoyer dans LSES Infos', link: { text: 'Trombinoscope', url: 'https://www.canva.com/design/DAGzQCSaqAY/ASNs1-k_xRGAXdlg_oL1xw/edit' } },
-            { text: 'Modifier l\'annuaire et l\'envoyer dans LSES Infos', link: { text: 'Annuaire', url: 'https://www.canva.com/design/DAGzivD6iCM/IAypIsutJJhUXMjhxitILw/edit' } },
+            { text: 'Copier l\'annuaire et l\'envoyer dans LSES Infos', link: { text: 'Annuaire', url: 'https://discord.com/channels/751385237220491295/784066072436801546' } },
             'Màj salaire intra 21',
 
             { header: 'Titulaire' },
@@ -59,7 +59,7 @@ export const rhChecklists = [
             'Écrire le message de promotion',
             'Mettre à jour le suivi effectif',
             { text: 'Modifier le trombinoscope et l\'envoyer dans LSES Infos', link: { text: 'Trombinoscope', url: 'https://www.canva.com/design/DAGzQCSaqAY/ASNs1-k_xRGAXdlg_oL1xw/edit' } },
-            { text: 'Modifier l\'annuaire et l\'envoyer dans LSES Infos', link: { text: 'Annuaire', url: 'https://www.canva.com/design/DAGzivD6iCM/IAypIsutJJhUXMjhxitILw/edit' } },
+            { text: 'Copier l\'annuaire et l\'envoyer dans LSES Infos', link: { text: 'Annuaire', url: 'https://discord.com/channels/751385237220491295/784066072436801546' } },
             'Mettre à jour le grade dans l\'intranet discord et vérifier les accès',
             { text: 'L\'ajouter au groupe "Pôles - 21-LSES-Specialités"', link: { text: 'Groupe 21', url: 'https://groups.google.com/u/3/g/21-lses-spe/members' } },
             'L\'ajouter au groupe du pôle s\'il existe',
@@ -70,7 +70,7 @@ export const rhChecklists = [
             'Écrire le message de promotion',
             'Mettre à jour le suivi effectif',
             { text: 'Modifier le trombinoscope et l\'envoyer dans LSES Infos', link: { text: 'Trombinoscope', url: 'https://www.canva.com/design/DAGzQCSaqAY/ASNs1-k_xRGAXdlg_oL1xw/edit' } },
-            { text: 'Modifier l\'annuaire et l\'envoyer dans LSES Infos', link: { text: 'Annuaire', url: 'https://www.canva.com/design/DAGzivD6iCM/IAypIsutJJhUXMjhxitILw/edit' } },
+            { text: 'Copier l\'annuaire et l\'envoyer dans LSES Infos', link: { text: 'Annuaire', url: 'https://discord.com/channels/751385237220491295/784066072436801546' } },
             'Vérifier les accès et les rôles sur l\'intranet Discord',
             'Màj salaire intra 21',
         ]
@@ -107,7 +107,7 @@ export const rhChecklists = [
             { text: 'Mettre à jour les groupes', link: { text: 'Groupe Google', url: 'https://groups.google.com/g/21-lses-interne-resident-medecin/members' } },
             'Clôturer son fil de formation (si interne)',
             { text: 'Modifier le trombinoscope et l\'envoyer dans LSES Infos', link: { text: 'Trombinoscope', url: 'https://www.canva.com/design/DAGzQCSaqAY/ASNs1-k_xRGAXdlg_oL1xw/edit' } },
-            { text: 'Modifier l\'annuaire et l\'envoyer dans LSES Infos', link: { text: 'Annuaire', url: 'https://www.canva.com/design/DAGzivD6iCM/IAypIsutJJhUXMjhxitILw/edit' } },
+            { text: 'Copier l\'annuaire et l\'envoyer dans LSES Infos', link: { text: 'Annuaire', url: 'https://discord.com/channels/751385237220491295/784066072436801546' } },
             'Mettre à jour le LSES inventory (Supprimer l\'employé)',
             { text: 'Supprimer les réactions et la signature dans le canal 🌐-contrat sur l\'intra discord', link: { text: 'Canal contrat', url: 'https://discord.com/channels/751385237220491295/1151555485141573804' } },
         ]
