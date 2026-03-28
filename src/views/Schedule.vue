@@ -493,13 +493,17 @@ export default {
          let sDate = abs.startDate
          let sTime = ''
          if (sDate.includes('T')) {
-            [sDate, sTime] = sDate.split('T')
+            const parts = sDate.split('T')
+            sDate = parts[0]
+            sTime = parts[1].substring(0, 5)
          }
          
          let eDate = abs.endDate
          let eTime = ''
          if (eDate && eDate.includes('T')) {
-            [eDate, eTime] = eDate.split('T')
+            const parts = eDate.split('T')
+            eDate = parts[0]
+            eTime = parts[1].substring(0, 5)
          }
 
         this.currentAbsence = {
@@ -644,9 +648,12 @@ export default {
 
         if (this.currentAbsence.type === 'event') {
           if (!isFullDay) {
-            finalStart = `${this.currentAbsence.startDate}T${this.currentAbsence.startTime || '00:00'}:00`
+            finalStart = `${this.currentAbsence.startDate}T${this.currentAbsence.startTime || '00:00'}`
+            if (!finalStart.includes(':00', 11)) finalStart += ':00'
+
             if (this.currentAbsence.endTime) {
-              finalEnd = `${this.currentAbsence.endDate || this.currentAbsence.startDate}T${this.currentAbsence.endTime}:00`
+              finalEnd = `${this.currentAbsence.endDate || this.currentAbsence.startDate}T${this.currentAbsence.endTime}`
+              if (!finalEnd.includes(':00', 11)) finalEnd += ':00'
             } else if (this.currentAbsence.endDate && this.currentAbsence.endDate !== this.currentAbsence.startDate) {
               finalEnd = `${this.currentAbsence.endDate}T23:59:59`
             } else {
@@ -670,8 +677,14 @@ export default {
           }
         } else {
           if (!this.currentAbsence.isFullDay) {
-             if (this.currentAbsence.startTime) finalStart += `T${this.currentAbsence.startTime}:00`
-             if (this.currentAbsence.endTime) finalEnd += `T${this.currentAbsence.endTime}:00`
+             if (this.currentAbsence.startTime) {
+               finalStart += `T${this.currentAbsence.startTime}`
+               if (!this.currentAbsence.startTime.includes(':00', 5)) finalStart += ':00'
+             }
+             if (this.currentAbsence.endTime) {
+               finalEnd += `T${this.currentAbsence.endTime}`
+               if (!this.currentAbsence.endTime.includes(':00', 5)) finalEnd += ':00'
+             }
              else finalEnd = finalStart
           }
         }
