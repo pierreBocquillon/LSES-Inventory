@@ -1,30 +1,33 @@
 <template>
   <div class="pa-4">
-    <div class="d-flex justify-space-between align-center mb-4 gap-2">
-      <h1 class="text-h4 text-primary">Emploi du temps</h1>
-      <div class="d-flex gap-3 align-center">
-        <v-badge v-if="isManagement && pendingRequests.length > 0" :content="pendingRequests.length" color="red" overlap>
+    <div class="d-flex flex-column flex-md-row justify-space-between align-md-center mb-6 gap-4">
+      <h1 class="text-h4 font-weight-bold text-primary text-center text-md-left mb-2 mb-md-0">
+        Emploi du temps
+      </h1>
+      <div class="d-flex flex-wrap justify-center justify-md-end align-center">
+        <v-badge v-if="isManagement && pendingRequests.length > 0" :content="pendingRequests.length" color="red" overlap class="mx-2 my-1">
           <v-btn 
             color="warning" 
             variant="tonal" 
             @click="isPendingModalOpen = true" 
             prepend-icon="mdi-bell-outline"
-            class="text-none font-weight-bold"
+            class="text-none font-weight-bold action-btn"
             rounded="lg"
+            elevation="1"
           >
             Demandes
           </v-btn>
         </v-badge>
         
-        <v-btn v-else-if="isManagement" color="grey-lighten-2" variant="tonal" disabled prepend-icon="mdi-bell-off-outline" class="text-none" rounded="lg">
+        <v-btn v-else-if="isManagement" color="grey-lighten-1" variant="tonal" disabled prepend-icon="mdi-bell-off-outline" class="text-none mx-2 my-1 action-btn" rounded="lg">
           Aucune demande
         </v-btn>
 
-        <v-btn color="primary" @click="openAddModal('absence')" prepend-icon="mdi-calendar-plus" class="text-none font-weight-bold ml-6" rounded="lg" elevation="2">
+        <v-btn color="amber-darken-3" @click="openAddModal('absence')" prepend-icon="mdi-calendar-plus" class="text-none font-weight-bold mx-2 my-1 action-btn" rounded="lg" elevation="4">
           Signaler une absence / congé
         </v-btn>
 
-        <v-btn v-if="isDirection" color="deep-purple-darken-1" @click="openAddModal('event')" prepend-icon="mdi-star" class="text-none font-weight-bold ml-2" rounded="lg" elevation="2">
+        <v-btn v-if="isDirection" color="deep-purple-accent-4" @click="openAddModal('event')" prepend-icon="mdi-star" class="text-none font-weight-bold mx-2 my-1 action-btn" rounded="lg" elevation="4">
           Créer un évènement
         </v-btn>
       </div>
@@ -928,5 +931,35 @@ export default {
 }
 :deep(.fc-timegrid-divider) {
   display: none !important;
+}
+
+.action-btn {
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.action-btn:hover {
+  transform: translateY(-2px);
+}
+
+@media (max-width: 600px) {
+  :deep(.fc-header-toolbar) {
+    flex-direction: column;
+    gap: 12px;
+  }
+  :deep(.fc-toolbar-chunk) {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+  }
+  :deep(.fc-toolbar-title) {
+    font-size: 1.2rem !important;
+  }
+  .v-btn {
+    flex: 1 1 auto;
+  }
+  .d-flex.flex-wrap.justify-center.justify-md-end.gap-3.align-center {
+    width: 100% !important;
+    justify-content: stretch !important;
+  }
 }
 </style>
