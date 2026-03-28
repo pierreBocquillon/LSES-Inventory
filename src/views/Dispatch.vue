@@ -974,26 +974,18 @@ export default {
     standardRadios() { return (this.dispatch?.radios||[]).filter(r => r.category !== 'direction') },
     addDialogCategory()   { return this.allCategories.find(c => c.value === this.addDialogCategoryValue) || null },
     lastRepairDateStr() {
-      if (!this.vehicles || !this.vehicles.length) return 'Aucune'
-      const withDates = this.vehicles.filter(v => v.lastRepairDate)
-
-      if (!withDates || !withDates.length) return 'Aucune'
-      const latest = withDates.sort((a,b) => b.lastRepairDate - a.lastRepairDate)[0]
-
-      if (!latest || !latest.lastRepairDate) return 'Aucune'
-      const date = new Date(latest.lastRepairDate)
-
-      return date.toLocaleDateString('fr-FR') + ' à ' + date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+      const globalTs = notifState.lastVehicleSaveDate?.date
+      if (globalTs) {
+        const date = new Date(globalTs)
+        return date.toLocaleDateString('fr-FR') + ' à ' + date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+      }
+      return 'Aucune'
     },
     lastRepairColorClass() {
-      if (!this.vehicles || !this.vehicles.length) return this.isLightTheme ? 'text-grey-darken-3' : 'text-white'
-      const withDates = this.vehicles.filter(v => v.lastRepairDate)
-      if (!withDates || !withDates.length) return this.isLightTheme ? 'text-grey-darken-3' : 'text-white'
+      const globalTs = notifState.lastVehicleSaveDate?.date || 0
+      if (!globalTs) return this.isLightTheme ? 'text-grey-darken-3' : 'text-white'
 
-      const latest = withDates.sort((a,b) => b.lastRepairDate - a.lastRepairDate)[0]
-      if (!latest || !latest.lastRepairDate) return this.isLightTheme ? 'text-grey-darken-3' : 'text-white'
-
-      const diff = this.currentTime - latest.lastRepairDate
+      const diff = this.currentTime - globalTs
       const hours = diff / (1000 * 60 * 60)
 
       if (hours >= 48) return 'text-red-lighten-1'
