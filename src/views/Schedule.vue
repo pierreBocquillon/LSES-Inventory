@@ -43,9 +43,12 @@
           <span class="text-h5" v-if="currentAbsence.type === 'event'">Évènement</span>
           <span class="text-h5" v-else>{{ currentAbsence.id ? 'Détails' : 'Signaler une absence / congé' }}</span>
           <v-spacer></v-spacer>
-          <v-chip v-if="currentAbsence.userId && currentAbsence.userId !== userStore.profile.id" color="white" variant="outlined" size="small">
-             {{ getEmployeeName(currentAbsence.userId) }}
-          </v-chip>
+          <div v-if="currentAbsence.userId && currentAbsence.type !== 'event'" class="d-flex align-center opacity-90 ml-4">
+             <v-icon size="small" class="mr-1">mdi-account-circle-outline</v-icon>
+             <span class="text-subtitle-1 font-weight-bold">
+                {{ getEmployeeName(currentAbsence.userId) }}
+             </span>
+          </div>
         </v-card-title>
         
         <v-card-text class="pa-4 mt-2">
