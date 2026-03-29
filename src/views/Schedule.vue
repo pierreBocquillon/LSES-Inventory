@@ -280,6 +280,9 @@ export default {
         eventDidMount: (info) => {
           info.el.title = info.event.title;
         },
+        eventMouseEnter: (info) => {
+          info.el.title = info.event.title;
+        },
         nowIndicator: true,
         dayMaxEvents: true,
         allDayText: 'Journée',
