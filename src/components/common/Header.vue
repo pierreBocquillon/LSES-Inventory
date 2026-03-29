@@ -113,6 +113,9 @@ export default {
     rhNotif() {
         return rhNotif.value
     },
+    waitingAbsences() {
+      return notifState.waitingAbsences
+    },
     waitingUsers() {
       return notifState.waitingUsers
     },
@@ -183,6 +186,17 @@ export default {
             }
             if(tmp_item.link == '/rh') {
               tmp_item.notif = this.rhNotif
+            }
+            if(tmp_item.link == '/schedule') {
+              const userPerms = this.userStore.profile?.permissions || []
+              const isRH = userPerms.some(p => ['rh'].includes(p))
+              
+              const currentUserId = this.userStore.profile?.id
+              const currentEmployee = this.employees.find(e => e.userId === currentUserId)
+              const isDirection = currentEmployee && ['Directeur', 'Directeur Adjoint'].includes(currentEmployee.role)
+
+              if (isRH || isDirection)
+                tmp_item.notif = this.waitingAbsences.length
             }
             currentGroup.push(tmp_item)
           }

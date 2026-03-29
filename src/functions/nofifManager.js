@@ -11,6 +11,7 @@ import SaveDate from '@/classes/SaveDate.js'
 import ExpenseNote from '@/classes/ExpenseNote.js'
 import Vehicle from '@/classes/Vehicle.js'
 import SharedChecklist from '@/classes/SharedChecklist.js'
+import Absence from '@/classes/Absence.js'
 
 export const notifState = reactive({
   waitingUsers: [],
@@ -25,6 +26,7 @@ export const notifState = reactive({
   lastVehicleSaveDate: null,
   rhWeeklyTasks: [],
   rhMonthlyTasks: [],
+  waitingAbsences: [],
   unsubscribers: []
 })
 
@@ -101,6 +103,10 @@ export function initNotifManager() {
   const monthlyManager = new SharedChecklist('monthly_rh')
   notifState.unsubscribers.push(monthlyManager.listen(data => {
     notifState.rhMonthlyTasks = data.tasks
+  }))
+
+  notifState.unsubscribers.push(Absence.listenAll(absences => {
+    notifState.waitingAbsences = absences.filter(a => a.type === 'leave' && a.status === 'pending')
   }))
 }
 
