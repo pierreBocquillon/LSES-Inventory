@@ -43,12 +43,6 @@
           <span class="text-h5" v-if="currentAbsence.type === 'event'">Évènement</span>
           <span class="text-h5" v-else>{{ currentAbsence.id ? 'Détails' : 'Signaler une absence / congé' }}</span>
           <v-spacer></v-spacer>
-          <div v-if="currentAbsence.userId && currentAbsence.type !== 'event'" class="d-flex align-center opacity-90 ml-4">
-             <v-icon size="small" class="mr-1">mdi-account-circle-outline</v-icon>
-             <span class="text-subtitle-1 font-weight-bold">
-                {{ getEmployeeName(currentAbsence.userId) }}
-             </span>
-          </div>
         </v-card-title>
         
         <v-card-text class="pa-4 mt-2">
@@ -61,7 +55,19 @@
                     <v-btn value="leave">Congé</v-btn>
                   </v-btn-toggle>
               </v-col>
-              <v-col cols="12" v-else>
+              <v-col cols="12" v-if="isDirection && currentAbsence.type !== 'event'">
+                  <v-autocomplete
+                    v-model="currentAbsence.userId"
+                    :items="employees"
+                    item-title="name"
+                    item-value="userId"
+                    label="Employé concerné"
+                    variant="outlined"
+                    density="compact"
+                    prepend-inner-icon="mdi-account"
+                  ></v-autocomplete>
+              </v-col>
+              <v-col cols="12" v-else-if="currentAbsence.type === 'event'">
                  <div class="text-h6 text-primary mb-2">Nouvel Évènement</div>
               </v-col>
             </v-row>
@@ -587,6 +593,7 @@ export default {
         endDate: this.getDefaultDate(),
         endTime: '',
         isFullDay: true,
+        userId: this.userStore.profile?.id,
         reason: '',
         slot: 'full',
         recurrence: 'none',
@@ -717,7 +724,7 @@ export default {
         if (this.currentAbsence.type !== 'event') {
           const overlapping = this.absences.filter(a => {
             if (a.id === this.currentAbsence.id) return false
-            if (a.userId === currentUserId) return false
+            if (a.userId === this.currentAbsence.userId) return false
             if (a.status === 'refused') return false
 
             const aStartDay = a.startDate.split('T')[0]
@@ -749,7 +756,7 @@ export default {
 
         const abs = new Absence(
           this.currentAbsence.id,
-          this.userStore.profile.id,
+          this.currentAbsence.userId || this.userStore.profile.id,
           finalStart,
           finalEnd,
           isFullDay,
