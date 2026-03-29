@@ -245,6 +245,7 @@ import Employee from '@/classes/Employee.js'
 import { useUserStore } from '@/store/user.js'
 import Swal from 'sweetalert2/dist/sweetalert2.js'
 import { SCHEDULE_COLORS } from '@/config/schedule.js'
+import logger from '@/functions/logger.js'
 
 export default {
   components: {
@@ -616,7 +617,9 @@ export default {
          })
          if (confirmDel.isConfirmed) {
              const abs = new Absence(this.currentAbsence.id)
+             const employeeName = this.getEmployeeName(this.currentAbsence.userId)
              await abs.delete()
+             logger.log(this.userStore.profile.id, 'ABSENCE', `Suppression d'une absence/congé pour ${employeeName}`)
              this.closeModal()
              Swal.fire({
                  icon: 'success',
@@ -640,7 +643,9 @@ export default {
     async quickManage(req, status) {
        try {
           req.status = status
+          const employeeName = this.getEmployeeName(req.userId)
           await req.save()
+          logger.log(this.userStore.profile.id, 'ABSENCE', `${status === 'approved' ? 'Approbation' : 'Refus'} du congé de ${employeeName}`)
           Swal.fire({
             icon: 'success',
             title: status === 'approved' ? 'Approuvé' : 'Refusé',
@@ -768,6 +773,20 @@ export default {
         )
 
         await abs.save()
+        
+        const employeeName = this.getEmployeeName(this.currentAbsence.userId)
+        const actionPrefix = this.currentAbsence.id ? 'Modification' : 'Création'
+        let logDescription = ''
+        
+        if (this.currentAbsence.type === 'event') {
+          logDescription = `${actionPrefix} de l'évènement "${this.currentAbsence.reason || 'SANS TITRE'}"`
+        } else {
+          const typeLabel = this.currentAbsence.type === 'leave' ? 'un congé' : 'une absence'
+          logDescription = `${actionPrefix} de ${typeLabel} pour ${employeeName}`
+        }
+        
+        logger.log(this.userStore.profile.id, 'ABSENCE', logDescription)
+
         Swal.fire({
           icon: 'success',
           title: 'Enregistré',
