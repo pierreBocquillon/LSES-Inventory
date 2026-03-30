@@ -144,6 +144,7 @@ export async function generateReport(data, canvasElement = null) {
     cid, 
     genderIsMale, 
     doctor, 
+    doctors,
     legists, 
     injuries, 
     bloodBilan, 
@@ -158,6 +159,8 @@ export async function generateReport(data, canvasElement = null) {
   // Compat anciens rapports avec legist (string)
   const legistsArr = Array.isArray(legists) ? legists : (data.legist ? [data.legist] : [])
   const legistsDisplay = legistsArr.filter(Boolean).map(l => `Dr ${l}`).join(', ') || 'Médecin légiste'
+  const doctorsArr = Array.isArray(doctors) ? doctors : (doctor ? [doctor] : [])
+  const doctorsDisplay = doctorsArr.filter(Boolean).map(d => `Dr ${d}`).join(', ') || ''
 
   try {
     const doc = new jsPDF()
@@ -240,7 +243,7 @@ export async function generateReport(data, canvasElement = null) {
     doc.setFont('helvetica', 'bold')
     doc.text('Médecin intervenant :', margin, yPosition)
     doc.setFont('helvetica', 'normal')
-    doc.text(` Dr ${doctor}`, margin + 4 + doc.getTextWidth('Médecin intervenant :'), yPosition)
+    doc.text(` ${doctorsDisplay}`, margin + 4 + doc.getTextWidth('Médecin intervenant :'), yPosition)
     yPosition += 15
 
     // Schéma et Blessures côte à côte
