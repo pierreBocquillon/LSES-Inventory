@@ -12,7 +12,7 @@ function normalizeCentrale(c) {
 }
 
 class Dispatch {
-    constructor(centrale, patates, hospitalStatus, interventions, lsesRadio, communeRadio, notepad, radios, nuitRadioId, crises, beds, temporaryEmployees, morgue, crisisZip, centralEmpsData) {
+    constructor(centrale, patates, hospitalStatus, interventions, lsesRadio, communeRadio, notepad, radios, nuitRadioId, crises, beds, temporaryEmployees, morgue, crisisZip, centralEmpsData, autoResetEnabled, autoResetTime, lastResetDate, nextResetCancelled) {
         this.centrale = normalizeCentrale(centrale)
         if (centralEmpsData) this.centrale.employees = centralEmpsData
         this.patates = patates || []
@@ -28,6 +28,10 @@ class Dispatch {
         this.temporaryEmployees = temporaryEmployees || []
         this.morgue = morgue || { lockers: {}, urnShelves: {}, burials: {} }
         this.crisisZip = crisisZip || ''
+        this.autoResetEnabled = autoResetEnabled || false
+        this.autoResetTime = autoResetTime || '03:00'
+        this.lastResetDate = lastResetDate || ''
+        this.nextResetCancelled = nextResetCancelled || false
     }
 
     static listenGlobal(callback) {
@@ -60,7 +64,11 @@ class Dispatch {
                     globalData.temporaryEmployees,
                     globalData.morgue,
                     globalData.crisisZip,
-                    centralEmpsData
+                    centralEmpsData,
+                    globalData.autoResetEnabled,
+                    globalData.autoResetTime,
+                    globalData.lastResetDate,
+                    globalData.nextResetCancelled
                 ))
             }
         }
@@ -117,12 +125,19 @@ class Dispatch {
             beds: this.beds || {},
             temporaryEmployees: this.temporaryEmployees || [],
             morgue: this.morgue || { lockers: {}, urnShelves: {}, burials: {} },
-            crisisZip: this.crisisZip || ''
+            crisisZip: this.crisisZip || '',
+            autoResetEnabled: this.autoResetEnabled || false,
+            autoResetTime: this.autoResetTime || '03:00',
+            lastResetDate: this.lastResetDate || '',
+            nextResetCancelled: this.nextResetCancelled || false
         })
     }
 
     static async updateField(field, value) {
         await updateDoc(doc(db, collectionName, GLOBAL_DOC_ID), { [field]: value })
+    }
+    static async updateFields(updates) {
+        await updateDoc(doc(db, collectionName, GLOBAL_DOC_ID), updates)
     }
 
     static async updateRadio(radioId, updates) {
@@ -263,7 +278,7 @@ class Dispatch {
         await updateDoc(d, up)
     }
 
-    static async resetAll() {
+    static async resetAll(additionalUpdates = {}) {
         const batch = writeBatch(db)
         const globalRef = doc(db, collectionName, GLOBAL_DOC_ID)
         const snap = await getDoc(globalRef)
@@ -273,7 +288,8 @@ class Dispatch {
 
         batch.update(globalRef, {
             hospitalStatus: 'hopital_ferme',
-            radios: radios
+            radios: radios,
+            ...additionalUpdates
         })
 
         const colls = ["interventions", "patates", "centrale_employees"]
@@ -283,6 +299,31 @@ class Dispatch {
         }
 
         await batch.commit()
+    }
+
+    static async tryAutoReset(currentDate) {
+        const globalRef = doc(db, collectionName, GLOBAL_DOC_ID)
+        let result = false
+        try {
+            await runTransaction(db, async (transaction) => {
+                const snap = await transaction.get(globalRef)
+                if (!snap.exists()) return
+                const data = snap.data()
+                if (data.lastResetDate === currentDate) return
+
+                result = data.nextResetCancelled ? 'skipped' : 'reset'
+                transaction.update(globalRef, { lastResetDate: currentDate })
+            })
+
+            if (result === 'skipped')
+                await updateDoc(globalRef, { nextResetCancelled: false })
+            else if (result === 'reset')
+                await Dispatch.resetAll({ nextResetCancelled: false, lastResetDate: currentDate })
+            return result
+        } catch (e) {
+            console.error('AutoReset transaction failed:', e)
+            return false
+        }
     }
 
     static async migrateEmployee(employeeId, srcKey, targetKey, employeeData) {

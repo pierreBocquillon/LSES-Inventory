@@ -2,8 +2,13 @@
   <div class="dispatch-root" :class="{ 'is-dragging': !!draggingEmployee, 'theme--light': isLightTheme }">
 
         <div class="dispatch-top-headers">
-      <div class="th-cell th-left">
-        <v-icon size="13" class="mr-1">mdi-headset</v-icon>Status Centrale & Interventions
+      <div class="th-cell th-left d-flex align-center justify-space-between">
+        <div class="d-flex align-center">
+          <v-icon size="13" class="mr-1">mdi-headset</v-icon>Status Centrale & Interventions
+        </div>
+        <v-btn v-if="isDirection" icon variant="text" size="x-small" @click.stop="showAffiliationManager = true" style="color: #94a3b8;" title="Gérer les affiliations">
+          <v-icon size="14">mdi-cog</v-icon>
+        </v-btn>
       </div>
       <div class="th-cell th-center d-flex align-center justify-space-between w-100 px-3">
         <div class="d-flex align-center" style="gap: 15px;">
@@ -712,6 +717,103 @@
 
     <DispatchMorgue :dispatch="dispatch" :affiliations="affiliations" />
 
+    <v-dialog v-model="showAffiliationManager" max-width="500" :retain-focus="false">
+      <v-card class="rounded-xl" style="background: #1e293b; color: #fff;">
+        <v-card-title class="pa-0">
+          <v-tabs v-model="activeTab" grow bg-color="amber-darken-3" theme="dark">
+            <v-tab :value="0"><v-icon class="mr-2">mdi-account-group</v-icon> Affiliations</v-tab>
+            <v-tab :value="1"><v-icon class="mr-2">mdi-history</v-icon> Auto-Reset</v-tab>
+          </v-tabs>
+        </v-card-title>
+        
+        <v-window v-model="activeTab">
+          <v-window-item :value="0">
+            <v-card-text class="pa-4 pt-2">
+              <div style="max-height: 600px; overflow-y: auto; padding-right: 8px;" class="custom-scrollbar">
+                <div v-for="aff in affiliations" :key="aff.id" class="d-flex align-center mb-2 pa-2 rounded" style="background: rgba(0,0,0,0.2); border: 1px solid #334155;">
+                  <div class="d-flex flex-column mr-2 align-center justify-center">
+                    <v-btn icon variant="plain" size="x-small" color="grey" @click="moveAffiliationUp(aff)" :disabled="isFirstAffiliation(aff)" style="height: 16px; width: 16px;">
+                      <v-icon size="16">mdi-chevron-up</v-icon>
+                    </v-btn>
+                    <v-btn icon variant="plain" size="x-small" color="grey" @click="moveAffiliationDown(aff)" :disabled="isLastAffiliation(aff)" style="height: 16px; width: 16px; margin-top: 2px;">
+                      <v-icon size="16">mdi-chevron-down</v-icon>
+                    </v-btn>
+                  </div>
+                  <div :style="`width: 12px; height: 12px; border-radius: 50%; background: ${aff.color}; margin-right: 12px;`" title="Couleur"></div>
+                  <div class="flex-grow-1 font-weight-bold">{{ aff.label }}</div>
+                  <v-btn icon variant="plain" size="x-small" color="blue" @click="promptEditAffiliation(aff)" class="mr-1">
+                    <v-icon size="14">mdi-pencil</v-icon>
+                  </v-btn>
+                  <v-btn icon variant="plain" size="x-small" color="error" @click="confirmDeleteAffiliation(aff)">
+                    <v-icon size="14">mdi-delete</v-icon>
+                  </v-btn>
+                </div>
+              </div>
+              <v-btn block color="amber-darken-2" variant="tonal" class="mt-4" @click="promptAddAffiliation">
+                <v-icon class="mr-2">mdi-plus</v-icon> Ajouter une affiliation
+              </v-btn>
+            </v-card-text>
+          </v-window-item>
+
+          <v-window-item :value="1">
+            <v-card-text class="pa-4">
+              <div class="mb-4">
+                <div class="d-flex align-center justify-space-between mb-2">
+                  <div class="text-subtitle-2 font-weight-bold text-amber-lighten-2">Activer le reset auto quotidien</div>
+                  <v-switch :model-value="dispatch.autoResetEnabled" @update:model-value="handleAutoResetToggle($event)" color="amber-darken-2" hide-details density="compact"></v-switch>
+                </div>
+                <div class="text-caption text-grey">Si activé, le dispatch sera réinitialisé chaque jour à l'heure indiquée.</div>
+              </div>
+
+              <v-divider class="mb-4" color="white" style="opacity: 0.1"></v-divider>
+
+              <div class="mb-4">
+                <div class="text-subtitle-2 font-weight-bold mb-1">Heure du reset (format 24h)</div>
+                <div class="d-flex align-center">
+                  <v-icon size="18" color="grey" class="mr-2">mdi-clock-outline</v-icon>
+                  <input 
+                    type="time" 
+                    :value="dispatch?.autoResetTime || '03:00'" 
+                    @change="handleAutoResetTimeChange($event.target.value)"
+                    class="location-input" 
+                    style="width: 120px; font-size: 1.1rem; letter-spacing: 1px; font-weight: bold; background: rgba(0,0,0,0.2); border: 1px solid #334155; padding: 5px 10px; border-radius: 4px;"
+                  />
+                </div>
+              </div>
+
+              <v-divider class="mb-4" color="white" style="opacity: 0.1"></v-divider>
+
+              <div class="mb-2">
+                <div class="text-subtitle-2 font-weight-bold mb-1">Prochain reset prévu</div>
+                <div class="d-flex align-center justify-space-between pa-3 rounded" style="background: rgba(0,0,0,0.2); border: 1px solid #334155;">
+                  <div class="d-flex flex-column">
+                    <div class="text-body-2" :class="dispatch?.nextResetCancelled ? 'text-decoration-line-through text-grey' : 'text-white'">
+                      Demain à <span class="font-weight-black">{{ dispatch?.autoResetTime || '03:00' }}</span>
+                    </div>
+                    <div v-if="dispatch?.nextResetCancelled" class="text-caption text-error font-weight-bold">ANNULÉ PAR LA DIRECTION</div>
+                  </div>
+                  <v-btn 
+                    :color="dispatch?.nextResetCancelled ? 'success' : 'error'" 
+                    variant="tonal" 
+                    size="small" 
+                    class="ml-2"
+                    @click="Dispatch.updateField('nextResetCancelled', !dispatch.nextResetCancelled)"
+                  >
+                    <v-icon size="16" class="mr-1">{{ dispatch?.nextResetCancelled ? 'mdi-check' : 'mdi-close-circle' }}</v-icon>
+                    {{ dispatch?.nextResetCancelled ? 'Réactiver' : 'Annuler le prochain' }}
+                  </v-btn>
+                </div>
+              </div>
+            </v-card-text>
+          </v-window-item>
+        </v-window>
+
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn variant="text" @click="showAffiliationManager = false">Fermer</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
 
     <v-dialog v-model="quickAddDialog" max-width="360">
       <v-card class="rounded-xl">
@@ -835,6 +937,8 @@ export default {
       _timeouts: {},
       localBuffers: {},
       lastSyncedCentrale: { name: '', phone: '' },
+      showAffiliationManager: false,
+      activeTab: 0,
     }
   },
 
@@ -1100,6 +1204,7 @@ export default {
     this.currentTime = Date.now()
     this.timeInterval = setInterval(() => {
       this.currentTime = Date.now()
+      this.checkAutoReset()
     }, 1000)
   },
 
@@ -1119,6 +1224,66 @@ export default {
   methods: {
     toggleTheme() {
       this.isLightTheme = !this.isLightTheme;
+    },
+
+    async handleAutoResetToggle(val) {
+      if (!this.dispatch) return
+      const updates = { autoResetEnabled: val }
+      if (val) {
+        const now = new Date()
+        const currentHHmm = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0')
+        const currentDate = now.toISOString().split('T')[0]
+        const resetTime = this.dispatch.autoResetTime || '03:00'
+        
+        if (currentHHmm >= resetTime)
+          updates.lastResetDate = currentDate
+      }
+      await Dispatch.updateFields(updates)
+    },
+    
+    async handleAutoResetTimeChange(newTime) {
+      if (!this.dispatch) return
+      const updates = { autoResetTime: newTime }
+      
+      const now = new Date()
+      const currentHHmm = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0')
+      const currentDate = now.toISOString().split('T')[0]
+      
+      if (this.dispatch.autoResetEnabled && currentHHmm >= newTime) {
+        updates.lastResetDate = currentDate
+      }
+      await Dispatch.updateFields(updates)
+    },
+
+    async checkAutoReset() {
+      if (!this.dispatch || !this.dispatch.autoResetEnabled || !this.dispatch.autoResetTime) return
+
+      const now = new Date(this.currentTime)
+      const currentHHmm = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0')
+      const currentDate = now.toISOString().split('T')[0]
+
+      if (currentHHmm >= this.dispatch.autoResetTime && this.dispatch.lastResetDate !== currentDate) {
+        if (this._isResetting) return;
+        this._isResetting = true;
+        
+        const randomDelay = Math.floor(Math.random() * 2000)
+        setTimeout(async () => {
+             if (this.dispatch.lastResetDate === currentDate) {
+                 this._isResetting = false;
+                 return;
+             }
+             
+             const result = await Dispatch.tryAutoReset(currentDate)
+             
+             if (result === 'skipped') {
+               logger.log(this.userStore.profile?.id, 'DISPATCH', 'La réinitialisation automatique a été skippée (annulée par la direction).')
+             } else if (result === 'reset') {
+               logger.log(this.userStore.profile?.id, 'DISPATCH', 'Le dispatch a été réinitialisé automatiquement (horaire quotidien).')
+             }
+             
+             setTimeout(() => { this._isResetting = false }, 3000);
+        }, randomDelay);
+      }
     },
 
     syncCentraleGSheet(d) {
@@ -1598,7 +1763,128 @@ export default {
     },
     async setCentraleEmpRole(empId, role) {
       if (!this.hasLsesPerm) return
-      await Dispatch.updateCentraleEmployee(empId, { centralRole: role })
+      await Dispatch.updateCentraleEmployeeRole(empId, role)
+    },
+
+    async promptAddAffiliation() {
+      const { value: formValues } = await Swal.fire({
+        title: 'Ajoute une affiliation',
+        html:
+          `<div style="text-align: left; padding: 0 5px;">
+            <label style="display: block; font-size: 0.8rem; color: #94a3b8; margin-bottom: 4px; font-weight: bold;">NOM DU GROUPE / AFFILIATION</label>
+            <input id="swal-input1" class="swal2-input" placeholder="ex: Ballas" style="margin: 0 0 15px 0; width: 100%; height: 45px; background: rgba(0,0,0,0.2); color: #fff; border: 1px solid #334155;">
+            
+            <label style="display: block; font-size: 0.8rem; color: #94a3b8; margin-bottom: 4px; font-weight: bold;">COULEUR DISTINCTIVE</label>
+            <input id="swal-input2" class="swal2-input" type="color" value="#3b82f6" style="margin: 0; width: 100%; height: 45px; cursor: pointer; background: rgba(0,0,0,0.2); border: 1px solid #334155; padding: 4px;">
+          </div>`,
+        focusConfirm: false,
+        background: '#1e293b',
+        color: '#fff',
+        target: '#app',
+        didOpen: () => {
+          document.getElementById('swal-input1')?.focus()
+        },
+        showCancelButton: true,
+        confirmButtonText: 'Ajouter',
+        cancelButtonText: 'Annuler',
+        preConfirm: () => {
+          const label = document.getElementById('swal-input1').value.trim()
+          const color = document.getElementById('swal-input2').value
+          if (!label) {
+            Swal.showValidationMessage("Le nom est obligatoire")
+            return false
+          }
+          return { label, color }
+        }
+      })
+      if (formValues) {
+        await Dispatch.addAffiliation({ ...formValues, order: Date.now() })
+      }
+    },
+    async promptEditAffiliation(aff) {
+      const { value: formValues } = await Swal.fire({
+        title: 'Modifier l\'affiliation',
+        html:
+          `<div style="text-align: left; padding: 0 5px;">
+            <label style="display: block; font-size: 0.8rem; color: #94a3b8; margin-bottom: 4px; font-weight: bold;">NOM DU GROUPE / AFFILIATION</label>
+            <input id="swal-input1" class="swal2-input" placeholder="Label" value="${aff.label}" style="margin: 0 0 15px 0; width: 100%; height: 45px; background: rgba(0,0,0,0.2); color: #fff; border: 1px solid #334155;">
+            
+            <label style="display: block; font-size: 0.8rem; color: #94a3b8; margin-bottom: 4px; font-weight: bold;">COULEUR DISTINCTIVE</label>
+            <input id="swal-input2" class="swal2-input" type="color" value="${aff.color}" style="margin: 0; width: 100%; height: 45px; cursor: pointer; background: rgba(0,0,0,0.2); border: 1px solid #334155; padding: 4px;">
+          </div>`,
+        focusConfirm: false,
+        background: '#1e293b',
+        color: '#fff',
+        target: '#app',
+        didOpen: () => {
+          document.getElementById('swal-input1')?.focus()
+        },
+        showCancelButton: true,
+        confirmButtonText: 'Sauvegarder',
+        cancelButtonText: 'Annuler',
+        preConfirm: () => {
+          const label = document.getElementById('swal-input1').value.trim()
+          const color = document.getElementById('swal-input2').value
+          if (!label) {
+            Swal.showValidationMessage("Le nom est obligatoire")
+            return false
+          }
+          return { label, color }
+        }
+      })
+      if (formValues) {
+        await Dispatch.updateAffiliation(aff.id, formValues)
+      }
+    },
+    async confirmDeleteAffiliation(aff) {
+      const r = await Swal.fire({
+        title: 'Supprimer l\'affiliation ?',
+        text: `Voulez-vous vraiment supprimer "${aff.label}" ?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Oui, supprimer',
+        cancelButtonText: 'Annuler',
+        background: '#1e293b',
+        color: '#fff',
+        target: '#app'
+      })
+      if (r.isConfirmed) {
+        await Dispatch.deleteAffiliation(aff.id)
+      }
+    },
+    isFirstAffiliation(aff) {
+      if (!this.affiliations || this.affiliations.length === 0) return true
+      return this.affiliations[0].id === aff.id
+    },
+    isLastAffiliation(aff) {
+      if (!this.affiliations || this.affiliations.length === 0) return true
+      return this.affiliations[this.affiliations.length - 1].id === aff.id
+    },
+    async moveAffiliationUp(aff) {
+      const idx = this.affiliations.findIndex(a => a.id === aff.id)
+      if (idx > 0) {
+        const list = [...this.affiliations]
+        const temp = list[idx]
+        list[idx] = list[idx - 1]
+        list[idx - 1] = temp
+        
+        const promises = list.map((a, i) => Dispatch.updateAffiliation(a.id, { order: i }))
+        await Promise.all(promises)
+      }
+    },
+    async moveAffiliationDown(aff) {
+      const idx = this.affiliations.findIndex(a => a.id === aff.id)
+      if (idx < this.affiliations.length - 1) {
+        const list = [...this.affiliations]
+        const temp = list[idx]
+        list[idx] = list[idx + 1]
+        list[idx + 1] = temp
+        
+        const promises = list.map((a, i) => Dispatch.updateAffiliation(a.id, { order: i }))
+        await Promise.all(promises)
+      }
     },
 
     async setCentraleType(typeValue) {
