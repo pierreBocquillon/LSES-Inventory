@@ -24,7 +24,7 @@
           </template>
 
           <template v-slot:item.doctor="{ item }">
-            {{ item.doctor ? 'Dr ' + item.doctor : '' }}
+            {{ (() => { const arr = Array.isArray(item.doctors) ? item.doctors : (item.doctor ? [item.doctor] : []); return arr.filter(Boolean).map(d => 'Dr ' + d).join(', ') })() }}
           </template>
 
           <template v-slot:item.legists="{ item }">

@@ -26,9 +26,13 @@
               <v-switch color="cyan" base-color="cyan" class="px-3" hide-details v-model="genderIsMale"></v-switch>
               <h3 class="text-cyan">Homme</h3>
             </div>
-            <h3 class="mb-3">Médecin intervenant :</h3>
-            <div class="d-flex flex-row align-center justify-center">
-              <v-text-field label="Nom" class="mx-1 w-100" color="cyan" base-color="cyan" variant="outlined" hide-details v-model="doctor"></v-text-field>
+            <h3 class="mb-3">Médecin(s) intervenant(s) :</h3>
+            <div v-for="(doc_, index) in doctors" :key="index" class="d-flex flex-row align-center mb-2">
+              <v-select :label="'Intervenant' + (doctors.length > 1 ? ' ' + (index + 1) : '')" class="mx-1 w-100" color="cyan" base-color="cyan" variant="outlined" hide-details :items="profiles" v-model="doctors[index]" clearable></v-select>
+              <v-btn icon="mdi-minus" color="red" variant="text" density="compact" class="ml-1" @click="removeDoctor(index)" :disabled="doctors.length <= 1"></v-btn>
+            </div>
+            <div class="d-flex justify-end mt-1 mb-2">
+              <v-btn color="cyan" variant="tonal" density="compact" prepend-icon="mdi-plus" @click="addDoctor">Ajouter un intervenant</v-btn>
             </div>
             <h3 class="mb-3 mt-4">Médecin(s) légiste(s) :</h3>
             <div v-for="(leg, index) in legists" :key="index" class="d-flex flex-row align-center mb-2">
@@ -147,6 +151,7 @@ export default {
       name: '',
       cid: '',
       doctor: '',
+      doctors: [],
       genderIsMale: false,
       legists: [],
       injuries: [],
@@ -385,6 +390,14 @@ export default {
         }
         this.drawCanvas()
       },
+      addDoctor() {
+        this.doctors.push(null)
+      },
+      removeDoctor(index) {
+        if (this.doctors.length > 1) {
+          this.doctors.splice(index, 1)
+        }
+      },
       addLegist() {
         this.legists.push(null)
       },
@@ -398,7 +411,7 @@ export default {
         this.name = report.name
         this.cid = report.cid
         this.genderIsMale = report.genderIsMale
-        this.doctor = report.doctor
+        this.doctors = Array.isArray(report.doctors) ? report.doctors : (report.doctor ? [report.doctor] : [null])
         this.legists = Array.isArray(report.legists) ? report.legists : (report.legist ? [report.legist] : [''])
         this.injuries = report.injuries
         this.bloodBilan = report.bloodBilan
@@ -421,6 +434,7 @@ export default {
         this.cid = ''
         this.genderIsMale = false
         this.doctor = ''
+        this.doctors = [null]
         this.legists = [this.userStore.profile?.name || '']
         this.injuries = [
           {
@@ -448,6 +462,7 @@ export default {
         report.cid = this.cid
         report.genderIsMale = this.genderIsMale
         report.doctor = this.doctor
+        report.doctors = this.doctors
         report.legists = this.legists
         report.injuries = this.injuries
         report.bloodBilan = this.bloodBilan
@@ -466,6 +481,7 @@ export default {
           cid: this.cid,
           genderIsMale: this.genderIsMale,
           doctor: this.doctor,
+          doctors: this.doctors,
           legists: this.legists,
           injuries: this.injuries,
           bloodBilan: this.bloodBilan,
