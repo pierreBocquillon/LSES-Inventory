@@ -1802,6 +1802,12 @@ export default {
       }
     },
     async promptEditAffiliation(aff) {
+      let safeColor = aff.color || '#3b82f6';
+      if (safeColor.startsWith('#') && safeColor.length > 7)
+        safeColor = safeColor.substring(0, 7);
+      else if (!safeColor.startsWith('#'))
+        safeColor = '#3b82f6';
+
       const { value: formValues } = await Swal.fire({
         title: 'Modifier l\'affiliation',
         html:
@@ -1810,7 +1816,7 @@ export default {
             <input id="swal-input1" class="swal2-input" placeholder="Label" value="${aff.label}" style="margin: 0 0 15px 0; width: 100%; height: 45px; background: rgba(0,0,0,0.2); color: #fff; border: 1px solid #334155;">
             
             <label style="display: block; font-size: 0.8rem; color: #94a3b8; margin-bottom: 4px; font-weight: bold;">COULEUR DISTINCTIVE</label>
-            <input id="swal-input2" class="swal2-input" type="color" value="${aff.color}" style="margin: 0; width: 100%; height: 45px; cursor: pointer; background: rgba(0,0,0,0.2); border: 1px solid #334155; padding: 4px;">
+            <input id="swal-input2" class="swal2-input" type="color" value="${safeColor}" style="margin: 0; width: 100%; height: 45px; cursor: pointer; background: rgba(0,0,0,0.2); border: 1px solid #334155; padding: 4px;">
           </div>`,
         focusConfirm: false,
         background: '#1e293b',
