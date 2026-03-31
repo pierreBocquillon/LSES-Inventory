@@ -30,11 +30,11 @@
                   <td style="width: 130px; text-align: center; font-weight: bold; color: #94a3b8; font-size: 0.72rem; border: 1px solid #1e293b; background: rgba(255,255,255,0.02);">Prénom NOM</td>
                   <td v-for="i in chunk" :key="'lk-name-'+chunkIdx+'-'+i"
                     style="padding: 2px; border: 1px solid #1f2937; height: 30px;"
-                    :style="getMorgueSlot('lockers', i).name ? 'background: rgba(107,114,128,0.25)' : 'background: rgba(0,0,0,0.3)'">
+                    :style="isSlotFilled('lockers', i) ? 'background: rgba(107,114,128,0.25)' : 'background: rgba(0,0,0,0.3)'">
                     <input :value="localBuffers[`morgue-lockers-${i}-name`] ?? getMorgueSlot('lockers', i).name ?? ''"
                       @input="updateMorgueSlot('lockers', i, 'name', $event.target.value)"
                       class="location-input font-weight-bold text-center"
-                      :class="getMorgueSlot('lockers', i).name ? 'text-grey-lighten-2' : ''"
+                      :class="isSlotFilled('lockers', i) ? 'text-grey-lighten-2' : ''"
                       style="font-size: 0.78rem; width: 100%; border: none; background: transparent; outline: none; padding: 3px;" />
                   </td>
                 </tr>
@@ -42,9 +42,9 @@
                   <td style="width: 130px; text-align: center; font-weight: bold; color: #94a3b8; font-size: 0.72rem; border: 1px solid #1e293b; background: rgba(255,255,255,0.02);">Date du décès</td>
                   <td v-for="i in chunk" :key="'lk-date-'+chunkIdx+'-'+i"
                     style="padding: 2px; border: 1px solid #1f2937; height: 30px;"
-                    :style="getMorgueSlot('lockers', i).name ? 'background: rgba(107,114,128,0.25)' : 'background: rgba(0,0,0,0.3)'">
-                    <input :value="getMorgueSlot('lockers', i).date || ''"
-                      @change="updateMorgueSlot('lockers', i, 'date', $event.target.value)"
+                    :style="isSlotFilled('lockers', i) ? 'background: rgba(107,114,128,0.25)' : 'background: rgba(0,0,0,0.3)'">
+                    <input :value="localBuffers[`morgue-lockers-${i}-date`] ?? getMorgueSlot('lockers', i).date ?? ''"
+                      @input="updateMorgueSlot('lockers', i, 'date', $event.target.value)"
                       class="location-input text-center"
                       style="font-size: 0.75rem; width: 100%; border: none; background: transparent; outline: none; padding: 3px; color: #9ca3af;" />
                   </td>
@@ -53,7 +53,7 @@
                   <td style="width: 130px; text-align: center; font-weight: bold; color: #94a3b8; font-size: 0.72rem; border: 1px solid #1e293b; background: rgba(255,255,255,0.02);">Appartenance</td>
                   <td v-for="i in chunk" :key="'lk-aff-'+chunkIdx+'-'+i"
                     style="padding: 1px; border: 1px solid #1f2937; height: 30px;"
-                    :style="getMorgueSlot('lockers', i).name ? 'background: rgba(107,114,128,0.25)' : 'background: rgba(0,0,0,0.3)'">
+                    :style="isSlotFilled('lockers', i) ? 'background: rgba(107,114,128,0.25)' : 'background: rgba(0,0,0,0.3)'">
                     <select :value="getMorgueSlot('lockers', i).affiliation || ''"
                       @change="updateMorgueSlot('lockers', i, 'affiliation', $event.target.value)"
                       class="location-input w-100 h-100 text-center"
@@ -68,7 +68,7 @@
                   <td style="width: 130px; text-align: center; font-weight: bold; color: #94a3b8; font-size: 0.72rem; border: 1px solid #1e293b; background: rgba(255,255,255,0.02);">Contact d'urgence</td>
                   <td v-for="i in chunk" :key="'lk-urg-'+chunkIdx+'-'+i"
                     style="padding: 0; border: 1px solid #1f2937; height: 30px;"
-                    :style="getMorgueSlot('lockers', i).emergencyContacted ? 'background: rgba(99, 102, 241, 0.4)' : (getMorgueSlot('lockers', i).name ? 'background: rgba(107,114,128,0.25)' : 'background: rgba(0,0,0,0.3)')">
+                    :style="getMorgueSlot('lockers', i).emergencyContacted ? 'background: rgba(99, 102, 241, 0.4)' : (isSlotFilled('lockers', i) ? 'background: rgba(107,114,128,0.25)' : 'background: rgba(0,0,0,0.3)')">
                     <div class="d-flex w-100 h-100 align-center justify-center">
                       <label class="d-flex align-center justify-center flex-1-1 cursor-pointer" style="height:100%;">
                         <input type="checkbox" :checked="getMorgueSlot('lockers', i).emergencyContacted"
@@ -82,9 +82,9 @@
                   <td style="width: 130px; text-align: center; font-weight: bold; color: #94a3b8; font-size: 0.72rem; border: 1px solid #1e293b; background: rgba(255,255,255,0.02);">Nom du légiste</td>
                   <td v-for="i in chunk" :key="'lk-leg-'+chunkIdx+'-'+i"
                     style="padding: 2px; border: 1px solid #1f2937; height: 30px;"
-                    :style="getMorgueSlot('lockers', i).name ? 'background: rgba(107,114,128,0.25)' : 'background: rgba(0,0,0,0.3)'">
-                    <input :value="getMorgueSlot('lockers', i).legist || ''"
-                      @change="updateMorgueSlot('lockers', i, 'legist', $event.target.value)"
+                    :style="isSlotFilled('lockers', i) ? 'background: rgba(107,114,128,0.25)' : 'background: rgba(0,0,0,0.3)'">
+                    <input :value="localBuffers[`morgue-lockers-${i}-legist`] ?? getMorgueSlot('lockers', i).legist ?? ''"
+                      @input="updateMorgueSlot('lockers', i, 'legist', $event.target.value)"
                       class="location-input text-center"
                       style="font-size: 0.75rem; width: 100%; border: none; background: transparent; outline: none; padding: 3px; color: #d1d5db;" />
                   </td>
@@ -93,7 +93,7 @@
                   <td style="width: 130px; text-align: center; font-weight: bold; color: #94a3b8; font-size: 0.72rem; border: 1px solid #1e293b; background: rgba(255,255,255,0.02);">Demande d'enterrement</td>
                   <td v-for="i in chunk" :key="'lk-bur-'+chunkIdx+'-'+i"
                     style="padding: 0; border: 1px solid #1f2937; height: 30px;"
-                    :style="getMorgueSlot('lockers', i).burialRequested ? 'background: rgba(139, 92, 246, 0.4)' : (getMorgueSlot('lockers', i).name ? 'background: rgba(107,114,128,0.25)' : 'background: rgba(0,0,0,0.3)')">
+                    :style="getMorgueSlot('lockers', i).burialRequested ? 'background: rgba(139, 92, 246, 0.4)' : (isSlotFilled('lockers', i) ? 'background: rgba(107,114,128,0.25)' : 'background: rgba(0,0,0,0.3)')">
                     <div class="d-flex w-100 h-100 align-center justify-center">
                       <label class="d-flex align-center justify-center flex-1-1 cursor-pointer" style="height:100%;">
                         <input type="checkbox" :checked="getMorgueSlot('lockers', i).burialRequested"
@@ -107,9 +107,9 @@
                   <td style="width: 130px; text-align: center; font-weight: bold; color: #94a3b8; font-size: 0.72rem; border: 1px solid #1e293b; background: rgba(255,255,255,0.02);">Commentaire</td>
                   <td v-for="i in chunk" :key="'lk-com-'+chunkIdx+'-'+i"
                     style="padding: 2px; border: 1px solid #1f2937; height: 30px;"
-                    :style="getMorgueSlot('lockers', i).name ? 'background: rgba(107,114,128,0.25)' : 'background: rgba(0,0,0,0.3)'">
-                    <input :value="getMorgueSlot('lockers', i).comment || ''"
-                      @change="updateMorgueSlot('lockers', i, 'comment', $event.target.value)"
+                    :style="isSlotFilled('lockers', i) ? 'background: rgba(107,114,128,0.25)' : 'background: rgba(0,0,0,0.3)'">
+                    <input :value="localBuffers[`morgue-lockers-${i}-comment`] ?? getMorgueSlot('lockers', i).comment ?? ''"
+                      @input="updateMorgueSlot('lockers', i, 'comment', $event.target.value)"
                       class="location-input text-center"
                       style="font-size: 0.72rem; width: 100%; border: none; background: transparent; outline: none; padding: 3px; color: #9ca3af;" />
                   </td>
@@ -118,7 +118,7 @@
                   <td style="width: 130px; text-align: center; font-weight: bold; color: #94a3b8; font-size: 0.72rem; border: 1px solid #1e293b; background: rgba(255,255,255,0.02);">Recup corps possible</td>
                   <td v-for="i in chunk" :key="'lk-rec-'+chunkIdx+'-'+i"
                     style="padding: 0; border: 1px solid #1f2937; height: 30px;"
-                    :style="getMorgueSlot('lockers', i).bodyRecoverable ? 'background: rgba(16, 185, 129, 0.4)' : (getMorgueSlot('lockers', i).name ? 'background: rgba(107,114,128,0.25)' : 'background: rgba(0,0,0,0.3)')">
+                    :style="getMorgueSlot('lockers', i).bodyRecoverable ? 'background: rgba(16, 185, 129, 0.4)' : (isSlotFilled('lockers', i) ? 'background: rgba(107,114,128,0.25)' : 'background: rgba(0,0,0,0.3)')">
                     <div class="d-flex w-100 h-100 align-center justify-center">
                       <label class="d-flex align-center justify-center flex-1-1 cursor-pointer" style="height:100%;">
                         <input type="checkbox" :checked="getMorgueSlot('lockers', i).bodyRecoverable"
@@ -132,7 +132,7 @@
                   <td style="width: 130px; border: 1px solid transparent;"></td>
                   <td v-for="i in chunk" :key="'lk-act-'+chunkIdx+'-'+i"
                     style="height: 34px; border: 1px solid transparent; padding-top: 4px; text-align: center;">
-                    <v-btn v-if="getMorgueSlot('lockers', i).name" variant="tonal" size="x-small" color="error"
+                    <v-btn v-if="isSlotFilled('lockers', i)" variant="tonal" size="x-small" color="error"
                       @click="clearMorgueSlot('lockers', i)" title="Libérer le casier">
                       <v-icon size="11" class="mr-1">mdi-close</v-icon> Libérer
                     </v-btn>
@@ -164,11 +164,11 @@
                   <td style="width: 130px; text-align: center; font-weight: bold; color: #94a3b8; font-size: 0.72rem; border: 1px solid #1e293b; background: rgba(255,255,255,0.02);">Prénom NOM</td>
                   <td v-for="i in chunk" :key="'urn-name-'+chunkIdx+'-'+i"
                     style="padding: 2px; border: 1px solid #1f2937; height: 30px;"
-                    :style="getMorgueSlot('urnShelves', i).name ? 'background: rgba(88,28,135,0.25)' : 'background: rgba(0,0,0,0.3)'">
-                    <input :value="getMorgueSlot('urnShelves', i).name || ''"
-                      @change="updateMorgueSlot('urnShelves', i, 'name', $event.target.value)"
+                    :style="isSlotFilled('urnShelves', i) ? 'background: rgba(88,28,135,0.25)' : 'background: rgba(0,0,0,0.3)'">
+                    <input :value="localBuffers[`morgue-urnShelves-${i}-name`] ?? getMorgueSlot('urnShelves', i).name ?? ''"
+                      @input="updateMorgueSlot('urnShelves', i, 'name', $event.target.value)"
                       class="location-input font-weight-bold text-center"
-                      :class="getMorgueSlot('urnShelves', i).name ? 'text-purple-lighten-3' : ''"
+                      :class="isSlotFilled('urnShelves', i) ? 'text-purple-lighten-3' : ''"
                       style="font-size: 0.78rem; width: 100%; border: none; background: transparent; outline: none; padding: 3px;" />
                   </td>
                 </tr>
@@ -176,9 +176,9 @@
                   <td style="width: 130px; text-align: center; font-weight: bold; color: #94a3b8; font-size: 0.72rem; border: 1px solid #1e293b; background: rgba(255,255,255,0.02);">Date d'incinération</td>
                   <td v-for="i in chunk" :key="'urn-date-'+chunkIdx+'-'+i"
                     style="padding: 2px; border: 1px solid #1f2937; height: 30px;"
-                    :style="getMorgueSlot('urnShelves', i).name ? 'background: rgba(88,28,135,0.25)' : 'background: rgba(0,0,0,0.3)'">
-                    <input :value="getMorgueSlot('urnShelves', i).date || ''"
-                      @change="updateMorgueSlot('urnShelves', i, 'date', $event.target.value)"
+                    :style="isSlotFilled('urnShelves', i) ? 'background: rgba(88,28,135,0.25)' : 'background: rgba(0,0,0,0.3)'">
+                    <input :value="localBuffers[`morgue-urnShelves-${i}-date`] ?? getMorgueSlot('urnShelves', i).date ?? ''"
+                      @input="updateMorgueSlot('urnShelves', i, 'date', $event.target.value)"
                       class="location-input text-center"
                       style="font-size: 0.75rem; width: 100%; border: none; background: transparent; outline: none; padding: 3px; color: #9ca3af;" />
                   </td>
@@ -187,9 +187,9 @@
                   <td style="width: 130px; text-align: center; font-weight: bold; color: #94a3b8; font-size: 0.72rem; border: 1px solid #1e293b; background: rgba(255,255,255,0.02);">Contact pour l'enterrement</td>
                   <td v-for="i in chunk" :key="'urn-con-'+chunkIdx+'-'+i"
                     style="padding: 2px; border: 1px solid #1f2937; height: 30px;"
-                    :style="getMorgueSlot('urnShelves', i).name ? 'background: rgba(88,28,135,0.25)' : 'background: rgba(0,0,0,0.3)'">
-                    <input :value="getMorgueSlot('urnShelves', i).contact || ''"
-                      @change="updateMorgueSlot('urnShelves', i, 'contact', $event.target.value)"
+                    :style="isSlotFilled('urnShelves', i) ? 'background: rgba(88,28,135,0.25)' : 'background: rgba(0,0,0,0.3)'">
+                    <input :value="localBuffers[`morgue-urnShelves-${i}-contact`] ?? getMorgueSlot('urnShelves', i).contact ?? ''"
+                      @input="updateMorgueSlot('urnShelves', i, 'contact', $event.target.value)"
                       class="location-input text-center"
                       style="font-size: 0.75rem; width: 100%; border: none; background: transparent; outline: none; padding: 3px; color: #d1d5db;" />
                   </td>
@@ -198,9 +198,9 @@
                   <td style="width: 130px; text-align: center; font-weight: bold; color: #94a3b8; font-size: 0.72rem; border: 1px solid #1e293b; background: rgba(255,255,255,0.02);">Nom du légiste</td>
                   <td v-for="i in chunk" :key="'urn-leg-'+chunkIdx+'-'+i"
                     style="padding: 2px; border: 1px solid #1f2937; height: 30px;"
-                    :style="getMorgueSlot('urnShelves', i).name ? 'background: rgba(88,28,135,0.25)' : 'background: rgba(0,0,0,0.3)'">
-                    <input :value="getMorgueSlot('urnShelves', i).legist || ''"
-                      @change="updateMorgueSlot('urnShelves', i, 'legist', $event.target.value)"
+                    :style="isSlotFilled('urnShelves', i) ? 'background: rgba(88,28,135,0.25)' : 'background: rgba(0,0,0,0.3)'">
+                    <input :value="localBuffers[`morgue-urnShelves-${i}-legist`] ?? getMorgueSlot('urnShelves', i).legist ?? ''"
+                      @input="updateMorgueSlot('urnShelves', i, 'legist', $event.target.value)"
                       class="location-input text-center"
                       style="font-size: 0.75rem; width: 100%; border: none; background: transparent; outline: none; padding: 3px; color: #d1d5db;" />
                   </td>
@@ -209,9 +209,9 @@
                   <td style="width: 130px; text-align: center; font-weight: bold; color: #94a3b8; font-size: 0.72rem; border: 1px solid #1e293b; background: rgba(255,255,255,0.02);">Commentaire</td>
                   <td v-for="i in chunk" :key="'urn-com-'+chunkIdx+'-'+i"
                     style="padding: 2px; border: 1px solid #1f2937; height: 30px;"
-                    :style="getMorgueSlot('urnShelves', i).name ? 'background: rgba(88,28,135,0.25)' : 'background: rgba(0,0,0,0.3)'">
-                    <input :value="getMorgueSlot('urnShelves', i).comment || ''"
-                      @change="updateMorgueSlot('urnShelves', i, 'comment', $event.target.value)"
+                    :style="isSlotFilled('urnShelves', i) ? 'background: rgba(88,28,135,0.25)' : 'background: rgba(0,0,0,0.3)'">
+                    <input :value="localBuffers[`morgue-urnShelves-${i}-comment`] ?? getMorgueSlot('urnShelves', i).comment ?? ''"
+                      @input="updateMorgueSlot('urnShelves', i, 'comment', $event.target.value)"
                       class="location-input text-center"
                       style="font-size: 0.72rem; width: 100%; border: none; background: transparent; outline: none; padding: 3px; color: #9ca3af;" />
                   </td>
@@ -220,7 +220,7 @@
                   <td style="width: 130px; border: 1px solid transparent;"></td>
                   <td v-for="i in chunk" :key="'urn-act-'+chunkIdx+'-'+i"
                     style="height: 34px; border: 1px solid transparent; padding-top: 4px; text-align: center;">
-                    <v-btn v-if="getMorgueSlot('urnShelves', i).name" variant="tonal" size="x-small" color="error"
+                    <v-btn v-if="isSlotFilled('urnShelves', i)" variant="tonal" size="x-small" color="error"
                       @click="clearMorgueSlot('urnShelves', i)" title="Libérer l'étagère">
                       <v-icon size="11" class="mr-1">mdi-close</v-icon> Libérer
                     </v-btn>
@@ -252,11 +252,11 @@
                   <td style="width: 130px; text-align: center; font-weight: bold; color: #94a3b8; font-size: 0.72rem; border: 1px solid #1e293b; background: rgba(255,255,255,0.02);">Prénom NOM</td>
                   <td v-for="i in chunk" :key="'bur-name-'+chunkIdx+'-'+i"
                     style="padding: 2px; border: 1px solid #1f2937; height: 30px;"
-                    :style="getMorgueSlot('burials', i).name ? 'background: rgba(20,83,45,0.35)' : 'background: rgba(0,0,0,0.3)'">
-                    <input :value="getMorgueSlot('burials', i).name || ''"
-                      @change="updateMorgueSlot('burials', i, 'name', $event.target.value)"
+                    :style="isSlotFilled('burials', i) ? 'background: rgba(20,83,45,0.35)' : 'background: rgba(0,0,0,0.3)'">
+                    <input :value="localBuffers[`morgue-burials-${i}-name`] ?? getMorgueSlot('burials', i).name ?? ''"
+                      @input="updateMorgueSlot('burials', i, 'name', $event.target.value)"
                       class="location-input font-weight-bold text-center"
-                      :class="getMorgueSlot('burials', i).name ? 'text-green-lighten-3' : ''"
+                      :class="isSlotFilled('burials', i) ? 'text-green-lighten-3' : ''"
                       style="font-size: 0.78rem; width: 100%; border: none; background: transparent; outline: none; padding: 3px;" />
                   </td>
                 </tr>
@@ -264,9 +264,9 @@
                   <td style="width: 130px; text-align: center; font-weight: bold; color: #94a3b8; font-size: 0.72rem; border: 1px solid #1e293b; background: rgba(255,255,255,0.02);">Date Enterrement</td>
                   <td v-for="i in chunk" :key="'bur-date-'+chunkIdx+'-'+i"
                     style="padding: 2px; border: 1px solid #1f2937; height: 30px;"
-                    :style="getMorgueSlot('burials', i).name ? 'background: rgba(20,83,45,0.35)' : 'background: rgba(0,0,0,0.3)'">
-                    <input :value="getMorgueSlot('burials', i).date || ''"
-                      @change="updateMorgueSlot('burials', i, 'date', $event.target.value)"
+                    :style="isSlotFilled('burials', i) ? 'background: rgba(20,83,45,0.35)' : 'background: rgba(0,0,0,0.3)'">
+                    <input :value="localBuffers[`morgue-burials-${i}-date`] ?? getMorgueSlot('burials', i).date ?? ''"
+                      @input="updateMorgueSlot('burials', i, 'date', $event.target.value)"
                       class="location-input text-center"
                       style="font-size: 0.75rem; width: 100%; border: none; background: transparent; outline: none; padding: 3px; color: #9ca3af;" />
                   </td>
@@ -275,9 +275,9 @@
                   <td style="width: 130px; text-align: center; font-weight: bold; color: #94a3b8; font-size: 0.72rem; border: 1px solid #1e293b; background: rgba(255,255,255,0.02);">Conducteur Corbillard</td>
                   <td v-for="i in chunk" :key="'bur-cond-'+chunkIdx+'-'+i"
                     style="padding: 2px; border: 1px solid #1f2937; height: 30px;"
-                    :style="getMorgueSlot('burials', i).name ? 'background: rgba(20,83,45,0.35)' : 'background: rgba(0,0,0,0.3)'">
-                    <input :value="getMorgueSlot('burials', i).driver || ''"
-                      @change="updateMorgueSlot('burials', i, 'driver', $event.target.value)"
+                    :style="isSlotFilled('burials', i) ? 'background: rgba(20,83,45,0.35)' : 'background: rgba(0,0,0,0.3)'">
+                    <input :value="localBuffers[`morgue-burials-${i}-driver`] ?? getMorgueSlot('burials', i).driver ?? ''"
+                      @input="updateMorgueSlot('burials', i, 'driver', $event.target.value)"
                       class="location-input text-center"
                       style="font-size: 0.75rem; width: 100%; border: none; background: transparent; outline: none; padding: 3px; color: #d1d5db;" />
                   </td>
@@ -286,9 +286,9 @@
                   <td style="width: 130px; text-align: center; font-weight: bold; color: #94a3b8; font-size: 0.72rem; border: 1px solid #1e293b; background: rgba(255,255,255,0.02);">Contact Référent</td>
                   <td v-for="i in chunk" :key="'bur-ref-'+chunkIdx+'-'+i"
                     style="padding: 2px; border: 1px solid #1f2937; height: 30px;"
-                    :style="getMorgueSlot('burials', i).name ? 'background: rgba(20,83,45,0.35)' : 'background: rgba(0,0,0,0.3)'">
-                    <input :value="getMorgueSlot('burials', i).contact || ''"
-                      @change="updateMorgueSlot('burials', i, 'contact', $event.target.value)"
+                    :style="isSlotFilled('burials', i) ? 'background: rgba(20,83,45,0.35)' : 'background: rgba(0,0,0,0.3)'">
+                    <input :value="localBuffers[`morgue-burials-${i}-contact`] ?? getMorgueSlot('burials', i).contact ?? ''"
+                      @input="updateMorgueSlot('burials', i, 'contact', $event.target.value)"
                       class="location-input text-center"
                       style="font-size: 0.75rem; width: 100%; border: none; background: transparent; outline: none; padding: 3px; color: #d1d5db;" />
                   </td>
@@ -297,7 +297,7 @@
                   <td style="width: 130px; border: 1px solid transparent;"></td>
                   <td v-for="i in chunk" :key="'bur-act-'+chunkIdx+'-'+i"
                     style="height: 34px; border: 1px solid transparent; padding-top: 4px; text-align: center;">
-                    <v-btn v-if="getMorgueSlot('burials', i).name" variant="tonal" size="x-small" color="error"
+                    <v-btn v-if="isSlotFilled('burials', i)" variant="tonal" size="x-small" color="error"
                       @click="clearMorgueSlot('burials', i)" title="Effacer ce slot">
                       <v-icon size="11" class="mr-1">mdi-close</v-icon> Effacer
                     </v-btn>
@@ -385,11 +385,18 @@ export default {
         delete this._timeouts[key]
       }, delay)
     },
+    isSlotFilled(section, index) {
+      const bufferedName = this.localBuffers[`morgue-${section}-${index}-name`]
+      if (bufferedName !== undefined) return !!bufferedName
+      return !!this.getMorgueSlot(section, index).name
+    },
     async updateMorgueSlot(section, index, field, value) {
-      if (field === 'name') {
-        const key = `morgue-${section}-${index}-name`
+      const key = `morgue-${section}-${index}-${field}`
+      const shouldBuffer = ['name', 'date', 'legist', 'comment', 'contact', 'driver'].includes(field)
+
+      if (shouldBuffer) {
         this.localBuffers[key] = value
-        this.debounceUpdate(key, 'name', () => {
+        this.debounceUpdate(key, field, () => {
           DispatchLib.updateMorgue(section, `slot_${index}`, { [field]: value }).then(() => {
             if (this.localBuffers[key] === value) delete this.localBuffers[key]
           })
@@ -399,12 +406,23 @@ export default {
       }
     },
     async clearMorgueSlot(section, index) {
+      const fields = ['name', 'date', 'legist', 'comment', 'contact', 'driver']
+      fields.forEach(f => {
+        const key = `morgue-${section}-${index}-${f}`
+        if (this.localBuffers[key]) delete this.localBuffers[key]
+      })
+
       await DispatchLib.updateMorgue(section, `slot_${index}`, {
-        patientName: '',
-        admissionTime: null,
-        lockerNumber: '',
-        items: '',
-        status: ''
+        name: '',
+        date: '',
+        affiliation: '',
+        emergencyContacted: false,
+        legist: '',
+        burialRequested: false,
+        comment: '',
+        bodyRecoverable: false,
+        contact: '',
+        driver: ''
       })
     }
   }
