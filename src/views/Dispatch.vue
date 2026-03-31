@@ -668,7 +668,7 @@
                   <span v-else class="text-caption font-weight-bold mx-1" style="width:50px; display:inline-block; color:#94a3b8; text-align:center;">{{ radio.serial || '---' }}</span>
                    <select :disabled="radio.category === 'direction' && !isDirection" :value="radio.employeeId" @change="onRadioAssign(radio, $event.target.value)" class="location-input mx-1" style="border-left:1px solid #334155; padding-left:4px; max-width: 120px;">
                      <option :value="''" style="background:#1a1f35">-- Assigner --</option>
-                     <option v-for="emp in getRadioEmployeeOptions(radio)" :key="emp.id" :value="emp.id" style="background:#1a1f35">{{ emp.name }}</option>
+                     <option v-for="emp in (radioEmployeeOptionsMap.get(radio.id) || [])" :key="emp.id" :value="emp.id" style="background:#1a1f35">{{ emp.name }}</option>
                    </select>
                   <v-btn size="x-small" :color="radio.status === 'on' ? 'success' : 'error'" variant="tonal" class="ml-auto px-1" style="min-width: 32px; height: 18px; font-size: 0.6rem;" :style="!hasLsesPerm ? 'pointer-events: none;' : ''" @click="toggleRadioStatus(radio)">
                     {{ radio.status === 'on' ? 'ON' : 'OFF' }}
@@ -1150,6 +1150,48 @@ export default {
           colorClass: a.maxAlertLevel >= 2 ? 'text-red-lighten-1' : 'text-primary'
         }))
     },
+
+    radioEmployeeOptionsMap() {
+      const map = new Map()
+      if (!this.dispatch) return map
+
+      const radios = this.dispatch.radios || []
+      if (!radios.length) return map
+
+      const dirEmps = this.employees.filter(e =>
+        ['Directeur', 'Directeur Adjoint'].includes(e.role)
+      )
+
+      const inServiceIds = new Set()
+      if (this.dispatch.centrale?.employees)
+        this.dispatch.centrale.employees.forEach(e => inServiceIds.add(e.employeeId))
+      ;(this.dispatch.interventions || []).forEach(s =>
+        (s.employees || []).forEach(e => inServiceIds.add(e.employeeId))
+      )
+      ;(this.dispatch.patates || []).forEach(p => { if (p.employeeId) inServiceIds.add(p.employeeId) })
+
+      const inServiceEmps = this.allEmployees.filter(e => inServiceIds.has(e.id))
+
+      for (const radio of radios) {
+        if (radio.category === 'direction') {
+          if (radio.employeeId && !dirEmps.find(e => e.id === radio.employeeId)) {
+            const current = this.allEmployees.find(e => e.id === radio.employeeId)
+            map.set(radio.id, current ? [...dirEmps, current] : dirEmps)
+          } else {
+            map.set(radio.id, dirEmps)
+          }
+        } else {
+          if (radio.employeeId && !inServiceEmps.find(e => e.id === radio.employeeId)) {
+            const current = this.allEmployees.find(e => e.id === radio.employeeId)
+            map.set(radio.id, current ? [...inServiceEmps, current] : inServiceEmps)
+          } else {
+            map.set(radio.id, inServiceEmps)
+          }
+        }
+      }
+
+      return map
+    },
   },
 
   watch: {
@@ -1309,33 +1351,6 @@ export default {
       }
     },
 
-
-    getRadioEmployeeOptions(radio) {
-      if (!this.dispatch) return []
-
-      if (radio.category === 'direction') {
-        const dirEmps = this.employees.filter(e => ['Directeur', 'Directeur Adjoint'].includes(e.role))
-        if (radio.employeeId && !dirEmps.find(e => e.id === radio.employeeId)) {
-          const current = this.allEmployees.find(e => e.id === radio.employeeId)
-          if (current) return [...dirEmps, current]
-        }
-        return dirEmps
-      }
-
-      const ids = new Set()
-      if (this.dispatch.centrale?.employees)
-        this.dispatch.centrale.employees.forEach(e => ids.add(e.employeeId))
-      ;(this.dispatch.interventions || []).forEach(s => (s.employees || []).forEach(e => ids.add(e.employeeId)))
-      ;(this.dispatch.patates || []).forEach(p => { if (p.employeeId) ids.add(p.employeeId) })
-
-      const inService = this.allEmployees.filter(e => ids.has(e.id))
-
-      if (radio.employeeId && !inService.find(e => e.id === radio.employeeId)) {
-        const current = this.allEmployees.find(e => e.id === radio.employeeId)
-        if (current) return [...inService, current]
-      }
-      return inService
-    },
 
     confirmResetDispatch() {
       if (!this.hasLsesPerm) return
@@ -2754,4 +2769,3 @@ export default {
 
 
 </style>
-
