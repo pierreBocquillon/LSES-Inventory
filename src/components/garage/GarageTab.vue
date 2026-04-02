@@ -195,6 +195,7 @@
 
 <script>
 import { useUserStore } from '@/store/user.js'
+import { useAchievementStore } from '@/store/achievements.js'
 
 import Swal from 'sweetalert2/dist/sweetalert2.js'
 
@@ -213,6 +214,7 @@ export default {
     return {
       unsub: [],
       userStore: useUserStore(),
+      achievementStore: useAchievementStore(),
       headers: [
         { title: '', key: 'status', align: 'end', sortable: false  },
         { title: 'Nom', key: 'name', align: 'start' },
@@ -453,13 +455,15 @@ export default {
       history.price = 0
       await history.save()
 
-      fetch('https://script.google.com/macros/s/AKfycbwDWdQakJgJ22wYz2-uo6LRheJSFX7_-kox8oGBSxe808QXr9ryMg74LNDc5ufgNgKp/execc', {
-        method: 'POST',
-        mode: 'no-cors',
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      })
+      // fetch('https://script.google.com/macros/s/AKfycbwDWdQakJgJ22wYz2-uo6LRheJSFX7_-kox8oGBSxe808QXr9ryMg74LNDc5ufgNgKp/execc', {
+      //   method: 'POST',
+      //   mode: 'no-cors',
+      //   headers: {
+      //     'Content-Type': 'application/json'
+      //   }
+      // })
+
+      this.achievementStore.incrementStat('fleet_full_repairs', 1, 6)
 
       this.closeRepaDialog()      
     },

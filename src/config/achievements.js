@@ -134,6 +134,27 @@ export const achievementList = [
   },
 
   {
+    id: 'fleet_repa_1',
+    category: 'Garage',
+    rarity: 'rare',
+    title: 'Mcanicien du quartier',
+    description: 'Effectuer une réparation complète de la flotte.',
+    icon: 'mdi-wrench-check',
+    progress: (stats) => ({ current: Math.min(stats.fleet_full_repairs || 0, 1), max: 1 }),
+    condition: (stats) => (stats.fleet_full_repairs || 0) >= 1
+  },
+  {
+    id: 'fleet_repa_2',
+    category: 'Garage',
+    rarity: 'epic',
+    title: 'On a les pilotes qu\'on mérite',
+    description: 'Effectuer 15 réparations complètes de la flotte.',
+    icon: 'mdi-shield-car',
+    progress: (stats) => ({ current: Math.min(stats.fleet_full_repairs || 0, 15), max: 15 }),
+    condition: (stats) => (stats.fleet_full_repairs || 0) >= 15
+  },
+
+  {
     id: 'secret_achievement',
     category: 'Secret',
     rarity: 'mythic',
@@ -170,6 +191,7 @@ export const commonStats = [
   { key: 'inventory_updates', label: 'Mises à jour de l\'inventaire' },
   { key: 'applications_created', label: 'Candidatures rédigées' },
   { key: 'ideas_suggested', label: 'Idées proposées' },
+  { key: 'fleet_full_repairs', label: 'Réparations Flotte Complètes' },
 ];
 
 export const achievementTitles = [
