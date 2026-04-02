@@ -55,7 +55,7 @@
       <v-card-text class="pa-4 pt-2">
         <div class="d-flex flex-wrap justify-center" style="gap: 10px;">
           <template v-for="group in filteredNavItems">
-            <v-card v-for="item in group" :key="item.link" class="nav-card rounded-xl d-flex align-center justify-center flex-column" width="150" height="150" variant="tonal" hover @click="$router.push(item.link)" style="cursor: pointer; position: relative;">
+            <v-card v-for="item in group" :key="item.link" class="nav-card rounded-xl d-flex align-center justify-center flex-column" width="150" height="150" variant="tonal" hover @click="item.link ? $router.push(item.link) : null" style="cursor: pointer; position: relative;">
               <v-badge v-if="item.notif > 0" color="error" :content="item.notif" style="position: absolute; top: 20px; right: 20px;"></v-badge>
               <img :src="item.img" height="100" class="mb-2" style="object-fit: contain;" />
               <h3 class="font-weight-medium text-center px-2" style="white-space: normal; line-height: 1.2;">{{ item.title }}</h3>
@@ -174,6 +174,7 @@
 
 <script>
 import { useUserStore } from '@/store/user.js'
+import { useAchievementStore } from '@/store/achievements.js'
 import Employee from '@/classes/Employee'
 import Specialty from '@/classes/Specialty'
 import Candidature from '@/classes/Candidature'
@@ -193,6 +194,7 @@ export default {
   data() {
     return {
       userStore: useUserStore(),
+      achievementStore: useAchievementStore(),
       permissions,
       navItems,
       employees: [],
@@ -330,7 +332,7 @@ export default {
           tmp_item.permissions = []
           tmp_item.notif = 0
 
-          let itemRoute = this.$router.resolve({ path: tmp_item.link })
+          let itemRoute = (tmp_item.link && tmp_item.link !== '') ? this.$router.resolve({ path: tmp_item.link }) : null
           if (itemRoute && itemRoute.meta && itemRoute.meta.permissions) {
             tmp_item.permissions = itemRoute.meta.permissions
           }
@@ -589,6 +591,8 @@ export default {
           this.editedCandidature.answers
         )
         await cand.save()
+        await this.achievementStore.incrementStat('applications_created', 1, 0)
+
         this.candidatureFormDialog = false
         Swal.fire({
           icon: 'success',

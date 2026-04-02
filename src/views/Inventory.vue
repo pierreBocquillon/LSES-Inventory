@@ -214,6 +214,7 @@
 
 <script>
 import { useUserStore } from '@/store/user.js'
+import { useAchievementStore } from '@/store/achievements.js'
 
 import Swal from 'sweetalert2/dist/sweetalert2.js'
 
@@ -238,6 +239,7 @@ export default {
     return {
       nestedUnsub: [],
       userStore: useUserStore(),
+      achievementStore: useAchievementStore(),
 
       tab: null,
 
@@ -394,6 +396,8 @@ export default {
         newDate.save()
       }
       logger.log(this.userStore.profile.id, 'INVENTAIRE', `Mise à jour de l'item ${item.icon}${item.name} dans ${this.storages.find(storage => storage.id === item.storage)?.icon}${this.storages.find(storage => storage.id === item.storage)?.name}. (Nouvelle quantité : ${item.amount})`)
+      
+      this.achievementStore.incrementStat('inventory_updates', 1, 2);
     },
     async openInstanceDialog(item) {
       this.dialogInstance = true

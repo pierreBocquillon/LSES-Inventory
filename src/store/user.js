@@ -6,5 +6,6 @@ export const useUserStore = defineStore('user', {
     ip: null,
     profile: null,
     isLoggedIn: false,
+    achievementsInitialized: false
   })
 })

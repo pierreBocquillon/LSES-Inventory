@@ -5,6 +5,9 @@
       <span class="ml-2 text-h5 text-primary">LSES Inventory</span>
     </h1>
     <v-spacer></v-spacer>
+    <v-btn icon variant="plain" @click="$router.push('/achievements')" class="mr-1" title="Achievements">
+      <v-icon size="28" color="primary">mdi-trophy-outline</v-icon>
+    </v-btn>
     <div>
       <v-menu>
         <template v-slot:activator="{ props }">
@@ -15,7 +18,7 @@
         <v-list style="min-width:250px">
           <template v-for="group in filteredNavItems">
             <template v-for="item in group">
-              <v-list-item @click="$router.push(item.link)">
+              <v-list-item v-if="item.link" @click="$router.push(item.link)">
                 <div class="d-flex align-center">
                   <img :src="item.img" height="24" class="mr-2" style="object-fit: contain;" />
                   <h3 class="font-weight-regular">{{ item.title }}</h3>
@@ -134,7 +137,7 @@ export default {
           tmp_item.permissions = []
           tmp_item.notif = 0
 
-          let itemRoute = this.$router.resolve({ path: tmp_item.link })
+          let itemRoute = (tmp_item.link && tmp_item.link !== '') ? this.$router.resolve({ path: tmp_item.link }) : null
           if(itemRoute && itemRoute.meta && itemRoute.meta.permissions){
             tmp_item.permissions = itemRoute.meta.permissions
           }
