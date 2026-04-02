@@ -216,8 +216,8 @@
 
             <div class="pc-popover-content" @mouseenter.stop @mouseleave.stop>
               <div class="pc-role" :style="`color:${getRoleColor(emp.role)}`"><span class="mr-1">{{ getEmployeeEmoji(emp.employeeId || emp.id) }}</span> {{ emp.role }}</div>
-              <div class="pc-validations" v-if="getValidationBadges(emp.employeeId).length">
-                <span v-for="b in getValidationBadges(emp.employeeId)" :key="b.title" class="val-emoji" :title="b.title">{{ b.emoji }}</span>
+              <div class="pc-validations" v-if="(validationBadgesMap.get(emp.employeeId || emp.id) || []).length">
+                <span v-for="b in (validationBadgesMap.get(emp.employeeId || emp.id) || [])" :key="b.title" class="val-emoji" :title="b.title">{{ b.emoji }}</span>
               </div>
               <div class="pc-specs">
                 <span v-for="sv in (emp.allSpecialties||[])" :key="sv" class="spec-emoji" :title="getSpecialtyName(sv)">{{ getSpecialtyIcon(sv) }}</span>
@@ -383,8 +383,8 @@
 
                 <div class="pc-popover-content" @mouseenter.stop @mouseleave.stop>
                   <div class="pc-role" :style="`color:${getRoleColor(emp.role)}`"><span class="mr-1">{{ getEmployeeEmoji(emp.employeeId || emp.id) }}</span> {{ emp.role }}</div>
-                  <div class="pc-validations" v-if="getValidationBadges(emp.employeeId).length">
-                    <span v-for="b in getValidationBadges(emp.employeeId)" :key="b.title" class="val-emoji" :title="b.title">{{ b.emoji }}</span>
+                  <div class="pc-validations" v-if="(validationBadgesMap.get(emp.employeeId || emp.id) || []).length">
+                    <span v-for="b in (validationBadgesMap.get(emp.employeeId || emp.id) || [])" :key="b.title" class="val-emoji" :title="b.title">{{ b.emoji }}</span>
                   </div>
                   <div class="pc-specs">
                     <span v-for="sv in (emp.allSpecialties||[])" :key="sv" class="spec-emoji" :title="getSpecialtyName(sv)">{{ getSpecialtyIcon(sv) }}</span>
@@ -445,8 +445,8 @@
                     <v-icon v-if="hasHelicopterTraining(p.employeeId || p.id)" size="12" class="pc-helico-icon" title="Médicoptère">mdi-helicopter</v-icon>
                   </div>
                 <div class="pc-phone">{{ p.phone }}</div>
-                <div class="pc-validations" v-if="getValidationBadges(p.employeeId).length">
-                  <span v-for="b in getValidationBadges(p.employeeId)" :key="b.title" class="val-emoji" :title="b.title">{{ b.emoji }}</span>
+                <div class="pc-validations" v-if="(validationBadgesMap.get(p.employeeId || p.id) || []).length">
+                  <span v-for="b in (validationBadgesMap.get(p.employeeId || p.id) || [])" :key="b.title" class="val-emoji" :title="b.title">{{ b.emoji }}</span>
                 </div>
                 <div class="pc-specs">
                   <span v-for="sv in (p.allSpecialties||[])" :key="sv" class="spec-emoji" :title="getSpecialtyName(sv)">{{ getSpecialtyIcon(sv) }}</span>
@@ -503,8 +503,8 @@
                     <v-icon v-if="hasHelicopterTraining(p.employeeId || p.id)" size="12" class="pc-helico-icon" title="Médicoptère">mdi-helicopter</v-icon>
                   </div>
                   <div class="pc-phone">{{ p.phone }}</div>
-                  <div class="pc-validations" v-if="getValidationBadges(p.employeeId || p.id).length">
-                    <span v-for="b in getValidationBadges(p.employeeId || p.id)" :key="b.title" class="val-emoji" :title="b.title">{{ b.emoji }}</span>
+                  <div class="pc-validations" v-if="(validationBadgesMap.get(p.employeeId || p.id) || []).length">
+                    <span v-for="b in (validationBadgesMap.get(p.employeeId || p.id) || [])" :key="b.title" class="val-emoji" :title="b.title">{{ b.emoji }}</span>
                   </div>
                   <div class="pc-specs">
                     <span v-for="sv in (p.allSpecialties||[])" :key="sv" class="spec-emoji" :title="getSpecialtyName(sv)">{{ getSpecialtyIcon(sv) }}</span>
@@ -552,8 +552,8 @@
                 <v-icon v-if="hasHelicopterTraining(emp.id)" size="12" class="pc-helico-icon" title="Médicoptère">mdi-helicopter</v-icon>
               </div>
               <div class="pc-phone">{{ emp.phone }}</div>
-              <div class="pc-validations" v-if="getValidationBadges(emp.id).length">
-                <span v-for="b in getValidationBadges(emp.id)" :key="b.title" class="val-emoji" :title="b.title">{{ b.emoji }}</span>
+              <div class="pc-validations" v-if="(validationBadgesMap.get(emp.id || emp.employeeId) || []).length">
+                <span v-for="b in (validationBadgesMap.get(emp.id || emp.employeeId) || [])" :key="b.title" class="val-emoji" :title="b.title">{{ b.emoji }}</span>
               </div>
               <div class="pc-specs">
                 <span v-for="sv in (emp.allSpecialties||[])" :key="sv" class="spec-emoji" :title="getSpecialtyName(sv)">{{ getSpecialtyIcon(sv) }}</span>
@@ -1192,6 +1192,52 @@ export default {
 
       return map
     },
+
+    validationBadgesMap() {
+      const map = new Map()
+      if (!this.employees) return map
+
+      const processEmp = (e, isTemp) => {
+        const badges = []
+        if (isTemp || e.role === 'Temporaire') {
+          const valIds = e.validations || []
+          trainingCompetencies.forEach(cat => {
+            cat.competencies.forEach(comp => {
+              if (valIds.includes(comp.id)) {
+                badges.push({ emoji: comp.emoji || '✅', title: comp.title })
+              }
+            })
+          })
+        } else if (e.competencyProgress) {
+          const progress = e.competencyProgress
+          const isIntern = e.role === 'Interne'
+          const isResident = e.role === 'Résident'
+          if (isIntern || isResident) {
+            trainingCompetencies.forEach(cat => {
+              cat.competencies.forEach(comp => {
+                const isInternComp = isIntern && ['dds', 'vc', 'vm', 'avp_airbag'].includes(comp.id)
+                const isResidentComp = isResident && ['central', 'folder_writing'].includes(comp.id)
+                if (isInternComp || isResidentComp) {
+                  const total = comp.subCompetencies?.length || 0
+                  const validated = comp.subCompetencies?.filter(sub => progress[sub.id] === 'validated').length || 0
+                  if (total > 0 && validated === total) {
+                    badges.push({ emoji: comp.emoji || '✅', title: comp.title })
+                  }
+                }
+              })
+            })
+          }
+        }
+        map.set(e.employeeId || e.id, badges)
+      }
+
+      this.employees.forEach(e => processEmp(e, false))
+      if (this.dispatch?.temporaryEmployees) {
+        this.dispatch.temporaryEmployees.forEach(e => processEmp(e, true))
+      }
+
+      return map
+    },
   },
 
   watch: {
@@ -1217,6 +1263,7 @@ export default {
     this.safdStatusConfig = safdStatusConfig;
     this.bcesStatusConfig = bcesStatusConfig;
     this.locations = vehiclesLocations;
+    this._isUnmounted = false;
   },
 
   mounted() {
@@ -1228,9 +1275,8 @@ export default {
 
     this.unsub = Dispatch.listenGlobal(d => {
       this.dispatch = Object.freeze(d)
-      if (d && !this.localCrisisZip && !document.activeElement?.classList.contains('crisis-zip-input')) {
+      if (d && !this.localCrisisZip && !document.activeElement?.classList.contains('crisis-zip-input'))
         this.localCrisisZip = d.crisisZip || ''
-      }
       this.syncCentraleGSheet(d)
     })
     this.unsubEmployees = Employee.listenAll(list => {
@@ -1261,6 +1307,7 @@ export default {
     if (this.unsubAffiliations) this.unsubAffiliations()
     stopNotifManager()
     if (this.timeInterval) clearInterval(this.timeInterval)
+    this._isUnmounted = true
   },
 
   methods: {
@@ -1308,22 +1355,23 @@ export default {
         if (this._isResetting) return;
         this._isResetting = true;
         
-        const randomDelay = Math.floor(Math.random() * 2000)
         setTimeout(async () => {
-             if (this.dispatch.lastResetDate === currentDate) {
-                 this._isResetting = false;
+             if (this._isUnmounted || (this.dispatch && this.dispatch.lastResetDate === currentDate)) {
+                 if (!this._isUnmounted) this._isResetting = false;
                  return;
              }
              
              const result = await Dispatch.tryAutoReset(currentDate)
              
+             if (this._isUnmounted) return;
+
              if (result === 'skipped') {
                logger.log(this.userStore.profile?.id, 'DISPATCH', 'La réinitialisation automatique a été skippée (annulée par la direction).')
              } else if (result === 'reset') {
                logger.log(this.userStore.profile?.id, 'DISPATCH', 'Le dispatch a été réinitialisé automatiquement (horaire quotidien).')
              }
              
-             setTimeout(() => { this._isResetting = false }, 3000);
+             setTimeout(() => { if (!this._isUnmounted) this._isResetting = false }, 3000);
         }, randomDelay);
       }
     },
@@ -1465,7 +1513,6 @@ export default {
         }
       }).then(async (result) => {
         if (result.isConfirmed) {
-          const wasInCentrale = this.dispatch.centrale?.employees?.some(e => e.employeeId === realId);
           await Dispatch.updateTemporaryEmployee(realId, {
             name: result.value.name,
             phone: result.value.phone || '',
@@ -1482,10 +1529,8 @@ export default {
             background: '#1e293b',
             color: '#fff'
           })
-          if (r.isConfirmed) {
-            const wasInCentrale = this.dispatch.centrale?.employees?.some(e => e.employeeId === realId);
+          if (r.isConfirmed)
             await Dispatch.removeTemporaryEmployee(realId)
-          }
         }
       })
     },
@@ -1496,11 +1541,11 @@ export default {
       logger.log(this.userStore.profile.id, 'DISPATCH', 'Le dispatch a été réinitialisé')
     },
 
-
     debounceUpdate(id, field, callback, delay = 500) {
       const key = `${id}-${field}`
       if (this._timeouts[key]) clearTimeout(this._timeouts[key])
       this._timeouts[key] = setTimeout(() => {
+        if (this._isUnmounted) return
         callback()
         delete this._timeouts[key]
       }, delay)
@@ -1509,6 +1554,7 @@ export default {
       fetch('https://docs.google.com/spreadsheets/d/1A1gxOho_roNwxTtcbiEpLGSWbD8JUasMDu4NL-zdcbw/export?format=csv&gid=0')
         .then(res => res.text())
         .then(text => {
+          if (this._isUnmounted) return
           const rows = text.split('\n')
           if (rows.length >= 3) {
             const cols = rows[2].split(',')
@@ -1518,6 +1564,7 @@ export default {
           }
         })
         .catch(err => {
+          if (this._isUnmounted) return
           console.error("Erreur gsheet SAFD", err)
         })
     },
@@ -1527,6 +1574,11 @@ export default {
       const callbackName = 'jsonpCallback_' + Math.round(100000 * Math.random())
       
       window[callbackName] = (data) => {
+        if (this._isUnmounted) {
+          delete window[callbackName]
+          if (script.parentNode) script.parentNode.removeChild(script)
+          return
+        }
         if (data && data.status) {
           this.bcesStatus = data.status.replace(/['"]/g, '').trim()
         }
@@ -1559,60 +1611,6 @@ export default {
       const e = this.employees.find(e=>e.id===empId)
       return e ? [...(e.specialties||[]),...(e.chiefSpecialties||[])].map(v=>this.getSpecialtyIcon(v)).filter(Boolean).join(' ') : ''
     },
-    getValidationBadges(empId) {
-      let isTemp = false;
-      let e = this.employees.find(e => e.id === empId)
-      if (!e) {
-        e = (this.dispatch?.temporaryEmployees || []).find(e => e.id === empId)
-        if (e) isTemp = true;
-      }
-      if (!e || (!e.role && !isTemp)) return []
-
-      if (isTemp || e.role === 'Temporaire') {
-        const badges = []
-        const valIds = e.validations || []
-        trainingCompetencies.forEach(cat => {
-          cat.competencies.forEach(comp => {
-            if (valIds.includes(comp.id)) {
-              badges.push({ emoji: comp.emoji || '✅', title: comp.title })
-            }
-          })
-        })
-        return badges
-      }
-      
-      if (!e.competencyProgress) return []
-      
-      const badges = []
-      const progress = e.competencyProgress
-      
-      const isIntern = e.role === 'Interne'
-      const isResident = e.role === 'Résident'
-      
-      if (!isIntern && !isResident) return []
-      
-      trainingCompetencies.forEach(cat => {
-        cat.competencies.forEach(comp => {
-          if (isIntern && ['dds', 'vc', 'vm', 'avp_airbag'].includes(comp.id)) {
-            const total = comp.subCompetencies.length
-            const validated = comp.subCompetencies.filter(sub => progress[sub.id] === 'validated').length
-            if (total > 0 && validated === total) {
-              badges.push({ emoji: comp.emoji || '✅', title: comp.title })
-            }
-          }
-          if (isResident && ['central', 'folder_writing'].includes(comp.id)) {
-            const total = comp.subCompetencies.length
-            const validated = comp.subCompetencies.filter(sub => progress[sub.id] === 'validated').length
-            if (total > 0 && validated === total) {
-              badges.push({ emoji: comp.emoji || '✅', title: comp.title })
-            }
-          }
-        })
-      })
-      
-      return badges
-    },
-
     patatesForCategory(cat) { return this.dispatch?.patates.filter(p=>p.category===cat)||[] },
 
     async setHospitalStatus(value) {
@@ -1730,8 +1728,6 @@ export default {
     async removeFromDispatch(employeeId) {
       if (!this.hasLsesPerm) return
       if (!this.dispatch) return
-      
-      let wasInCentrale = this.dispatch.centrale?.employees?.some(e => e.employeeId === employeeId)
       
       this.autoTurnOffRadio(employeeId)
       
@@ -1920,11 +1916,6 @@ export default {
       await Dispatch.updateCentrale({ returnStatus: statusValue || null })
     },
 
-    async setCentraleLocation(loc) {
-      if (!this.hasLsesPerm) return
-      if (!this.dispatch) return
-      await Dispatch.updateCentrale({ location: loc })
-    },
     onCentraleLocationInput(val) {
       if (!this.hasLsesPerm) return
       this.localBuffers['centrale-location'] = val
@@ -1973,10 +1964,6 @@ export default {
       await Dispatch.updateIntervention(slot.id, { type: typeValue })
     },
 
-    async setInterSlotLocation(slot, value) {
-      if (!this.hasLsesPerm) return
-      await Dispatch.updateIntervention(slot.id, { location: value.trim() || null })
-    },
     onInterSlotLocationInput(slot, val) {
       if (!this.hasLsesPerm) return
       this.localBuffers[`${slot.id}-location`] = val
@@ -2016,10 +2003,6 @@ export default {
         await Dispatch.deleteInterventionSlot(slot.id)
       }
     },
-
-
-
-
 
     openAddDialog(categoryValue) {
       this.addDialogCategoryValue = categoryValue

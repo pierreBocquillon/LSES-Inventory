@@ -1,4 +1,4 @@
-import {firebaseApp} from '@/plugins/firebase.js'
+import { firebaseApp } from '@/plugins/firebase.js'
 
 import { createApp } from 'vue'
 import App from './App.vue'
@@ -9,13 +9,13 @@ import { createPinia } from 'pinia'
 
 import "@/styles/styles.scss"
 import "@/styles/swal.scss"
-import "@/assets/dispatch.scss"
+import "@/styles/dispatch.scss"
 
 loadFonts()
 const pinia = createPinia()
 
 createApp(App)
-	.use(pinia)
+  .use(pinia)
   .use(router)
   .use(vuetify)
   .mount('#app')
