@@ -81,31 +81,39 @@ export function useDispatchActions(state) {
     await Dispatch.updateFields(updates)
   }
 
+  let _lastCheckedMinute = -1
   const checkAutoReset = async () => {
-    if (!dispatch.value || !dispatch.value.autoResetEnabled || !dispatch.value.autoResetTime) return
+    if (!dispatch.value?.autoResetEnabled || !dispatch.value?.autoResetTime) return
     const now = new Date(currentTime.value)
-    const currentHHmm = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0')
-    const currentDate = now.toISOString().split('T')[0]
+    const currentMinute = now.getMinutes()
 
-    if (currentHHmm >= dispatch.value.autoResetTime && dispatch.value.lastResetDate !== currentDate) {
+    if (currentMinute === _lastCheckedMinute) return
+    _lastCheckedMinute = currentMinute
+
+    const [targetH, targetM] = dispatch.value.autoResetTime.split(':').map(Number)
+    const resetTimeToday = new Date(now)
+    resetTimeToday.setHours(targetH, targetM, 0, 0)
+
+    const currentDateStr = now.toISOString().split('T')[0]
+
+    if (now >= resetTimeToday && dispatch.value.lastResetDate !== currentDateStr) {
       if (_isResetting) return
       _isResetting = true
 
-      const randomDelay = Math.random() * 5000
+      const jitter = Math.random() * 5000
       setTimeout(async () => {
-        if (_isUnmounted || (dispatch.value && dispatch.value.lastResetDate === currentDate)) {
+        if (_isUnmounted || (dispatch.value && dispatch.value.lastResetDate === currentDateStr)) {
           if (!_isUnmounted) _isResetting = false
           return
         }
-        const result = await Dispatch.tryAutoReset(currentDate)
+        const result = await Dispatch.tryAutoReset(currentDateStr)
         if (_isUnmounted) return
-        if (result === 'skipped') {
-          logger.log(userStore.profile?.id, 'DISPATCH', 'La réinitialisation automatique a été skippée (annulée par la direction).')
-        } else if (result === 'reset') {
-          logger.log(userStore.profile?.id, 'DISPATCH', 'Le dispatch a été réinitialisé automatiquement (horaire quotidien).')
-        }
-        setTimeout(() => { if (!_isUnmounted) _isResetting = false }, 3000)
-      }, randomDelay)
+        if (result === 'skipped')
+          logger.log(userStore.profile?.id, 'DISPATCH', 'La réinitialisation automatique a été annulée.')
+        else if (result === 'reset')
+          logger.log(userStore.profile?.id, 'DISPATCH', 'Le dispatch a été réinitialisé automatiquement.')
+        setTimeout(() => { if (!_isUnmounted) _isResetting = false }, 5000)
+      }, jitter)
     }
   }
 

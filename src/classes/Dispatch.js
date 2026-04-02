@@ -304,25 +304,29 @@ class Dispatch {
 
     static async tryAutoReset(currentDate) {
         const globalRef = doc(db, collectionName, GLOBAL_DOC_ID)
-        let result = false
+        let decision = null
         try {
             await runTransaction(db, async (transaction) => {
                 const snap = await transaction.get(globalRef)
                 if (!snap.exists()) return
                 const data = snap.data()
+
                 if (data.lastResetDate === currentDate) return
 
-                result = data.nextResetCancelled ? 'skipped' : 'reset'
+                decision = data.nextResetCancelled ? 'skipped' : 'reset'
                 transaction.update(globalRef, { lastResetDate: currentDate })
             })
 
-            if (result === 'skipped')
+            if (!decision) return false
+
+            if (decision === 'skipped') {
                 await updateDoc(globalRef, { nextResetCancelled: false })
-            else if (result === 'reset')
+            } else {
                 await Dispatch.resetAll({ nextResetCancelled: false, lastResetDate: currentDate })
-            return result
+            }
+            return decision
         } catch (e) {
-            console.error('AutoReset transaction failed:', e)
+            console.error('AutoReset critical failure:', e)
             return false
         }
     }
