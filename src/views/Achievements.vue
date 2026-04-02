@@ -446,7 +446,7 @@ export default {
 
         logger.log(
           this.userStore.profile.id, 
-          'ACHIEVEMENTS_ADMIN', 
+          'ACHIEVEMENTS', 
           `Modification manuelle par admin pour ${this.selectedUser.name}. Succès: [${this.selectedUser.achievements?.join(', ')}]. Stats: {${statsSummaries}}`
         )
 
