@@ -254,7 +254,7 @@
 
                 <div class="slot-section-title mt-2">
           🚑 Interventions
-          <v-btn v-if="hasLsesPerm" size="x-small" variant="plain" color="white" class="ml-auto" @click="addInterventionSlot">
+          <v-btn v-if="hasLsesPerm" size="x-small" variant="plain" color="white" class="ml-auto" @click="handleAddInterventionSlot">
             <v-icon size="13">mdi-plus</v-icon>
           </v-btn>
         </div>
@@ -732,10 +732,10 @@
               <div style="max-height: 600px; overflow-y: auto; padding-right: 8px;" class="custom-scrollbar">
                 <div v-for="aff in affiliations" :key="aff.id" class="d-flex align-center mb-2 pa-2 rounded" style="background: rgba(0,0,0,0.2); border: 1px solid #334155;">
                   <div class="d-flex flex-column mr-2 align-center justify-center">
-                    <v-btn icon variant="plain" size="x-small" color="grey" @click="moveAffiliationUp(aff)" :disabled="isFirstAffiliation(aff)" style="height: 16px; width: 16px;">
+                    <v-btn icon variant="plain" size="x-small" color="grey" @click="moveAffiliationUpTemplate(aff)" :disabled="isFirstAffiliationTemplate(aff)" style="height: 16px; width: 16px;">
                       <v-icon size="16">mdi-chevron-up</v-icon>
                     </v-btn>
-                    <v-btn icon variant="plain" size="x-small" color="grey" @click="moveAffiliationDown(aff)" :disabled="isLastAffiliation(aff)" style="height: 16px; width: 16px; margin-top: 2px;">
+                    <v-btn icon variant="plain" size="x-small" color="grey" @click="moveAffiliationDownTemplate(aff)" :disabled="isLastAffiliationTemplate(aff)" style="height: 16px; width: 16px; margin-top: 2px;">
                       <v-icon size="16">mdi-chevron-down</v-icon>
                     </v-btn>
                   </div>
@@ -837,42 +837,12 @@
       </v-card>
     </v-dialog>
 
-    <v-dialog v-model="addDialog" max-width="460">
-      <v-card class="rounded-xl">
-        <v-card-title class="pa-4 d-flex align-center"
-          :style="`background:${addDialogCategory?.color}22;color:${addDialogCategory?.color}`">
-          <v-icon :color="addDialogCategory?.color" class="mr-2">{{ addDialogCategory?.icon }}</v-icon>
-          Ajouter — {{ addDialogCategory?.label }}
-        </v-card-title>
-        <v-card-text class="pt-4">
-          <v-autocomplete v-model="selectedEmployee" :items="availableEmployees"
-            item-title="displayLabel" item-value="id" label="Choisir un employé"
-            variant="outlined" autofocus clearable return-object no-data-text="Aucun employé disponible">
-            <template v-slot:item="{ props, item }">
-              <v-list-item v-bind="props" :title="item.raw.name" :subtitle="item.raw.phone||'Pas de tél.'">
-                <template v-slot:prepend><v-icon class="mr-1">mdi-account</v-icon></template>
-                <template v-slot:append><span style="font-size:1rem;letter-spacing:2px">{{ getEmployeeEmojis(item.raw.id) }}</span></template>
-              </v-list-item>
-            </template>
-          </v-autocomplete>
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer></v-spacer>
-          <v-btn variant="text" @click="addDialog=false">Annuler</v-btn>
-          <v-btn color="primary" variant="tonal" @click="confirmAddPatate" :disabled="!selectedEmployee">Ajouter</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+
   </div>
 </template>
 
-<script>
-import Company from '@/classes/Company.js'
-import Dispatch from '@/classes/Dispatch.js'
-import Employee from '@/classes/Employee.js'
-import Specialty from '@/classes/Specialty.js'
-import Vehicle from '@/classes/Vehicle.js'
-import Swal from 'sweetalert2/dist/sweetalert2.js'
+<script setup>
+import { nextTick, ref, watch, computed, onUnmounted } from 'vue'
 import { useUserStore } from '@/store/user.js'
 import {
   allCategories,
@@ -882,1292 +852,145 @@ import {
   hospitalStatuses,
   safdStatusConfig,
   bcesStatusConfig,
+  complements,
   crisisMedicalStatuses,
   crisisBeds,
   crisisBedGroups,
-  complements,
   crisisRowColors
 } from '@/config/dispatch.js'
-import { trainingCompetencies } from '@/config/training_competencies.js'
-import { roleOrder, getRoleColor as getRoleColorConfig } from '@/config/roles.js'
-import logger from '@/functions/logger.js'
-import vehiclesLocations from '@/config/vehiclesLocations.js'
-import { initNotifManager, stopNotifManager, notifState, alerts } from '@/functions/nofifManager.js'
+import Dispatch from '@/classes/Dispatch.js'
 
 import DispatchMorgue from '@/components/dispatch/DispatchMorgue.vue'
 import DispatchBeds from '@/components/dispatch/DispatchBeds.vue'
 import DispatchCrisis from '@/components/dispatch/DispatchCrisis.vue'
 
-export default {
-  components: { DispatchMorgue, DispatchBeds, DispatchCrisis },
-  data() {
-    return {
-      userStore: useUserStore(),
-      dispatch: null,
-      employees: [],
-      safdStatus: null,
-      safdInterval: null,
-      bcesStatus: null,
-      bcesInterval: null,
-      specialties: [],
-      vehicles: [],
-      companies: [],
-      unsub: null,
-      unsubEmployees: null,
-      unsubSpecialties: null,
-      unsubVehicles: null,
-      unsubCompanies: null,
-      unsubAffiliations: null,
-      currentTime: Date.now(),
-      timeInterval: null,
+import { useDispatchState } from '@/composables/dispatch/useDispatchState.js'
+import { useDispatchActions } from '@/composables/dispatch/useDispatchActions.js'
+import { useDispatchDragAndDrop } from '@/composables/dispatch/useDispatchDragAndDrop.js'
+import { useDispatchStatus } from '@/composables/dispatch/useDispatchStatus.js'
+
+const userStore = useUserStore()
+
+// -- State --
+const state = useDispatchState()
+const {
+  dispatch,
+  affiliations,
+  currentTime,
+  isLightTheme,
+  localBuffers,
+
+  isDirection,
+  currentUserEmployeeId,
+  hasLsesPerm,
+  allLocations,
+  allEmployees,
+  sortedUnassignedEmployees,
+  directionRadios,
+  standardRadios,
+  lastRepairDateStr,
+  lastRepairColorClass,
+  fouriereVehicles,
+  guardVehicles,
+  insuranceVehicles,
+  needRepairVehicles,
+  storageUpdates,
+  todoOrders,
+  radioEmployeeOptionsMap,
+  validationBadgesMap,
+} = state
+
+
+const { safdStatus, bcesStatus } = useDispatchStatus()
+
+
+const hospitalStatusMeta = computed(() => {
+  if (!dispatch.value) return hospitalStatuses[0]
+  return hospitalStatuses.find(s => s.value === dispatch.value.hospitalStatus) || hospitalStatuses[0]
+})
+
+const hospitalStatusStyle = computed(() => {
+  const meta = hospitalStatusMeta.value
+  if (isLightTheme.value) {
+    return { color: meta.lightColor || meta.color, background: meta.lightBg || 'rgba(255,255,255,0.1)', borderColor: 'rgba(0,0,0,0.1)' }
+  }
+  return { color: meta.color, background: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.1)' }
+})
+
+const safdStatusStyle = computed(() => {
+  const status = (safdStatus.value || '').toLowerCase()
+  const mode = isLightTheme.value ? 'light' : 'dark'
+  let key = 'default'
+  if (status.includes('dispo') && !status.includes('indispo')) key = 'dispo'
+  else if (status.includes('indispo')) key = 'indispo'
+  const config = safdStatusConfig[key][mode]
+  return { wrapper: { borderColor: config.border, background: config.bg }, brand: { background: safdStatusConfig.brand.color }, status: { color: config.color } }
+})
+
+const bcesStatusStyle = computed(() => {
+  const status = (bcesStatus.value || '').toLowerCase()
+  const mode = isLightTheme.value ? 'light' : 'dark'
+  let key = 'default'
+  if (status.includes('dispo') && !status.includes('indispo')) key = 'dispo'
+  else if (status.includes('indispo')) key = 'indispo'
+  else if (status.includes('nuit')) key = 'nuit'
+  const config = bcesStatusConfig[key][mode]
+  return { wrapper: { borderColor: config.border, background: config.bg }, brand: { background: bcesStatusConfig.brand.color }, status: { color: config.color } }
+})
+
+const bottomCategories = computed(() => allCategories.filter(c => c.value !== 'en_service'))
+
+
+const actions = useDispatchActions({ ...state, userStore })
+const {
+
+  quickAddDialog, quickAddEmployee, quickMoveSourceKey,
+  showAffiliationManager, activeTab,
+
+
+  toggleTheme,
+  handleAutoResetToggle, handleAutoResetTimeChange,
+  setHospitalStatus,
+  autoTurnOffRadio, toggleRadioStatus, onRadioAssign, removeRadio, addRadio,
+  addInterventionSlot, setInterSlotType, setInterSlotStatus, removeInterventionSlot, onInterSlotLocationInput,
+  setCentraleType, setCentraleReturnStatus, clearCentrale, onCentraleLocationInput, setCentraleEmpRole,
+  onNotepadInput, confirmResetDispatch,
+  confirmAddPatate, openQuickMoveDialog, confirmQuickAdd,
+  promptAddTemporaryEmployee, promptEditTemporaryEmployee,
+  promptAddAffiliation, promptEditAffiliation, confirmDeleteAffiliation,
+  isFirstAffiliation, isLastAffiliation, moveAffiliationUp, moveAffiliationDown,
+  formatDateTime,
+  getSpecialtyIcon, getSpecialtyName,
+  getInterType, getReturnStatus, getCentralRole, getRoleColor,
+  getEmployeeEmoji, getEmployeeEmojis, hasHelicopterTraining,
+  patatesForCategory,
+  cleanup,
+} = actions
 
-      draggingEmployee: null,
-      draggingSource: null,   
-      dragOver: null,         
 
-      addDialog: false,
-      addDialogCategoryValue: null,
-      selectedEmployee: null,
-      quickAddDialog: false,
-      quickAddEmployee: null,
-      quickMoveSourceKey: null,
+const handleAddInterventionSlot = () => addInterventionSlot(nextTick)
 
-      isLightTheme: localStorage.getItem('dispatch_light_theme') === 'true',
-      affiliations: [],
-      _timeouts: {},
-      localBuffers: {},
-      lastSyncedCentrale: { name: '', phone: '' },
-      showAffiliationManager: false,
-      activeTab: 0,
-    }
-  },
 
-  computed: {
-    isDirection() {
-      const currentUserId = this.userStore.profile?.id
-      if (!currentUserId || !this.employees) return false
-      const currentEmployee = this.employees.find(e => e.userId === currentUserId)
+const isFirstAffiliationTemplate = (aff) => isFirstAffiliation(aff, affiliations.value)
+const isLastAffiliationTemplate = (aff) => isLastAffiliation(aff, affiliations.value)
+const moveAffiliationUpTemplate = (aff) => moveAffiliationUp(aff, affiliations.value)
+const moveAffiliationDownTemplate = (aff) => moveAffiliationDown(aff, affiliations.value)
 
-      if (!currentEmployee) return false
-      return ['Directeur', 'Directeur Adjoint'].includes(currentEmployee.role)
-    },
 
-    currentUserEmployeeId() {
-      const currentUserId = this.userStore.profile?.id
-      const currentEmployee = this.employees.find(e => e.userId === currentUserId)
-      return currentEmployee ? currentEmployee.id : null
-    },
+const {
+  draggingEmployee, draggingSource, dragOver,
+  startDrag, onDragEnd, onDragLeave, dropOn,
+} = useDispatchDragAndDrop(hasLsesPerm, dispatch, autoTurnOffRadio)
 
-    hasLsesPerm() {
-      return (this.userStore.profile?.permissions || []).some(p => ['lses', 'dev', 'admin'].includes(p))
-    },
 
-    bottomCategories() { return this.allCategories.filter(c => c.value !== 'en_service') },
+const localCrisisZip = ref('')
+watch(() => dispatch.value?.crisisZip, (newVal) => {
+  if (document.activeElement?.classList.contains('crisis-zip-input')) return
+  localCrisisZip.value = newVal || ''
+})
 
-    hospitalStatusMeta() {
-      if (!this.dispatch) return this.hospitalStatuses[0]
-      return this.hospitalStatuses.find(s => s.value === this.dispatch.hospitalStatus) || this.hospitalStatuses[0]
-    },
-    allLocations() {
-      let locs = [...this.locations]
-      ;(this.companies || []).forEach(company => {
-        if (company.isGarage) {
-          locs.push({
-            value: company.id,
-            text: `${company.icon} ${company.name}`,
-            home: false,
-          })
-        }
-      })
-      return Object.freeze(locs)
-    },
-    hospitalStatusStyle() {
-      const meta = this.hospitalStatusMeta
-      if (this.isLightTheme) {
-        return {
-          color: meta.lightColor || meta.color,
-          background: meta.lightBg || 'rgba(255,255,255,0.1)',
-          borderColor: 'rgba(0,0,0,0.1)'
-        }
-      }
-      return {
-        color: meta.color,
-        background: 'rgba(255,255,255,0.05)',
-        borderColor: 'rgba(255,255,255,0.1)'
-      }
-    },
-    safdStatusStyle() {
-      const status = (this.safdStatus || '').toLowerCase()
-      const mode = this.isLightTheme ? 'light' : 'dark'
-      let key = 'default'
-      if (status.includes('dispo') && !status.includes('indispo')) key = 'dispo'
-      else if (status.includes('indispo')) key = 'indispo'
-      
-      const config = this.safdStatusConfig[key][mode]
-      const brandColor = this.safdStatusConfig.brand.color
-      
-      return {
-        wrapper: { borderColor: config.border, background: config.bg },
-        brand: { background: brandColor },
-        status: { color: config.color }
-      }
-    },
-    bcesStatusStyle() {
-      const status = (this.bcesStatus || '').toLowerCase()
-      const mode = this.isLightTheme ? 'light' : 'dark'
-      let key = 'default'
-      if (status.includes('dispo') && !status.includes('indispo')) key = 'dispo'
-      else if (status.includes('indispo')) key = 'indispo'
-      else if (status.includes('nuit')) key = 'nuit'
-      
-      const config = this.bcesStatusConfig[key][mode]
-      const brandColor = this.bcesStatusConfig.brand.color
-      
-      return {
-        wrapper: { borderColor: config.border, background: config.bg },
-        brand: { background: brandColor },
-        status: { color: config.color }
-      }
-    },
+onUnmounted(() => cleanup())
 
-    allEmployees() {
-      const dbEmps = this.employees.map(e => ({
-        id: e.id,
-        employeeId: e.id,
-        name: e.name || '',
-        phone: e.phone || '',
-        role: e.role || '',
-        allSpecialties: e.specialties || [],
-        displayLabel: e.phone ? `${e.name || ''} — ${e.phone}` : (e.name || ''),
-      }))
-      const tempEmps = (this.dispatch?.temporaryEmployees || []).map(e => ({
-        id: e.id,
-        employeeId: e.id,
-        name: e.name || '',
-        phone: e.phone || '',
-        role: 'Temporaire',
-        allSpecialties: [],
-        displayLabel: e.phone ? `${e.name || ''} — ${e.phone}` : (e.name || ''),
-      }))
-      return Object.freeze([...dbEmps, ...tempEmps])
-    },
-
-    usedEmployeeIds() {
-      if (!this.dispatch) return new Set()
-      const ids = []
-      
-      ;(this.dispatch.interventions||[]).forEach(s => { (s.employees||[]).forEach(e => ids.push(e.employeeId)) })
-      this.dispatch.patates.forEach(p => { if (p.employeeId) ids.push(p.employeeId) })
-      if (this.dispatch.centrale && this.dispatch.centrale.employees)
-        this.dispatch.centrale.employees.forEach(e => { if (e.employeeId) ids.push(e.employeeId) })
-      return new Set(ids)
-    },
-
-    sortedUnassignedEmployees() {
-      const order = roleOrder
-      return this.allEmployees
-        .filter(e => !this.usedEmployeeIds.has(e.id))
-        .sort((a, b) => {
-          const ia = order.indexOf(a.role), ib = order.indexOf(b.role)
-          const ra = ia === -1 ? 99 : ia, rb = ib === -1 ? 99 : ib
-          if (ra !== rb) return ra - rb
-          return (a.name||'').localeCompare(b.name||'')
-        })
-    },
-    directionRadios() { return (this.dispatch?.radios||[]).filter(r => r.category === 'direction') },
-    standardRadios() { return (this.dispatch?.radios||[]).filter(r => r.category !== 'direction') },
-    addDialogCategory()   { return this.allCategories.find(c => c.value === this.addDialogCategoryValue) || null },
-    lastRepairDateStr() {
-      const globalTs = notifState.lastVehicleSaveDate?.date
-      if (globalTs) {
-        const date = new Date(globalTs)
-        return date.toLocaleDateString('fr-FR') + ' à ' + date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
-      }
-      return 'Aucune'
-    },
-    lastRepairColorClass() {
-      const globalTs = notifState.lastVehicleSaveDate?.date || 0
-      if (!globalTs) return this.isLightTheme ? 'text-grey-darken-3' : 'text-white'
-
-      const diff = this.currentTime - globalTs
-      const hours = diff / (1000 * 60 * 60)
-
-      if (hours >= 48) return 'text-red-lighten-1'
-      if (hours >= 24) return 'text-orange-lighten-1'
-      return this.isLightTheme ? 'text-grey-darken-3' : 'text-white'
-    },
-    fouriereVehicles() {
-      return (this.vehicles || []).filter(v => v.where === 'fouriere')
-    },
-    guardVehicles() {
-      return (this.vehicles || []).filter(v => v.underGuard)
-    },
-    insuranceVehicles() {
-      return (this.vehicles || []).filter(v => v.insurance)
-    },
-    needRepairVehicles() {
-      return (this.vehicles || []).filter(v => v.needRepair)
-    },
-
-    directionEmployeesForRadio() {
-      return this.employees.filter(e => ['Directeur', 'Directeur Adjoint'].includes(e.role))
-    },
-
-
-    storageUpdates() {
-      if (!notifState.storages || !notifState.saveDates) return []
-      return notifState.storages.map(storage => {
-        const saveDate = notifState.saveDates[storage.id]
-        const ts = saveDate ? saveDate.date : 0
-        let dateStr = 'Aucune'
-        let colorClass = this.isLightTheme ? 'text-grey-darken-3' : 'text-white'
-
-        if (ts) {
-          const date = new Date(ts)
-          dateStr = date.toLocaleDateString('fr-FR') + ' à ' + date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
-          const diff = this.currentTime - ts
-          const hours = diff / (1000 * 60 * 60)
-          if (hours >= 24) colorClass = 'text-red-lighten-1'
-          else if (hours >= 12) colorClass = 'text-orange-lighten-1'
-        }
-
-        return {
-          id: storage.id,
-          name: (storage.icon ? storage.icon + ' ' : '') + storage.name,
-          dateStr,
-          colorClass
-        }
-      })
-    },
-    todoOrders() {
-      return (alerts.value || []).filter(a => a.maxAlertLevel >= 1)
-        .map(a => ({
-          id: 'alert-' + a.company.id,
-          companyName: a.company.name,
-          icon: '⚠️',
-          label: 'Préparation',
-          totalWeight: a.totalWeight,
-          colorClass: a.maxAlertLevel >= 2 ? 'text-red-lighten-1' : 'text-primary'
-        }))
-    },
-
-    radioEmployeeOptionsMap() {
-      const map = new Map()
-      if (!this.dispatch) return map
-
-      const radios = this.dispatch.radios || []
-      if (!radios.length) return map
-
-      const dirEmps = this.employees.filter(e =>
-        ['Directeur', 'Directeur Adjoint'].includes(e.role)
-      )
-
-      const inServiceIds = new Set()
-      if (this.dispatch.centrale?.employees)
-        this.dispatch.centrale.employees.forEach(e => inServiceIds.add(e.employeeId))
-      ;(this.dispatch.interventions || []).forEach(s =>
-        (s.employees || []).forEach(e => inServiceIds.add(e.employeeId))
-      )
-      ;(this.dispatch.patates || []).forEach(p => { if (p.employeeId) inServiceIds.add(p.employeeId) })
-
-      const inServiceEmps = this.allEmployees.filter(e => inServiceIds.has(e.id))
-
-      for (const radio of radios) {
-        if (radio.category === 'direction') {
-          if (radio.employeeId && !dirEmps.find(e => e.id === radio.employeeId)) {
-            const current = this.allEmployees.find(e => e.id === radio.employeeId)
-            map.set(radio.id, current ? [...dirEmps, current] : dirEmps)
-          } else {
-            map.set(radio.id, dirEmps)
-          }
-        } else {
-          if (radio.employeeId && !inServiceEmps.find(e => e.id === radio.employeeId)) {
-            const current = this.allEmployees.find(e => e.id === radio.employeeId)
-            map.set(radio.id, current ? [...inServiceEmps, current] : inServiceEmps)
-          } else {
-            map.set(radio.id, inServiceEmps)
-          }
-        }
-      }
-
-      return map
-    },
-
-    validationBadgesMap() {
-      const map = new Map()
-      if (!this.employees) return map
-
-      const processEmp = (e, isTemp) => {
-        const badges = []
-        if (isTemp || e.role === 'Temporaire') {
-          const valIds = e.validations || []
-          trainingCompetencies.forEach(cat => {
-            cat.competencies.forEach(comp => {
-              if (valIds.includes(comp.id)) {
-                badges.push({ emoji: comp.emoji || '✅', title: comp.title })
-              }
-            })
-          })
-        } else if (e.competencyProgress) {
-          const progress = e.competencyProgress
-          const isIntern = e.role === 'Interne'
-          const isResident = e.role === 'Résident'
-          if (isIntern || isResident) {
-            trainingCompetencies.forEach(cat => {
-              cat.competencies.forEach(comp => {
-                const isInternComp = isIntern && ['dds', 'vc', 'vm', 'avp_airbag'].includes(comp.id)
-                const isResidentComp = isResident && ['central', 'folder_writing'].includes(comp.id)
-                if (isInternComp || isResidentComp) {
-                  const total = comp.subCompetencies?.length || 0
-                  const validated = comp.subCompetencies?.filter(sub => progress[sub.id] === 'validated').length || 0
-                  if (total > 0 && validated === total) {
-                    badges.push({ emoji: comp.emoji || '✅', title: comp.title })
-                  }
-                }
-              })
-            })
-          }
-        }
-        map.set(e.employeeId || e.id, badges)
-      }
-
-      this.employees.forEach(e => processEmp(e, false))
-      if (this.dispatch?.temporaryEmployees) {
-        this.dispatch.temporaryEmployees.forEach(e => processEmp(e, true))
-      }
-
-      return map
-    },
-  },
-
-  watch: {
-    'dispatch.crisisZip'(newVal) {
-      if (document.activeElement?.classList.contains('crisis-zip-input')) return
-      this.localCrisisZip = newVal || ''
-    },
-    isLightTheme(val) { localStorage.setItem('dispatch_light_theme', val) },
-  },
-
-  created() {
-    this.Dispatch = Dispatch;
-    this.allCategories = allCategories;
-    this.interventionTypes = interventionTypes;
-    this.returnStatuses = returnStatuses;
-    this.centralRoles = centralRoles;
-    this.hospitalStatuses = hospitalStatuses;
-    this.crisisMedicalStatuses = crisisMedicalStatuses;
-    this.crisisBeds = crisisBeds;
-    this.crisisBedGroups = crisisBedGroups;
-    this.complements = complements;
-    this.crisisRowColors = crisisRowColors;
-    this.safdStatusConfig = safdStatusConfig;
-    this.bcesStatusConfig = bcesStatusConfig;
-    this.locations = vehiclesLocations;
-    this._isUnmounted = false;
-  },
-
-  mounted() {
-    this.fetchSafdStatus()
-    this.safdInterval = setInterval(this.fetchSafdStatus, 60000)
-
-    this.fetchBcesStatus()
-    this.bcesInterval = setInterval(this.fetchBcesStatus, 60000)
-
-    this.unsub = Dispatch.listenGlobal(d => {
-      this.dispatch = Object.freeze(d)
-      if (d && !this.localCrisisZip && !document.activeElement?.classList.contains('crisis-zip-input'))
-        this.localCrisisZip = d.crisisZip || ''
-      this.syncCentraleGSheet(d)
-    })
-    this.unsubEmployees = Employee.listenAll(list => {
-      this.employees = Object.freeze([...list].sort((a,b) => (a.name||'').localeCompare(b.name||'')))
-    })
-    this.unsubSpecialties = Specialty.listenAll(list => { this.specialties = Object.freeze(list) })
-    this.unsubVehicles = Vehicle.listenAll(list => { this.vehicles = Object.freeze(list) })
-    this.unsubCompanies = Company.listenAll(list => { this.companies = Object.freeze(list) })
-    this.unsubAffiliations = Dispatch.listenAffiliations(list => { this.affiliations = Object.freeze(list) })
-
-    initNotifManager()
-
-    this.currentTime = Date.now()
-    this.timeInterval = setInterval(() => {
-      this.currentTime = Date.now()
-      this.checkAutoReset()
-    }, 1000)
-  },
-
-  beforeUnmount() {
-    if (this.safdInterval) clearInterval(this.safdInterval)
-    if (this.bcesInterval) clearInterval(this.bcesInterval)
-    if (this.unsub) this.unsub()
-    if (this.unsubEmployees) this.unsubEmployees()
-    if (this.unsubSpecialties) this.unsubSpecialties()
-    if (this.unsubVehicles) this.unsubVehicles()
-    if (this.unsubCompanies) this.unsubCompanies()
-    if (this.unsubAffiliations) this.unsubAffiliations()
-    stopNotifManager()
-    if (this.timeInterval) clearInterval(this.timeInterval)
-    this._isUnmounted = true
-  },
-
-  methods: {
-    toggleTheme() {
-      this.isLightTheme = !this.isLightTheme;
-    },
-
-    async handleAutoResetToggle(val) {
-      if (!this.dispatch) return
-      const updates = { autoResetEnabled: val }
-      if (val) {
-        const now = new Date()
-        const currentHHmm = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0')
-        const currentDate = now.toISOString().split('T')[0]
-        const resetTime = this.dispatch.autoResetTime || '03:00'
-        
-        if (currentHHmm >= resetTime)
-          updates.lastResetDate = currentDate
-      }
-      await Dispatch.updateFields(updates)
-    },
-    
-    async handleAutoResetTimeChange(newTime) {
-      if (!this.dispatch) return
-      const updates = { autoResetTime: newTime }
-      
-      const now = new Date()
-      const currentHHmm = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0')
-      const currentDate = now.toISOString().split('T')[0]
-      
-      if (this.dispatch.autoResetEnabled && currentHHmm >= newTime) {
-        updates.lastResetDate = currentDate
-      }
-      await Dispatch.updateFields(updates)
-    },
-
-    async checkAutoReset() {
-      if (!this.dispatch || !this.dispatch.autoResetEnabled || !this.dispatch.autoResetTime) return
-
-      const now = new Date(this.currentTime)
-      const currentHHmm = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0')
-      const currentDate = now.toISOString().split('T')[0]
-
-      if (currentHHmm >= this.dispatch.autoResetTime && this.dispatch.lastResetDate !== currentDate) {
-        if (this._isResetting) return;
-        this._isResetting = true;
-        
-        setTimeout(async () => {
-             if (this._isUnmounted || (this.dispatch && this.dispatch.lastResetDate === currentDate)) {
-                 if (!this._isUnmounted) this._isResetting = false;
-                 return;
-             }
-             
-             const result = await Dispatch.tryAutoReset(currentDate)
-             
-             if (this._isUnmounted) return;
-
-             if (result === 'skipped') {
-               logger.log(this.userStore.profile?.id, 'DISPATCH', 'La réinitialisation automatique a été skippée (annulée par la direction).')
-             } else if (result === 'reset') {
-               logger.log(this.userStore.profile?.id, 'DISPATCH', 'Le dispatch a été réinitialisé automatiquement (horaire quotidien).')
-             }
-             
-             setTimeout(() => { if (!this._isUnmounted) this._isResetting = false }, 3000);
-        }, randomDelay);
-      }
-    },
-
-    syncCentraleGSheet(d) {
-      const data = d || this.dispatch
-      if (!data?.centrale?.employees) return
-
-      const employees = data.centrale.employees
-      let name = '';
-      let phone = '';
-      if (employees && employees.length > 0) {
-        name = employees[0].name || '';
-        phone = employees[0].phone || '';
-      }
-
-      if (this.lastSyncedCentrale.name === name && this.lastSyncedCentrale.phone === phone) return
-      this.lastSyncedCentrale = { name, phone }
-      
-      try {
-        const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwDWdQakJgJ22wYz2-uo6LRheJSFX7_-kox8oGBSxe808QXr9ryMg74LNDc5ufgNgKp/exec';
-        fetch(`${WEB_APP_URL}?action=updateCentrale&name=${encodeURIComponent(name)}&phone=${encodeURIComponent(phone)}`, { mode: 'no-cors' });
-      } catch (err) {
-        console.error("Erreur synchro GSheet Centrale", err);
-      }
-    },
-
-
-    confirmResetDispatch() {
-      if (!this.hasLsesPerm) return
-      Swal.fire({
-        title: 'Réinitialiser le dispatch ?',
-        text: 'Tout le monde sera mis en "Hors service", les interventions seront vidées, et toutes les radios seront éteintes.',
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#d33',
-        cancelButtonColor: '#3085d6',
-        confirmButtonText: 'Oui, réinitialiser',
-        cancelButtonText: 'Annuler',
-      }).then((result) => {
-        if (result.isConfirmed) {
-          this.resetDispatch();
-        }
-      });
-    },
-
-    promptAddTemporaryEmployee() {
-      if (!this.hasLsesPerm) return
-      Swal.fire({
-        title: 'Ajout temporaire',
-        html: `
-          <input id="swal-temp-name" class="swal2-input" placeholder="Prénom/Nom" style="background: rgba(0,0,0,0.2); color:#fff; margin-bottom: 10px;">
-          <input id="swal-temp-phone" class="swal2-input" placeholder="Téléphone" style="background: rgba(0,0,0,0.2); color:#fff; margin-bottom: 10px;">
-          <div style="text-align: left; background: rgba(0,0,0,0.15); padding: 10px; border-radius: 6px; font-size: 0.9rem; margin-top: 10px;">
-            <div style="margin-bottom: 5px; color: #94a3b8; font-weight: bold;">Validations :</div>
-            <label style="display: block; cursor: pointer; margin-bottom: 4px;"><input type="checkbox" id="swal-temp-dds" style="accent-color: #3b82f6; width: 14px; height: 14px;"> DDS (🩸)</label>
-            <label style="display: block; cursor: pointer; margin-bottom: 4px;"><input type="checkbox" id="swal-temp-vc" style="accent-color: #3b82f6; width: 14px; height: 14px;"> VC (🩺)</label>
-            <label style="display: block; cursor: pointer; margin-bottom: 4px;"><input type="checkbox" id="swal-temp-vm" style="accent-color: #3b82f6; width: 14px; height: 14px;"> VM (⚕️)</label>
-            <label style="display: block; cursor: pointer;"><input type="checkbox" id="swal-temp-airbag" style="accent-color: #3b82f6; width: 14px; height: 14px;"> Airbag (🚔)</label>
-          </div>
-        `,
-        focusConfirm: false,
-        background: '#1e293b',
-        color: '#fff',
-        showCancelButton: true,
-        confirmButtonText: 'Ajouter',
-        cancelButtonText: 'Annuler',
-        preConfirm: () => {
-          const name = document.getElementById('swal-temp-name').value.trim()
-          const phone = document.getElementById('swal-temp-phone').value.trim()
-          if (!name) {
-            Swal.showValidationMessage("Le nom est obligatoire")
-            return false
-          }
-          const validations = []
-          if (document.getElementById('swal-temp-dds').checked) validations.push('dds')
-          if (document.getElementById('swal-temp-vc').checked) validations.push('vc')
-          if (document.getElementById('swal-temp-vm').checked) validations.push('vm')
-          if (document.getElementById('swal-temp-airbag').checked) validations.push('avp_airbag')
-
-          return { name, phone, validations }
-        }
-      }).then(async (result) => {
-        if (result.isConfirmed) {
-          await Dispatch.addTemporaryEmployee({
-            name: result.value.name,
-            phone: result.value.phone || '',
-            validations: result.value.validations || []
-          });
-        }
-      })
-    },
-
-    promptEditTemporaryEmployee(empInfo) {
-      if (!this.hasLsesPerm) return
-      if (!this.dispatch) return;
-      
-      const realId = empInfo.employeeId || empInfo.id;
-      const tEmp = (this.dispatch.temporaryEmployees || []).find(e => e.id === realId);
-      if (!tEmp) return;
-
-      Swal.fire({
-        title: 'Modifier / Supprimer',
-        html: `
-          <input id="swal-temp-name" class="swal2-input" value="${tEmp.name}" placeholder="Prénom/Nom" style="background: rgba(0,0,0,0.2); color:#fff; margin-bottom: 10px;">
-          <input id="swal-temp-phone" class="swal2-input" value="${tEmp.phone || ''}" placeholder="Téléphone" style="background: rgba(0,0,0,0.2); color:#fff; margin-bottom: 10px;">
-          <div style="text-align: left; background: rgba(0,0,0,0.15); padding: 10px; border-radius: 6px; font-size: 0.9rem; margin-top: 10px;">
-            <div style="margin-bottom: 5px; color: #94a3b8; font-weight: bold;">Validations :</div>
-            <label style="display: block; cursor: pointer; margin-bottom: 4px;"><input type="checkbox" id="swal-temp-dds" ${tEmp.validations?.includes('dds') ? 'checked' : ''} style="accent-color: #3b82f6; width: 14px; height: 14px;"> DDS (🩸)</label>
-            <label style="display: block; cursor: pointer; margin-bottom: 4px;"><input type="checkbox" id="swal-temp-vc" ${tEmp.validations?.includes('vc') ? 'checked' : ''} style="accent-color: #3b82f6; width: 14px; height: 14px;"> VC (🩺)</label>
-            <label style="display: block; cursor: pointer; margin-bottom: 4px;"><input type="checkbox" id="swal-temp-vm" ${tEmp.validations?.includes('vm') ? 'checked' : ''} style="accent-color: #3b82f6; width: 14px; height: 14px;"> VM (⚕️)</label>
-            <label style="display: block; cursor: pointer;"><input type="checkbox" id="swal-temp-airbag" ${tEmp.validations?.includes('avp_airbag') ? 'checked' : ''} style="accent-color: #3b82f6; width: 14px; height: 14px;"> Airbag (🚔)</label>
-          </div>
-        `,
-        focusConfirm: false,
-        background: '#1e293b',
-        color: '#fff',
-        showCancelButton: true,
-        showDenyButton: true,
-        confirmButtonText: 'Sauvegarder',
-        cancelButtonText: 'Annuler',
-        denyButtonText: 'Supprimer',
-        confirmButtonColor: '#3b82f6',
-        denyButtonColor: '#ef4444',
-        preConfirm: () => {
-          const name = document.getElementById('swal-temp-name').value.trim()
-          const phone = document.getElementById('swal-temp-phone').value.trim()
-          if (!name) {
-            Swal.showValidationMessage("Le nom est obligatoire")
-            return false
-          }
-          const validations = []
-          if (document.getElementById('swal-temp-dds').checked) validations.push('dds')
-          if (document.getElementById('swal-temp-vc').checked) validations.push('vc')
-          if (document.getElementById('swal-temp-vm').checked) validations.push('vm')
-          if (document.getElementById('swal-temp-airbag').checked) validations.push('avp_airbag')
-
-          return { name, phone, validations }
-        }
-      }).then(async (result) => {
-        if (result.isConfirmed) {
-          await Dispatch.updateTemporaryEmployee(realId, {
-            name: result.value.name,
-            phone: result.value.phone || '',
-            validations: result.value.validations || []
-          })
-        } else if (result.isDenied) {
-          const r = await Swal.fire({
-            title: 'Supprimer l\'employé ?',
-            text: 'Il sera retiré de toutes les sections.',
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#d33',
-            confirmButtonText: 'Oui, supprimer',
-            background: '#1e293b',
-            color: '#fff'
-          })
-          if (r.isConfirmed)
-            await Dispatch.removeTemporaryEmployee(realId)
-        }
-      })
-    },
-    async resetDispatch() {
-      if (!this.hasLsesPerm) return
-      if (!this.dispatch) return;
-      await Dispatch.resetAll()
-      logger.log(this.userStore.profile.id, 'DISPATCH', 'Le dispatch a été réinitialisé')
-    },
-
-    debounceUpdate(id, field, callback, delay = 500) {
-      const key = `${id}-${field}`
-      if (this._timeouts[key]) clearTimeout(this._timeouts[key])
-      this._timeouts[key] = setTimeout(() => {
-        if (this._isUnmounted) return
-        callback()
-        delete this._timeouts[key]
-      }, delay)
-    },
-    fetchSafdStatus() {
-      fetch('https://docs.google.com/spreadsheets/d/1A1gxOho_roNwxTtcbiEpLGSWbD8JUasMDu4NL-zdcbw/export?format=csv&gid=0')
-        .then(res => res.text())
-        .then(text => {
-          if (this._isUnmounted) return
-          const rows = text.split('\n')
-          if (rows.length >= 3) {
-            const cols = rows[2].split(',')
-            if (cols.length >= 4) {
-              this.safdStatus = cols[3].trim()
-            }
-          }
-        })
-        .catch(err => {
-          if (this._isUnmounted) return
-          console.error("Erreur gsheet SAFD", err)
-        })
-    },
-    fetchBcesStatus() {
-      const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwDWdQakJgJ22wYz2-uo6LRheJSFX7_-kox8oGBSxe808QXr9ryMg74LNDc5ufgNgKp/exec?action=bcesDispatchDoGet'
-      const script = document.createElement('script')
-      const callbackName = 'jsonpCallback_' + Math.round(100000 * Math.random())
-      
-      window[callbackName] = (data) => {
-        if (this._isUnmounted) {
-          delete window[callbackName]
-          if (script.parentNode) script.parentNode.removeChild(script)
-          return
-        }
-        if (data && data.status) {
-          this.bcesStatus = data.status.replace(/['"]/g, '').trim()
-        }
-        delete window[callbackName]
-        document.body.removeChild(script)
-      }
-
-      script.src = `${WEB_APP_URL}&callback=${callbackName}`
-      script.onerror = () => {
-        console.error("Erreur Web App BCES (JSONP)")
-        delete window[callbackName]
-        document.body.removeChild(script)
-      }
-
-      document.body.appendChild(script)
-    },
-    hasHelicopterTraining(empId) {
-      const e = this.employees.find(e => e.id === empId)
-      return e ? !!e.helicopterTrainingDate : false
-    },
-    
-    getSpecialtyIcon(v) { return this.specialties.find(s=>s.value===v||s.name===v)?.icon||'' },
-    getSpecialtyName(v) { return this.specialties.find(s=>s.value===v||s.name===v)?.name||v },
-    getInterType(v)     { return this.interventionTypes.find(it=>it.value===v)||null },
-    getReturnStatus(v)  { return this.returnStatuses.find(rs=>rs.value===v)||null },
-    getRoleColor(role) {
-      return getRoleColorConfig(role)
-    },
-    getEmployeeEmojis(empId) {
-      const e = this.employees.find(e=>e.id===empId)
-      return e ? [...(e.specialties||[]),...(e.chiefSpecialties||[])].map(v=>this.getSpecialtyIcon(v)).filter(Boolean).join(' ') : ''
-    },
-    patatesForCategory(cat) { return this.dispatch?.patates.filter(p=>p.category===cat)||[] },
-
-    async setHospitalStatus(value) {
-      if (!this.hasLsesPerm) return
-      if (!this.dispatch) return
-
-      await Dispatch.updateField('hospitalStatus', value)
-
-      const meta = this.hospitalStatuses.find(s => s.value === value) || this.hospitalStatuses[0]
-      const label = meta.gsheet
-      
-      try {
-        const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwDWdQakJgJ22wYz2-uo6LRheJSFX7_-kox8oGBSxe808QXr9ryMg74LNDc5ufgNgKp/exec'
-
-        fetch(`${WEB_APP_URL}?action=updateHospitalStatus&status=${encodeURIComponent(label)}`, { mode: 'no-cors' })
-      } catch (err) {
-        console.error("Erreur de synchro GSheet Hospital Status", err)
-      }
-    },
-
-    startDrag(employee, sourceKey) {
-      if (!this.hasLsesPerm) return
-      this.draggingEmployee = employee
-      this.draggingSource = sourceKey
-      document.addEventListener('dragover', this._handleGlobalDragOver, { capture: true })
-      document.addEventListener('wheel', this._handleGlobalWheel, { capture: true, passive: false })
-    },
-    onDragEnd() { 
-      this.draggingEmployee = null; 
-      this.draggingSource = null; 
-      this.dragOver = null;
-      document.removeEventListener('dragover', this._handleGlobalDragOver, { capture: true })
-      document.removeEventListener('wheel', this._handleGlobalWheel, { capture: true })
-    },
-    onDragLeave(key) { if (this.dragOver === key) this.dragOver = null },
-
-    _handleGlobalDragOver(e) {
-      this.lastDragX = e.clientX;
-      this.lastDragY = e.clientY;
-
-      const threshold = 80;
-      const speed = 20;
-
-      if (e.clientY < threshold && e.clientY > 0) {
-        window.scrollBy(0, -speed);
-      } else if (window.innerHeight - e.clientY < threshold && e.clientY > 0) {
-        window.scrollBy(0, speed);
-      }
-
-      const path = e.composedPath ? e.composedPath() : [];
-      for (let el of path) {
-        if (el && el.nodeType === 1 && el.scrollHeight > el.clientHeight) {
-          const style = window.getComputedStyle(el);
-          if (style.overflowY === 'auto' || style.overflowY === 'scroll') {
-            const rect = el.getBoundingClientRect();
-
-            if (e.clientY - rect.top < 60 && e.clientY - rect.top > 0) {
-              el.scrollBy(0, -speed);
-            } else if (rect.bottom - e.clientY < 60 && rect.bottom - e.clientY > 0) {
-              el.scrollBy(0, speed);
-            }
-            break;
-          }
-        }
-      }
-    },
-
-    _handleGlobalWheel(e) {
-      if (!this.lastDragX || !this.lastDragY) return;
-
-      let el = document.elementFromPoint(this.lastDragX, this.lastDragY);
-      let scrolled = false;
-      
-      while (el && el !== document.body && el !== document.documentElement) {
-        if (el.nodeType === 1 && el.scrollHeight > el.clientHeight) {
-          const style = window.getComputedStyle(el);
-          if (style.overflowY === 'auto' || style.overflowY === 'scroll') {
-            el.scrollBy(0, e.deltaY);
-            scrolled = true;
-            break;
-          }
-        }
-        el = el.parentElement;
-      }
-
-      if (!scrolled) {
-        window.scrollBy(0, e.deltaY);
-      }
-    },
-
-    async dropOn(targetKey) {
-      if (!this.hasLsesPerm) return
-      this.dragOver = null
-      const emp = this.draggingEmployee
-      const src = this.draggingSource
-      if (!emp || !this.dispatch) return
-      if (src === targetKey) return   
-
-      const empId = emp.employeeId || emp.id
-      if (!empId) {
-        console.warn("Drop ignored: missing employee identifier", emp)
-        return
-      }
-      
-      if (targetKey === 'hs') this.autoTurnOffRadio(empId)
-
-      await Dispatch.migrateEmployee(empId, src, targetKey === 'hs' ? null : targetKey, {
-        name: emp.name || '',
-        phone: emp.phone || '',
-        allSpecialties: emp.allSpecialties||[],
-        role: emp.role||''
-      })
-    },
-
-    async removeFromDispatch(employeeId) {
-      if (!this.hasLsesPerm) return
-      if (!this.dispatch) return
-      
-      this.autoTurnOffRadio(employeeId)
-      
-      await Dispatch.removeFromBoard(employeeId)
-    },
-
-    async clearCentrale() {
-      if (!this.hasLsesPerm) return
-      if (!this.dispatch?.centrale) return
-
-      const c = this.dispatch.centrale
-      const hasFields = !!(c.location || c.complement || c.type || c.returnStatus)
-
-      if (hasFields) {
-        const locKey = 'centrale-location'
-        if (this.localBuffers[locKey] !== undefined) delete this.localBuffers[locKey]
-        if (this._timeouts[locKey]) {
-          clearTimeout(this._timeouts[locKey])
-          delete this._timeouts[locKey]
-        }
-        await Dispatch.updateCentrale({ location: null, complement: null, type: null, returnStatus: null })
-      } else {
-        const emps = c.employees || []
-        if (emps.length === 0) return
-        
-        for (const emp of emps) {
-          await Dispatch.migrateEmployee(emp.employeeId || emp.id, 'centrale', 'cat:en_service', {
-            name: emp.name,
-            phone: emp.phone,
-            role: emp.role,
-            allSpecialties: emp.allSpecialties || []
-          })
-        }
-      }
-    },
-
-    async removeEmpFromCentrale(empId) {
-      if (!this.hasLsesPerm) return
-      const r = await Swal.fire({ icon:'warning', title:'Retirer de la centrale ?',
-        showCancelButton:true, confirmButtonText:'Retirer' })
-      if (!r.isConfirmed || !this.dispatch) return
-      
-      await Dispatch.migrateEmployee(empId, 'centrale', null, {})
-    },
-    async setCentraleEmpRole(empId, role) {
-      if (!this.hasLsesPerm) return
-      await Dispatch.updateCentraleEmployeeRole(empId, role)
-    },
-
-    async promptAddAffiliation() {
-      const { value: formValues } = await Swal.fire({
-        title: 'Ajoute une affiliation',
-        html:
-          `<div style="text-align: left; padding: 0 5px;">
-            <label style="display: block; font-size: 0.8rem; color: #94a3b8; margin-bottom: 4px; font-weight: bold;">NOM DU GROUPE / AFFILIATION</label>
-            <input id="swal-input1" class="swal2-input" placeholder="ex: Ballas" style="margin: 0 0 15px 0; width: 100%; height: 45px; background: rgba(0,0,0,0.2); color: #fff; border: 1px solid #334155;">
-            
-            <label style="display: block; font-size: 0.8rem; color: #94a3b8; margin-bottom: 4px; font-weight: bold;">COULEUR DISTINCTIVE</label>
-            <input id="swal-input2" class="swal2-input" type="color" value="#3b82f6" style="margin: 0; width: 100%; height: 45px; cursor: pointer; background: rgba(0,0,0,0.2); border: 1px solid #334155; padding: 4px;">
-          </div>`,
-        focusConfirm: false,
-        background: '#1e293b',
-        color: '#fff',
-        target: '#app',
-        didOpen: () => {
-          document.getElementById('swal-input1')?.focus()
-        },
-        showCancelButton: true,
-        confirmButtonText: 'Ajouter',
-        cancelButtonText: 'Annuler',
-        preConfirm: () => {
-          const label = document.getElementById('swal-input1').value.trim()
-          const color = document.getElementById('swal-input2').value
-          if (!label) {
-            Swal.showValidationMessage("Le nom est obligatoire")
-            return false
-          }
-          return { label, color }
-        }
-      })
-      if (formValues) {
-        await Dispatch.addAffiliation({ ...formValues, order: Date.now() })
-      }
-    },
-    async promptEditAffiliation(aff) {
-      let safeColor = aff.color || '#3b82f6';
-      if (safeColor.startsWith('#') && safeColor.length > 7)
-        safeColor = safeColor.substring(0, 7);
-      else if (!safeColor.startsWith('#'))
-        safeColor = '#3b82f6';
-
-      const { value: formValues } = await Swal.fire({
-        title: 'Modifier l\'affiliation',
-        html:
-          `<div style="text-align: left; padding: 0 5px;">
-            <label style="display: block; font-size: 0.8rem; color: #94a3b8; margin-bottom: 4px; font-weight: bold;">NOM DU GROUPE / AFFILIATION</label>
-            <input id="swal-input1" class="swal2-input" placeholder="Label" value="${aff.label}" style="margin: 0 0 15px 0; width: 100%; height: 45px; background: rgba(0,0,0,0.2); color: #fff; border: 1px solid #334155;">
-            
-            <label style="display: block; font-size: 0.8rem; color: #94a3b8; margin-bottom: 4px; font-weight: bold;">COULEUR DISTINCTIVE</label>
-            <input id="swal-input2" class="swal2-input" type="color" value="${safeColor}" style="margin: 0; width: 100%; height: 45px; cursor: pointer; background: rgba(0,0,0,0.2); border: 1px solid #334155; padding: 4px;">
-          </div>`,
-        focusConfirm: false,
-        background: '#1e293b',
-        color: '#fff',
-        target: '#app',
-        didOpen: () => {
-          document.getElementById('swal-input1')?.focus()
-        },
-        showCancelButton: true,
-        confirmButtonText: 'Sauvegarder',
-        cancelButtonText: 'Annuler',
-        preConfirm: () => {
-          const label = document.getElementById('swal-input1').value.trim()
-          const color = document.getElementById('swal-input2').value
-          if (!label) {
-            Swal.showValidationMessage("Le nom est obligatoire")
-            return false
-          }
-          return { label, color }
-        }
-      })
-      if (formValues) {
-        await Dispatch.updateAffiliation(aff.id, formValues)
-      }
-    },
-    async confirmDeleteAffiliation(aff) {
-      const r = await Swal.fire({
-        title: 'Supprimer l\'affiliation ?',
-        text: `Voulez-vous vraiment supprimer "${aff.label}" ?`,
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#d33',
-        cancelButtonColor: '#3085d6',
-        confirmButtonText: 'Oui, supprimer',
-        cancelButtonText: 'Annuler',
-        background: '#1e293b',
-        color: '#fff',
-        target: '#app'
-      })
-      if (r.isConfirmed) {
-        await Dispatch.deleteAffiliation(aff.id)
-      }
-    },
-    isFirstAffiliation(aff) {
-      if (!this.affiliations || this.affiliations.length === 0) return true
-      return this.affiliations[0].id === aff.id
-    },
-    isLastAffiliation(aff) {
-      if (!this.affiliations || this.affiliations.length === 0) return true
-      return this.affiliations[this.affiliations.length - 1].id === aff.id
-    },
-    async moveAffiliationUp(aff) {
-      const idx = this.affiliations.findIndex(a => a.id === aff.id)
-      if (idx > 0) {
-        const list = [...this.affiliations]
-        const temp = list[idx]
-        list[idx] = list[idx - 1]
-        list[idx - 1] = temp
-        
-        const promises = list.map((a, i) => Dispatch.updateAffiliation(a.id, { order: i }))
-        await Promise.all(promises)
-      }
-    },
-    async moveAffiliationDown(aff) {
-      const idx = this.affiliations.findIndex(a => a.id === aff.id)
-      if (idx < this.affiliations.length - 1) {
-        const list = [...this.affiliations]
-        const temp = list[idx]
-        list[idx] = list[idx + 1]
-        list[idx + 1] = temp
-        
-        const promises = list.map((a, i) => Dispatch.updateAffiliation(a.id, { order: i }))
-        await Promise.all(promises)
-      }
-    },
-
-    async setCentraleType(typeValue) {
-      if (!this.hasLsesPerm) return
-      if (!this.dispatch) return
-      await Dispatch.updateCentrale({ type: typeValue })
-    },
-
-    async setCentraleReturnStatus(statusValue) {
-      if (!this.hasLsesPerm) return
-      if (!this.dispatch) return
-      await Dispatch.updateCentrale({ returnStatus: statusValue || null })
-    },
-
-    onCentraleLocationInput(val) {
-      if (!this.hasLsesPerm) return
-      this.localBuffers['centrale-location'] = val
-      this.debounceUpdate('centrale', 'location', () => {
-        Dispatch.updateCentrale({ location: val.trim() || null }).then(() => {
-          if (this.localBuffers['centrale-location'] === val) delete this.localBuffers['centrale-location']
-        })
-      })
-    },
-
-    getCentralRole(v) { return this.centralRoles.find(cr => cr.value === v) || null },
-
-    getEmployeeEmoji(empId) {
-      if (!empId) return '';
-      const emp = this.employees.find(e => e.id === empId);
-      if (!emp) return '';
-      if (emp.role === 'Interne') return '🐣';
-      return emp.emoji || '';
-    },
-
-    async addInterventionSlot() {
-      if (!this.hasLsesPerm) return
-      if (!this.dispatch) return
-      if ((this.dispatch.interventions || []).length >= 25) {
-        Swal.fire({ title: 'Limite atteinte', text: 'Vous ne pouvez pas ajouter plus de 25 interventions.', icon: 'warning', background: '#1e293b', color: '#fff' })
-        return
-      }
-      const newSlotId = Date.now().toString()+Math.random().toString(36).slice(2,6)
-      await Dispatch.addInterventionSlot({
-        id: newSlotId,
-        type: 'intervention',
-        employees: [],
-        returnStatus: null,
-        location: null,
-        complement: null,
-      })
-      
-      this.$nextTick(() => {
-        const el = document.getElementById(`zip-input-${newSlotId}`)
-        if (el) el.focus()
-      })
-    },
-
-    async setInterSlotType(slot, typeValue) {
-      if (!this.hasLsesPerm) return
-      await Dispatch.updateIntervention(slot.id, { type: typeValue })
-    },
-
-    onInterSlotLocationInput(slot, val) {
-      if (!this.hasLsesPerm) return
-      this.localBuffers[`${slot.id}-location`] = val
-      this.debounceUpdate(slot.id, 'location', () => {
-        Dispatch.updateIntervention(slot.id, { location: val.trim() || null }).then(() => {
-          if (this.localBuffers[`${slot.id}-location`] === val) delete this.localBuffers[`${slot.id}-location`]
-        })
-      })
-    },
-
-    async setInterSlotStatus(slot, statusValue) {
-      if (!this.hasLsesPerm) return
-      await Dispatch.updateIntervention(slot.id, { returnStatus: statusValue || null })
-    },
-
-    async removeEmployeeFromSlot(slotId, employeeId) {
-      const slot = this.dispatch.interventions.find(s=>s.id===slotId)
-      if (slot) {
-        const emps = (slot.employees||[]).filter(e => e.employeeId !== employeeId)
-        await Dispatch.updateIntervention(slotId, { employees: emps })
-      }
-    },
-
-    async removeInterventionSlot(slot) {
-      if (!this.hasLsesPerm || !slot) return
-      const hasContent = (slot.employees?.length || slot.location || slot.complement || slot.returnStatus || slot.type !== 'intervention')
-      if (hasContent) {
-        const locKey = `${slot.id}-location`
-        if (this.localBuffers[locKey] !== undefined) delete this.localBuffers[locKey]
-        if (this._timeouts[locKey]) {
-          clearTimeout(this._timeouts[locKey])
-          delete this._timeouts[locKey]
-        }
-
-        await Dispatch.resetInterventionSlot(slot.id)
-      } else {
-        await Dispatch.deleteInterventionSlot(slot.id)
-      }
-    },
-
-    openAddDialog(categoryValue) {
-      this.addDialogCategoryValue = categoryValue
-      this.selectedEmployee = null
-      this.addDialog = true
-    },
-    async confirmAddPatate() {
-      if (!this.hasLsesPerm) return
-      if (!this.selectedEmployee || !this.dispatch) return
-      this.addDialog = false
-      const empId = this.selectedEmployee.id
-      const emp = this.employees.find(e=>e.id===empId)
-
-      const role = emp?.role || this.selectedEmployee.role || ''
-      const specs = emp ? (emp.specialties || []) : (this.selectedEmployee.allSpecialties || [])
-
-      await Dispatch.migrateEmployee(empId, null, `cat:${this.addDialogCategoryValue}`, {
-        name: this.selectedEmployee.name || '',
-        phone: this.selectedEmployee.phone || '',
-        allSpecialties: specs,
-        role,
-      })
-      this.addDialog = false
-    },
-
-    openQuickMoveDialog(emp, sourceKey) { 
-      if (!this.hasLsesPerm) return
-      this.quickAddEmployee = emp; 
-      this.quickMoveSourceKey = sourceKey;
-      this.quickAddDialog = true 
-    },
-    async confirmQuickAdd(categoryValue) {
-      if (!this.hasLsesPerm) return
-      if (!this.quickAddEmployee || !this.dispatch) return
-      this.quickAddDialog = false
-      
-      const empId = this.quickAddEmployee.employeeId || this.quickAddEmployee.id
-      const src = this.quickMoveSourceKey
-      const emp = this.employees.find(e=>e.id===empId)
-
-      const role = emp?.role || this.quickAddEmployee.role || ''
-      const specs = emp ? (emp.specialties || []) : (this.quickAddEmployee.allSpecialties || [])
-
-      if (categoryValue === 'hs') {
-        this.autoTurnOffRadio(empId)
-      }
-      
-      await Dispatch.migrateEmployee(empId, src, categoryValue === 'hs' ? null : `cat:${categoryValue}`, {
-        name: this.quickAddEmployee.name || '',
-        phone: this.quickAddEmployee.phone || '',
-        allSpecialties: specs,
-        role,
-      })
-
-      this.quickAddDialog = false
-    },
-
-    async addRadio(category = 'standard') {
-      if (!this.hasLsesPerm) return
-      if (!this.dispatch) return
-      if ((this.dispatch.radios || []).length >= 30) {
-        Swal.fire({ title: 'Limite atteinte', text: 'Vous ne pouvez pas ajouter plus de 30 radios.', icon: 'warning', background: '#1e293b', color: '#fff' })
-        return
-      }
-      const radios = JSON.parse(JSON.stringify(this.dispatch.radios || []))
-      radios.push({
-        id: Date.now().toString()+Math.random().toString(36).slice(2,6),
-        serial: '',
-        employeeId: null,
-        status: 'on',
-        category
-      })
-      await Dispatch.updateField('radios', radios)
-      logger.log(this.userStore.profile.id, 'RADIOS', `Nouvelle radio ajoutée (${category === 'direction' ? 'Direction' : 'Standard'})`)
-    },
-    async onRadioAssign(radio, newEmpId) {
-      if (!this.hasLsesPerm) return
-      if (radio.category === 'direction' && !this.isDirection) {
-        Swal.fire({ title: 'Accès refusé', text: 'Seules les personnes de la Direction peuvent modifier ces radios.', icon: 'error', background: '#1e293b', color: '#fff' })
-        return
-      }
-      const oldEmpId = radio.employeeId
-      if (oldEmpId !== newEmpId) {
-        const radios = JSON.parse(JSON.stringify(this.dispatch.radios || []))
-        const r = radios.find(x => x.id === radio.id)
-        if (r) {
-          r.employeeId = newEmpId || null
-          if (!oldEmpId && newEmpId) r.status = 'on'
-          else if (oldEmpId && !newEmpId) r.status = 'off'
-          await Dispatch.updateField('radios', radios)
-        }
-
-        const serialStr = radio.serial || 'sans matricule'
-        if (!oldEmpId && newEmpId) {
-          const emp = this.employees.find(e => e.id === newEmpId)
-          if (emp) logger.log(this.userStore.profile.id, 'RADIOS', `${emp.name} a pris la radio ${serialStr}`)
-        } else if (oldEmpId && !newEmpId) {
-          const emp = this.employees.find(e => e.id === oldEmpId)
-          if (emp) logger.log(this.userStore.profile.id, 'RADIOS', `${emp.name} a déposé la radio ${serialStr}`)
-        } else if (oldEmpId && newEmpId) {
-          const oldEmp = this.employees.find(e => e.id === oldEmpId)
-          const newEmp = this.employees.find(e => e.id === newEmpId)
-          if (oldEmp && newEmp) logger.log(this.userStore.profile.id, 'RADIOS', `${oldEmp.name} a transféré la radio ${serialStr} à ${newEmp.name}`)
-        }
-      }
-    },
-    async removeRadio(radio) {
-      if (!this.hasLsesPerm) return
-      if (!this.dispatch) return
-      const r = await Swal.fire({ 
-        icon: 'warning', 
-        title: 'Supprimer cette radio ?',
-        text: `Es-tu sûr de vouloir supprimer la radio ${radio.serial || 'sans matricule'} ?`,
-        showCancelButton: true, 
-        confirmButtonText: 'Supprimer', 
-        cancelButtonText: 'Annuler',
-        confirmButtonColor: '#d33'
-      })
-      if (!r.isConfirmed) return
-      
-      const radios = JSON.parse(JSON.stringify(this.dispatch.radios || []))
-      const idx = radios.findIndex(x => x.id === radio.id)
-      if (idx !== -1) {
-        const serial = radios[idx].serial || 'sans matricule'
-        radios.splice(idx, 1)
-        await Dispatch.updateField('radios', radios)
-        logger.log(this.userStore.profile.id, 'RADIOS', `Radio ${serial} supprimée`)
-      }
-    },
-    autoTurnOffRadio(employeeId) {
-      if (!this.dispatch?.radios || !employeeId) return
-      const radios = JSON.parse(JSON.stringify(this.dispatch.radios))
-      const radio = radios.find(r => r.employeeId === employeeId)
-      if (radio) {
-        radio.status = 'off'
-        Dispatch.updateField('radios', radios)
-      }
-    },
-    async toggleRadioStatus(radio) {
-      if (!this.hasLsesPerm) return
-      const radios = JSON.parse(JSON.stringify(this.dispatch.radios))
-      const r = radios.find(x => x.id === radio.id)
-      if (r) {
-        r.status = r.status === 'on' ? 'off' : 'on'
-        await Dispatch.updateField('radios', radios)
-      }
-    },
-    onNotepadInput(val) {
-      if (!this.isDirection) return
-      this.localBuffers['global-notepad'] = val
-      this.debounceUpdate('global', 'notepad', () => {
-        Dispatch.updateField('notepad', val).then(() => {
-          if (this.localBuffers['global-notepad'] === val) delete this.localBuffers['global-notepad']
-        })
-      })
-    },
-    formatDateTime(ts) {
-      if (!ts) return ''
-      const date = new Date(ts)
-      return date.toLocaleDateString('fr-FR') + ' ' + date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
-    },
-
-
-  },
-}
 </script>
 
 <style scoped>
