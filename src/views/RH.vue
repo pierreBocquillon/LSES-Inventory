@@ -2253,6 +2253,8 @@ export default {
         return false
       }
 
+      this.achievementStore.incrementStat('employees_recruited', 1, 1)
+
       const today = new Date().toISOString().split('T')[0]
 
       const newEmployee = new Employee(

@@ -134,6 +134,37 @@ export const achievementList = [
   },
 
   {
+    id: 'recruiter_first',
+    category: 'Recrutement',
+    rarity: 'uncommon',
+    title: 'Bienvenue chez les RH',
+    description: 'Recrutez votre premier employé.',
+    icon: 'mdi-account-plus',
+    progress: (stats) => ({ current: Math.min(stats.employees_recruited || 0, 1), max: 1 }),
+    condition: (stats) => (stats.employees_recruited || 0) >= 1
+  },
+  {
+    id: 'recruiter_serial',
+    category: 'Recrutement',
+    rarity: 'epic',
+    title: 'Belle perf',
+    description: 'Recrutez 10 employés.',
+    icon: 'mdi-account-group',
+    progress: (stats) => ({ current: Math.min(stats.employees_recruited || 0, 10), max: 10 }),
+    condition: (stats) => (stats.employees_recruited || 0) >= 10
+  },
+  {
+    id: 'recruiter_legend',
+    category: 'Recrutement',
+    rarity: 'legendary',
+    title: 'Tu vas finir par recruter le bon',
+    description: 'Recrutez 25 employés.',
+    icon: 'mdi-medal-outline',
+    progress: (stats) => ({ current: Math.min(stats.employees_recruited || 0, 25), max: 25 }),
+    condition: (stats) => (stats.employees_recruited || 0) >= 25
+  },
+
+  {
     id: 'fleet_repa_1',
     category: 'Garage',
     rarity: 'rare',
@@ -190,6 +221,7 @@ export const achievementList = [
 export const commonStats = [
   { key: 'inventory_updates', label: 'Mises à jour de l\'inventaire' },
   { key: 'applications_created', label: 'Candidatures rédigées' },
+  { key: 'employees_recruited', label: 'Employés recrutés' },
   { key: 'ideas_suggested', label: 'Idées proposées' },
   { key: 'fleet_full_repairs', label: 'Réparations Flotte Complètes' },
 ];
