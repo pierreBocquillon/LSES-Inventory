@@ -656,7 +656,7 @@
             </template>
             <template v-slot:item.validatedTrainings="{ item }">
               <div class="d-flex align-center justify-center gap-1">
-                <v-chip v-for="training in (item.validatedTrainings || [])" :key="training" :color="getTrainingColor(training)" size="small" variant="flat" class="cursor-pointer" @click="removeValidatedTraining(item, training)">
+                <v-chip v-for="training in (item.validatedTrainings || []).filter(t => !t.toLowerCase().startsWith('qualification'))" :key="training" :color="getTrainingColor(training)" size="small" variant="flat" class="cursor-pointer" @click="removeValidatedTraining(item, training)">
                   {{ getTrainingShortName(training) }}
                   <v-tooltip activator="parent" location="top">
                     {{ training }} (Cliquer pour retirer)
@@ -1054,7 +1054,9 @@ export default {
       if (allowedTrainings.length === 0) return []
 
       if (!emp.validatedTrainings) return allowedTrainings
-      return allowedTrainings.filter(t => !emp.validatedTrainings.includes(t))
+      return allowedTrainings
+        .filter(t => !emp.validatedTrainings.includes(t))
+        .filter(t => !t.toLowerCase().startsWith('qualification'))
     },
   },
 
