@@ -92,6 +92,16 @@ export const achievementList = [
     progress: (stats) => ({ current: Math.min(stats.inventory_updates || 0, 50), max: 50 }),
     condition: (stats) => (stats.inventory_updates || 0) >= 50
   },
+  {
+    id: 'inventory_legend',
+    category: 'Inventaire',
+    rarity: 'legendary',
+    title: 'Employé Amazon',
+    description: 'Effectuez 100 mises à jour des stocks.',
+    icon: 'mdi-truck-fast',
+    progress: (stats) => ({ current: Math.min(stats.inventory_updates || 0, 100), max: 100 }),
+    condition: (stats) => (stats.inventory_updates || 0) >= 100
+  },
 
   {
     id: 'candidature_first_created',
@@ -160,4 +170,19 @@ export const commonStats = [
   { key: 'inventory_updates', label: 'Mises à jour de l\'inventaire' },
   { key: 'applications_created', label: 'Candidatures rédigées' },
   { key: 'ideas_suggested', label: 'Idées proposées' },
+];
+
+export const achievementTitles = [
+  { threshold: 0, label: 'Sans titre', color: 'grey-lighten-1', icon: 'mdi-account-question' },
+  { threshold: 1, label: 'Novice', color: 'grey-lighten-1', icon: 'mdi-baby-face-outline' },
+  { threshold: 2, label: 'Apprenti', color: 'brown-lighten-2', icon: 'mdi-scroll-outline' },
+  { threshold: 4, label: 'Initié', color: 'green-accent-3', icon: 'mdi-book-open-variant' },
+  { threshold: 6, label: 'Confirmé', color: 'teal-accent-3', icon: 'mdi-check-all' },
+  { threshold: 9, label: 'Vétéran', color: 'blue-accent-3', icon: 'mdi-medal' },
+  { threshold: 12, label: 'Expert', color: 'indigo-accent-2', icon: 'mdi-brain' },
+  { threshold: 15, label: 'Maître', color: 'deep-purple-accent-2', icon: 'mdi-wizard-hat' },
+  { threshold: 18, label: 'Légende', color: 'amber-accent-4', icon: 'mdi-star-circle' },
+  { threshold: 22, label: 'Mythe', color: 'orange-accent-4', icon: 'mdi-fire' },
+  { threshold: 26, label: 'Demi-Dieu', color: 'pink-accent-3', icon: 'mdi-lightning-bolt' },
+  { threshold: 30, label: 'Dieu du LSES', color: 'red-accent-4', icon: 'mdi-crown' }
 ];
