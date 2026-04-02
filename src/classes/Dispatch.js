@@ -96,6 +96,7 @@ class Dispatch {
 
         const unsubCentralEmps = onSnapshot(centralEmpsRef, snapshot => {
             centralEmpsData = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }))
+            centralEmpsData.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0))
             emit()
         })
 
@@ -371,7 +372,7 @@ class Dispatch {
 
             if (targetKey === 'centrale') {
                 const d = doc(db, collectionName, GLOBAL_DOC_ID, "centrale_employees", employeeId)
-                transaction.set(d, { ...employeeData, employeeId, centralRole: null })
+                transaction.set(d, { ...employeeData, employeeId, centralRole: null, createdAt: employeeData.createdAt || Date.now() })
             } else if (targetKey?.startsWith('inter:')) {
                 if (targetSlotSnap?.exists()) {
                     const emps = targetSlotSnap.data().employees || []
