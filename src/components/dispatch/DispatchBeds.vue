@@ -88,8 +88,11 @@
                 <tr>
                   <td style="width: 130px; border: 1px solid transparent;"></td>
                   <td v-for="(bedId, i) in bedSubarray" :key="bedId + '-action-' + i" style="height: 38px; border: 1px solid transparent; padding-top: 4px;">
-                    <v-btn v-if="bedId !== '' && getBedData(bedId).patientName" variant="tonal" size="x-small" color="error" @click="clearBed(bedId)" title="Libérer le lit">
+                    <v-btn v-if="bedId !== '' && getBedData(bedId).patientName" variant="tonal" size="x-small" color="error" @click="clearBed(bedId)" title="Libérer le lit" class="mr-1">
                       <v-icon size="12" class="mr-1">mdi-bed-empty</v-icon> Libérer
+                    </v-btn>
+                    <v-btn v-if="bedId !== '' && getBedData(bedId).patientName && getBedData(bedId).reason === 'decede'" variant="tonal" size="x-small" color="grey-lighten-1" @click="moveToMorgue(bedId)" title="Déplacer à la morgue">
+                      <v-icon size="12" class="mr-1">mdi-coffin</v-icon> Morgue
                     </v-btn>
                   </td>
                 </tr>
@@ -107,8 +110,10 @@ import DispatchLib from '@/classes/Dispatch.js'
 import {
   crisisMedicalStatuses,
   crisisBeds,
-  crisisBedGroups
+  crisisBedGroups,
+  morgueConfig
 } from '@/config/dispatch.js'
+import Swal from 'sweetalert2'
 
 export default {
   name: 'DispatchBeds',
@@ -122,6 +127,7 @@ export default {
       crisisMedicalStatuses,
       crisisBeds,
       crisisBedGroups,
+      morgueConfig,
       localBuffers: {},
       _timeouts: {}
     }
@@ -193,6 +199,58 @@ export default {
     },
     async clearBed(bedValue) {
       await DispatchLib.updateBed(bedValue, { patientName: '', fdoNotified: false, emergencyContactsNotified: false, reason: '', admissionTime: null })
+    },
+    async moveToMorgue(bedValue) {
+      const bedData = this.getBedData(bedValue)
+      const patientName = bedData.patientName
+      if (!patientName) return
+
+      // Find first empty locker
+      let emptySlotIndex = -1
+      const lockerCount = this.morgueConfig?.lockerCount || 12
+      const lockers = this.dispatch?.morgue?.lockers || {}
+      
+      for (let i = 1; i <= lockerCount; i++) {
+        const slot = lockers[`slot_${i}`]
+        if (!slot || !slot.name) {
+          emptySlotIndex = i
+          break
+        }
+      }
+
+      if (emptySlotIndex === -1) {
+        Swal.fire({
+          title: 'Morgue pleine',
+          text: 'Aucun casier mortuaire n\'est disponible.',
+          icon: 'warning',
+          background: '#1e293b',
+          color: '#fff',
+          confirmButtonColor: '#3b82f6',
+          target: '#app'
+        })
+        return
+      }
+
+      const now = new Date()
+      const dateStr = `${now.getDate().toString().padStart(2, '0')}/${(now.getMonth() + 1).toString().padStart(2, '0')}/${now.getFullYear()}`
+
+      await DispatchLib.updateMorgue('lockers', `slot_${emptySlotIndex}`, { 
+        name: patientName,
+        date: dateStr
+      })
+
+      await this.clearBed(bedValue)
+      
+      Swal.fire({
+        toast: true,
+        position: 'top-end',
+        icon: 'success',
+        title: `${patientName} déplacé en morgue (Casier ${emptySlotIndex})`,
+        showConfirmButton: false,
+        timer: 3000,
+        background: '#1e293b',
+        color: '#fff'
+      })
     }
   }
 }
