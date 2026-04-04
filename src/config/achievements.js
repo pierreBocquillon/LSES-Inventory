@@ -165,10 +165,69 @@ export const achievementList = [
   },
 
   {
+    id: 'followup_first',
+    category: 'Formation',
+    rarity: 'uncommon',
+    title: 'Formateur attentionné',
+    description: 'Mettez à jour la date de suivi d\'un médecin pour la première fois.',
+    icon: 'mdi-calendar-check',
+    condition: (stats) => (stats.followup_date_updated || 0) >= 1
+  },
+  {
+    id: 'followup_regular',
+    category: 'Formation',
+    rarity: 'rare',
+    title: 'Formateur du mois',
+    description: 'Mettez à jour la date de suivi d\'un médecin 10 fois.',
+    icon: 'mdi-calendar-clock',
+    progress: (stats) => ({ current: Math.min(stats.followup_date_updated || 0, 10), max: 10 }),
+    condition: (stats) => (stats.followup_date_updated || 0) >= 10
+  },
+  {
+    id: 'followup_veteran',
+    category: 'Formation',
+    rarity: 'epic',
+    title: 'Tu veux prendre ma place ou quoi ?',
+    description: 'Mettez à jour la date de suivi d\'un médecin 30 fois.',
+    icon: 'mdi-calendar-star',
+    progress: (stats) => ({ current: Math.min(stats.followup_date_updated || 0, 30), max: 30 }),
+    condition: (stats) => (stats.followup_date_updated || 0) >= 30
+  },
+  {
+    id: 'promotion_vote_first',
+    category: 'Formation',
+    rarity: 'uncommon',
+    title: 'J\'ai mon mot à dire',
+    description: 'Donnez votre avis sur un passage de grade pour la première fois.',
+    icon: 'mdi-vote',
+    condition: (stats) => (stats.promotion_votes || 0) >= 1
+  },
+  {
+    id: 'promotion_vote_regular',
+    category: 'Formation',
+    rarity: 'rare',
+    title: 'Membre du jury',
+    description: 'Donnez votre avis sur un passage de grade 10 fois.',
+    icon: 'mdi-gavel',
+    progress: (stats) => ({ current: Math.min(stats.promotion_votes || 0, 10), max: 10 }),
+    condition: (stats) => (stats.promotion_votes || 0) >= 10
+  },
+  {
+    id: 'promotion_vote_veteran',
+    category: 'Formation',
+    rarity: 'epic',
+    title: 'La sentence est irrévocable',
+    description: 'Donnez votre avis sur un passage de grade 25 fois.',
+    icon: 'mdi-scale-balance',
+    progress: (stats) => ({ current: Math.min(stats.promotion_votes || 0, 25), max: 25 }),
+    condition: (stats) => (stats.promotion_votes || 0) >= 25
+  },
+
+  {
     id: 'fleet_repa_1',
     category: 'Garage',
     rarity: 'rare',
-    title: 'Mcanicien du quartier',
+    title: 'Mécanicien du quartier',
     description: 'Effectuer une réparation complète de la flotte.',
     icon: 'mdi-wrench-check',
     progress: (stats) => ({ current: Math.min(stats.fleet_full_repairs || 0, 1), max: 1 }),
@@ -224,6 +283,8 @@ export const commonStats = [
   { key: 'employees_recruited', label: 'Employés recrutés' },
   { key: 'ideas_suggested', label: 'Idées proposées' },
   { key: 'fleet_full_repairs', label: 'Réparations Flotte Complètes' },
+  { key: 'followup_date_updated', label: 'Dates de suivi mises à jour' },
+  { key: 'promotion_votes', label: 'Avis sur passages de grade' },
 ];
 
 export const achievementTitles = [

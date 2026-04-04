@@ -748,6 +748,7 @@ import { PENALTIES } from '@/config/penalties'
 
 import { BODY_PARTS } from '@/config/body_parts'
 import { useUserStore } from '@/store/user'
+import { useAchievementStore } from '@/store/achievements.js'
 import Swal from 'sweetalert2/dist/sweetalert2.js'
 import logger from '@/functions/logger.js'
 
@@ -759,6 +760,7 @@ export default {
   name: 'Training',
   data: () => ({
     userStore: useUserStore(),
+    achievementStore: useAchievementStore(),
     search: '',
     employees: [],
     showAllEmployees: false,
@@ -1684,6 +1686,8 @@ export default {
         await this.selectedFollowUpEmployee.save()
         this.followUpDialog = false
 
+        this.achievementStore.incrementStat('followup_date_updated', 1, 1)
+
         Swal.fire({
           icon: 'success',
           title: 'Date mise à jour',
@@ -1779,6 +1783,7 @@ export default {
           voterName: this.userStore.profile.name || 'Inconnu'
         }
         await emp.save()
+        this.achievementStore.incrementStat('promotion_votes', 1, 1)
       }
     },
 
