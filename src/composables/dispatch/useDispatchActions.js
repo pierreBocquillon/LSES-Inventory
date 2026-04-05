@@ -2,6 +2,7 @@ import { ref, computed, watch } from 'vue'
 import Dispatch from '@/classes/Dispatch.js'
 import logger from '@/functions/logger.js'
 import Swal from 'sweetalert2/dist/sweetalert2.js'
+import { useAchievementStore } from '@/store/achievements.js'
 import {
   hospitalStatuses,
   allCategories,
@@ -30,6 +31,7 @@ export function useDispatchActions(state) {
   let _isResetting = false
   let _isUnmounted = false
 
+  const achievementStore = useAchievementStore()
 
   const quickAddDialog = ref(false)
   const quickAddEmployee = ref(null)
@@ -246,6 +248,7 @@ export function useDispatchActions(state) {
     }
     const newSlotId = Date.now().toString() + Math.random().toString(36).slice(2, 6)
     await Dispatch.addInterventionSlot({ id: newSlotId, type: 'intervention', employees: [], returnStatus: null, location: null, complement: null })
+    achievementStore.incrementStat('dispatch_interventions_created', 1, 1)
     if (nextTick) {
       nextTick(() => {
         const el = document.getElementById(`zip-input-${newSlotId}`)
@@ -353,6 +356,7 @@ export function useDispatchActions(state) {
     if (!dispatch.value) return
     await Dispatch.resetAll()
     logger.log(userStore.profile.id, 'DISPATCH', 'Le dispatch a été réinitialisé')
+    achievementStore.incrementStat('dispatch_resets', 1, 1)
   }
 
   const confirmResetDispatch = () => {
@@ -430,6 +434,11 @@ export function useDispatchActions(state) {
       allSpecialties: specs,
       role,
     })
+
+    if (src === 'hs' && categoryValue === 'astreinte')
+      achievementStore.incrementStat('dispatch_hs_to_astreinte', 1, 0.5)
+    if (categoryValue === 'centrale' && !(dispatch.value?.centrale?.employees || []).length)
+      achievementStore.incrementStat('dispatch_centrale_lead', 1, 1)
     quickAddDialog.value = false
   }
 

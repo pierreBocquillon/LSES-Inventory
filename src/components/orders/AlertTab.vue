@@ -71,6 +71,7 @@
 
 <script>
 import { useUserStore } from '@/store/user.js'
+import { useAchievementStore } from '@/store/achievements.js'
 
 import Order from '@/classes/Order.js'
 import Instance from '@/classes/Instance.js'
@@ -86,6 +87,7 @@ export default {
       unsub: [],
 
       userStore: useUserStore(),
+      achievementStore: useAchievementStore(),
 
       orders: [],
       companyOrders: [],
@@ -321,6 +323,8 @@ export default {
 
       await order.save()
       this.orderDialog = false
+
+      this.achievementStore.incrementStat('orders_started', 1, 1)
 
       logger.log(this.userStore.profile.id, 'COMMANDES', `Création d'une commande chez ${this.orderData.company.icon}${this.orderData.company.name} (${Math.round(this.orderWeight*100)/100} kg)`)
 

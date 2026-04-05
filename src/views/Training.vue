@@ -1313,6 +1313,8 @@ export default {
 
       await this.selectedScenarioTrainee.save()
 
+      this.achievementStore.incrementStat('simulations_saved', 1, 1)
+
       Swal.fire({
         icon: 'success',
         title: 'Simulation épinglée',

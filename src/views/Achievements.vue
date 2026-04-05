@@ -43,6 +43,11 @@
           </div>
         </div>
 
+        <div class="d-flex align-center justify-center mb-6 opacity-50 transition-all">
+          <v-icon size="14" class="mr-1" color="primary">mdi-information-outline</v-icon>
+          <span class="text-caption text-grey-lighten-2">Certains succès sont soumis à un délai anti-abus. Les compteurs peuvent ne pas s'actualiser instantanément.</span>
+        </div>
+
         <div class="d-flex justify-center">
           <v-tabs v-model="activeTab" bg-color="transparent" class="custom-nav-tabs pa-1 rounded-pill" hide-slider>
             <v-tab value="mine" class="rounded-pill px-8 mr-2 transition-all" :class="{ 'active-tab-bg shadow-lg': activeTab === 'mine' }" variant="text" :ripple="false">

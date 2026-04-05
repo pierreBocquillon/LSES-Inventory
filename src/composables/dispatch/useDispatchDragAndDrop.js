@@ -1,7 +1,9 @@
 import { ref, onBeforeUnmount } from 'vue'
 import Dispatch from '@/classes/Dispatch.js'
+import { useAchievementStore } from '@/store/achievements.js'
 
 export function useDispatchDragAndDrop(hasLsesPerm, dispatch, autoTurnOffRadio) {
+  const achievementStore = useAchievementStore()
   const draggingEmployee = ref(null)
   const draggingSource = ref(null)
   const dragOver = ref(null)
@@ -103,6 +105,11 @@ export function useDispatchDragAndDrop(hasLsesPerm, dispatch, autoTurnOffRadio) 
       allSpecialties: emp.allSpecialties || [],
       role: emp.role || ''
     })
+
+    if (src === 'hs' && targetKey === 'cat:astreinte')
+      achievementStore.incrementStat('dispatch_hs_to_astreinte', 1, 0.5)
+    if (targetKey === 'centrale' && !(dispatch.value?.centrale?.employees || []).length)
+      achievementStore.incrementStat('dispatch_centrale_lead', 1, 1)
   }
 
   onBeforeUnmount(() => {

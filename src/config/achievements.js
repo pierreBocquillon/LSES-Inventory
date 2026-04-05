@@ -193,6 +193,36 @@ export const achievementList = [
     progress: (stats) => ({ current: Math.min(stats.followup_date_updated || 0, 30), max: 30 }),
     condition: (stats) => (stats.followup_date_updated || 0) >= 30
   },
+
+  {
+    id: 'simulation_first',
+    category: 'Formation',
+    rarity: 'rare',
+    title: 'Mise en situation',
+    description: 'Enregistrez votre première simulation.',
+    icon: 'mdi-stethoscope',
+    condition: (stats) => (stats.simulations_saved || 0) >= 1
+  },
+  {
+    id: 'simulation_regular',
+    category: 'Formation',
+    rarity: 'epic',
+    title: 'En impro totale',
+    description: 'Enregistrez 10 simulations.',
+    icon: 'mdi-hospital-marker',
+    progress: (stats) => ({ current: Math.min(stats.simulations_saved || 0, 10), max: 10 }),
+    condition: (stats) => (stats.simulations_saved || 0) >= 10
+  },
+  {
+    id: 'simulation_veteran',
+    category: 'Formation',
+    rarity: 'legendary',
+    title: 'Le retour de Takashi Sakamoto',
+    description: 'Enregistrez 25 simulations.',
+    icon: 'mdi-medical-bag',
+    progress: (stats) => ({ current: Math.min(stats.simulations_saved || 0, 25), max: 25 }),
+    condition: (stats) => (stats.simulations_saved || 0) >= 25
+  },
   {
     id: 'promotion_vote_first',
     category: 'Formation',
@@ -221,6 +251,146 @@ export const achievementList = [
     icon: 'mdi-scale-balance',
     progress: (stats) => ({ current: Math.min(stats.promotion_votes || 0, 25), max: 25 }),
     condition: (stats) => (stats.promotion_votes || 0) >= 25
+  },
+
+  {
+    id: 'order_started_first',
+    category: 'Commandes',
+    rarity: 'rare',
+    title: 'Bon de commande',
+    description: 'Débutez votre première commande.',
+    icon: 'mdi-cart-plus',
+    condition: (stats) => (stats.orders_started || 0) >= 1
+  },
+  {
+    id: 'order_started_regular',
+    category: 'Commandes',
+    rarity: 'epic',
+    title: 'Le ravitailleur',
+    description: 'Débutez 15 commandes.',
+    icon: 'mdi-cart-arrow-down',
+    progress: (stats) => ({ current: Math.min(stats.orders_started || 0, 15), max: 15 }),
+    condition: (stats) => (stats.orders_started || 0) >= 15
+  },
+  {
+    id: 'order_started_veteran',
+    category: 'Commandes',
+    rarity: 'legendary',
+    title: 'Collectionneur de cartons',
+    description: 'Débutez 30 commandes.',
+    icon: 'mdi-clipboard-list',
+    progress: (stats) => ({ current: Math.min(stats.orders_started || 0, 30), max: 30 }),
+    condition: (stats) => (stats.orders_started || 0) >= 30
+  },
+
+  {
+    id: 'order_completed_first',
+    category: 'Commandes',
+    rarity: 'rare',
+    title: 'Livraison acceptée',
+    description: 'Terminez votre première commande.',
+    icon: 'mdi-package-variant-closed-check',
+    condition: (stats) => (stats.orders_completed || 0) >= 1
+  },
+  {
+    id: 'order_completed_regular',
+    category: 'Commandes',
+    rarity: 'epic',
+    title: 'Le collectionneur',
+    description: 'Terminez 15 commandes.',
+    icon: 'mdi-warehouse',
+    progress: (stats) => ({ current: Math.min(stats.orders_completed || 0, 15), max: 15 }),
+    condition: (stats) => (stats.orders_completed || 0) >= 15
+  },
+  {
+    id: 'order_completed_veteran',
+    category: 'Commandes',
+    rarity: 'legendary',
+    title: 'Expert du caddie',
+    description: 'Terminez 30 commandes.',
+    icon: 'mdi-truck-delivery',
+    progress: (stats) => ({ current: Math.min(stats.orders_completed || 0, 30), max: 30 }),
+    condition: (stats) => (stats.orders_completed || 0) >= 30
+  },
+
+  {
+    id: 'dispatch_reset',
+    category: 'Dispatch',
+    rarity: 'epic',
+    title: 'Remise à zéro',
+    description: 'Réinitialisez le dispatch pour la première fois.',
+    icon: 'mdi-restore',
+    condition: (stats) => (stats.dispatch_resets || 0) >= 1
+  },
+
+  {
+    id: 'dispatch_inter_first',
+    category: 'Dispatch',
+    rarity: 'common',
+    title: 'Premier appel',
+    description: 'Créez votre premier slot d\'intervention.',
+    icon: 'mdi-ambulance',
+    condition: (stats) => (stats.dispatch_interventions_created || 0) >= 1
+  },
+  {
+    id: 'dispatch_inter_regular',
+    category: 'Dispatch',
+    rarity: 'rare',
+    title: 'Je suis la centrale !',
+    description: 'Créez 50 interventions.',
+    icon: 'mdi-headset',
+    progress: (stats) => ({ current: Math.min(stats.dispatch_interventions_created || 0, 50), max: 50 }),
+    condition: (stats) => (stats.dispatch_interventions_created || 0) >= 50
+  },
+  {
+    id: 'dispatch_inter_veteran',
+    category: 'Dispatch',
+    rarity: 'epic',
+    title: 'Et avec le dispatch de crise ?',
+    description: 'Créez 150 interventions.',
+    icon: 'mdi-hospital-marker',
+    progress: (stats) => ({ current: Math.min(stats.dispatch_interventions_created || 0, 150), max: 150 }),
+    condition: (stats) => (stats.dispatch_interventions_created || 0) >= 150
+  },
+
+  {
+    id: 'dispatch_astreinte_first',
+    category: 'Dispatch',
+    rarity: 'uncommon',
+    title: 'Je me réveille !',
+    description: 'Mettez vous en astreinte pour la première fois.',
+    icon: 'mdi-clock-alert',
+    condition: (stats) => (stats.dispatch_hs_to_astreinte || 0) >= 1
+  },
+  {
+    id: 'dispatch_astreinte_veteran',
+    category: 'Dispatch',
+    rarity: 'rare',
+    title: 'Au rapport !',
+    description: 'Mettez vous en astreinte 20 fois.',
+    icon: 'mdi-account-clock',
+    progress: (stats) => ({ current: Math.min(stats.dispatch_hs_to_astreinte || 0, 20), max: 20 }),
+    condition: (stats) => (stats.dispatch_hs_to_astreinte || 0) >= 20
+  },
+
+  {
+    id: 'dispatch_centrale_first',
+    category: 'Dispatch',
+    rarity: 'rare',
+    title: 'Début d\'un long périple',
+    description: 'Devenez centrale pour la première fois.',
+    icon: 'mdi-microphone',
+    condition: (stats) => (stats.dispatch_centrale_lead || 0) >= 1
+  },
+  {
+    id: 'dispatch_centrale_veteran',
+    category: 'Dispatch',
+    rarity: 'epic',
+    title: 'Allô ? C\'est encore moi',
+    description: 'Devenez centrale 15 fois.',
+    icon: 'mdi-phone-classic',
+    progress: (stats) => ({ current: Math.min(stats.dispatch_centrale_lead || 0, 15), max: 15 }),
+    condition: (stats) => (stats.dispatch_centrale_lead || 0) >= 15
   },
 
   {
@@ -284,7 +454,14 @@ export const commonStats = [
   { key: 'ideas_suggested', label: 'Idées proposées' },
   { key: 'fleet_full_repairs', label: 'Réparations Flotte Complètes' },
   { key: 'followup_date_updated', label: 'Dates de suivi mises à jour' },
+  { key: 'simulations_saved', label: 'Simulations enregistrées' },
+  { key: 'orders_started', label: 'Commandes débutées' },
+  { key: 'orders_completed', label: 'Commandes terminées' },
   { key: 'promotion_votes', label: 'Avis sur passages de grade' },
+  { key: 'dispatch_resets', label: 'Dispatch réinitialisés' },
+  { key: 'dispatch_interventions_created', label: 'Slots d\'intervention créés' },
+  { key: 'dispatch_hs_to_astreinte', label: 'Mises en astreinte (depuis HS)' },
+  { key: 'dispatch_centrale_lead', label: 'Fois en tête de centrale' },
 ];
 
 export const achievementTitles = [
