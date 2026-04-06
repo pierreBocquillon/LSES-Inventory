@@ -138,11 +138,31 @@
 
             <v-select v-if="selectedScenarioObjectives.length > 0" v-model="selectedScenarios" :items="availableScenarios" label="Simulations possibles" variant="outlined" multiple chips class="mb-4"></v-select>
 
-            <div class="d-flex justify-center mb-4" v-if="selectedScenarios.length > 0">
-              <v-btn color="teal" prepend-icon="mdi-dice-multiple" @click="generateInjuries">
-                Générer les blessures
+            <div class="d-flex justify-center flex-wrap gap-2 mb-4" v-if="selectedScenarios.length > 0">
+              <v-btn color="teal" prepend-icon="mdi-dice-multiple" @click="generateInjuries" size="small">
+                Aléatoire
+              </v-btn>
+              <v-btn :color="isAddingManualInjury ? 'grey' : 'teal'" :prepend-icon="isAddingManualInjury ? 'mdi-close' : 'mdi-plus'" @click="isAddingManualInjury = !isAddingManualInjury" size="small" variant="tonal">
+                {{ isAddingManualInjury ? 'Annuler' : 'Ajouter' }}
               </v-btn>
             </div>
+
+            <v-expand-transition>
+              <div v-if="isAddingManualInjury" class="bg-teal-lighten-5 pa-3 rounded mb-4 border-teal-lighten-4 border">
+                <div class="text-caption font-weight-bold mb-2 text-teal-darken-2">Nouvelle blessure</div>
+                <v-row density="compact">
+                  <v-col cols="6">
+                    <v-select v-model="newInjury.bodyPart" :items="bodyParts" label="Zone" variant="outlined" density="compact" hide-details color="teal"></v-select>
+                  </v-col>
+                  <v-col cols="4">
+                    <v-select v-model="newInjury.severity" :items="severities" label="Gravité" variant="outlined" density="compact" hide-details color="teal"></v-select>
+                  </v-col>
+                  <v-col cols="2" class="d-flex align-center">
+                    <v-btn color="teal" icon="mdi-check" size="small" @click="addManualInjury" :disabled="!newInjury.bodyPart"></v-btn>
+                  </v-col>
+                </v-row>
+              </div>
+            </v-expand-transition>
 
             <v-select v-model="selectedMalus" :items="availableMalus" label="Malus à appliquer" variant="outlined" multiple chips class="mb-4" prepend-inner-icon="mdi-alert-octagon" color="error"></v-select>
 
@@ -156,20 +176,23 @@
                 <v-card-text>
                   <div class="font-weight-bold mb-2">Contexte:</div>
                   <div class="d-flex flex-wrap gap-2 mb-4">
-                    <v-chip v-for="sc in selectedScenarios" :key="sc" size="small" :color="getSeverityColor()" variant="elevated" class="text-white">
+                    <v-chip v-for="sc in selectedScenarios" :key="sc" size="small" color="teal" variant="elevated" class="text-white">
                       {{ sc }}
                     </v-chip>
                   </div>
 
                   <v-list density="compact" bg-color="transparent">
-                    <v-list-item v-for="(inj, i) in generatedInjuries" :key="i">
+                    <v-list-item v-for="(inj, i) in generatedInjuries" :key="i" class="px-0">
                       <template v-slot:prepend>
                         <v-icon :color="getSeverityColor(inj.severity)">mdi-alert-circle</v-icon>
                       </template>
-                      <v-list-item-title class="font-weight-bold">{{ inj.bodyPart }}</v-list-item-title>
-                      <v-list-item-subtitle>
-                        <span :class="`text-${getSeverityColor(inj.severity)} font-weight-bold`">{{ inj.severity }}</span>
-                      </v-list-item-subtitle>
+                      <v-list-item-title class="font-weight-bold text-body-2">{{ inj.bodyPart }}</v-list-item-title>
+                      <template v-slot:append>
+                        <div class="d-flex align-center">
+                          <v-select v-model="inj.severity" :items="severities" density="compact" variant="plain" hide-details hide-selected class="severity-selector mt-0 pt-0" style="width: 120px; font-size: 0.8rem; height: 30px;" :style="{ color: `var(--v-theme-${getSeverityColor(inj.severity)}) !important` }"></v-select>
+                          <v-btn icon="mdi-delete" size="x-small" color="error" variant="text" @click="removeInjury(i)" class="ml-1"></v-btn>
+                        </div>
+                      </template>
                     </v-list-item>
                   </v-list>
 
@@ -791,6 +814,10 @@ export default {
     generatedInjuries: [],
     selectedMalus: [],
     availableMalus: PENALTIES,
+    bodyParts: BODY_PARTS,
+    severities: ['Légère', 'Moyenne', 'Lourde'],
+    newInjury: { bodyPart: null, severity: 'Légère' },
+    isAddingManualInjury: false,
     newRequest: {
       employee: null,
       training: 'Formation Grenouille'
@@ -1198,6 +1225,8 @@ export default {
       this.selectedScenarios = []
       this.generatedInjuries = []
       this.selectedMalus = []
+      this.newInjury = { bodyPart: null, severity: 'Légère' }
+      this.isAddingManualInjury = false
     },
 
     getTrainerStatus(employee, objectiveId) {
@@ -1273,7 +1302,6 @@ export default {
     generateInjuries() {
       if (this.selectedScenarios.length === 0) return
 
-      const severities = ['Légère', 'Moyenne', 'Lourde']
       const numInjuries = Math.floor(Math.random() * 4) + 1
 
       const injuries = []
@@ -1289,11 +1317,24 @@ export default {
         }
         usedParts.add(part)
 
-        const severity = severities[Math.floor(Math.random() * severities.length)]
+        const severity = this.severities[Math.floor(Math.random() * this.severities.length)]
         injuries.push({ bodyPart: part, severity: severity })
       }
 
       this.generatedInjuries = injuries
+    },
+
+    addManualInjury() {
+      if (!this.newInjury.bodyPart) return
+      this.generatedInjuries.push({ ...this.newInjury })
+      this.newInjury.bodyPart = null
+      this.newInjury.severity = 'Légère'
+      this.isAddingManualInjury = false
+    },
+
+    removeInjury(index) {
+      if (index > -1)
+        this.generatedInjuries.splice(index, 1)
     },
 
     async pinSimulation(isValidating) {
