@@ -31,6 +31,71 @@
       <v-btn size="x-small" variant="plain" color="white" class="ml-1" @click.stop="confirmClearCrises" title="Réinitialiser le dispatch de crise">
         <v-icon size="13">mdi-refresh</v-icon>
       </v-btn>
+
+      <v-menu v-model="showFilterMenu" :close-on-content-click="false" location="bottom end" offset="5">
+        <template v-slot:activator="{ props }">
+          <v-btn v-bind="props" size="x-small" variant="tonal" :color="isFiltered ? 'amber' : 'white'" class="ml-4" @click.stop style="height: 24px; text-transform: none; font-size: 0.7rem;">
+            <v-badge v-if="isFiltered" color="amber" dot floating offset-x="-4" offset-y="2">
+              <div class="d-flex align-center">
+                <v-icon size="12" class="mr-1">mdi-filter-variant</v-icon>
+                Filtres
+              </div>
+            </v-badge>
+            <div v-else class="d-flex align-center">
+              <v-icon size="12" class="mr-1">mdi-filter-variant</v-icon>
+              Filtres
+            </div>
+          </v-btn>
+        </template>
+        <div style="background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 12px; min-width: 200px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.5);">
+          <div class="mb-3">
+            <label style="display: block; font-size: 0.7rem; color: #94a3b8; margin-bottom: 4px; font-weight: bold; text-transform: uppercase;">Groupe / Affiliation</label>
+            <select v-model="filterAffiliation" class="location-input" style="width: 100%; font-size: 0.8rem; background: rgba(0,0,0,0.2); border: 1px solid #334155; border-radius: 4px; padding: 4px 8px; color: #fff; height: 32px; outline: none;">
+              <option :value="null" style="background:#1a1f35">Tous les groupes</option>
+              <option v-for="aff in affiliations" :key="aff.id" :value="aff.id" style="background:#1a1f35" :style="{ color: aff.color }">{{ aff.label }}</option>
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label style="display: block; font-size: 0.7rem; color: #94a3b8; margin-bottom: 4px; font-weight: bold; text-transform: uppercase;">Qui rapatrie</label>
+            <select v-model="filterRepatriatedBy" class="location-input" style="width: 100%; font-size: 0.8rem; background: rgba(0,0,0,0.2); border: 1px solid #334155; border-radius: 4px; padding: 4px 8px; color: #fff; height: 32px; outline: none;">
+              <option :value="null" style="background:#1a1f35">Tous</option>
+              <option value="none" style="background:#1a1f35">-- Aucun --</option>
+              <option v-for="emp in getCrisisEmployeeOptions()" :key="emp.id" :value="emp.id" style="background:#1a1f35">{{ emp.name }}</option>
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label style="display: block; font-size: 0.7rem; color: #94a3b8; margin-bottom: 4px; font-weight: bold; text-transform: uppercase;">Qui soigne</label>
+            <select v-model="filterTreatedBy" class="location-input" style="width: 100%; font-size: 0.8rem; background: rgba(0,0,0,0.2); border: 1px solid #334155; border-radius: 4px; padding: 4px 8px; color: #fff; height: 32px; outline: none;">
+              <option :value="null" style="background:#1a1f35">Tous</option>
+              <option value="none" style="background:#1a1f35">-- Personne --</option>
+              <option v-for="emp in getCrisisEmployeeOptions(null, 'treatment')" :key="emp.id" :value="emp.id" style="background:#1a1f35">{{ emp.name }}</option>
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label style="display: block; font-size: 0.7rem; color: #94a3b8; margin-bottom: 4px; font-weight: bold; text-transform: uppercase;">Canal check centrale</label>
+            <select v-model="filterCanalCheck" class="location-input" style="width: 100%; font-size: 0.8rem; background: rgba(0,0,0,0.2); border: 1px solid #334155; border-radius: 4px; padding: 4px 8px; color: #fff; height: 32px; outline: none;">
+              <option value="all" style="background:#1a1f35">Tous</option>
+              <option value="checked" style="background:#1a1f35">Coché</option>
+              <option value="unchecked" style="background:#1a1f35">Non coché</option>
+            </select>
+          </div>
+
+          <div class="mb-3 d-flex align-center">
+            <label class="d-flex align-center cursor-pointer" style="font-size: 0.8rem; color: #e2e8f0; user-select: none;">
+              <input type="checkbox" v-model="hideCompleted" class="mr-2" style="width: 14px; height: 14px;" />
+              Masquer les patients terminés
+            </label>
+          </div>
+          <v-divider class="mb-2" color="white" style="opacity: 0.1"></v-divider>
+          <div class="d-flex justify-space-between align-center">
+            <v-btn variant="text" size="x-small" color="grey-lighten-1" @click="resetFilters" style="text-transform: none;">Réinitialiser</v-btn>
+            <v-btn variant="tonal" size="x-small" color="blue" @click="showFilterMenu = false" style="text-transform: none;">Fermer</v-btn>
+          </div>
+        </div>
+      </v-menu>
     </div>
 
     <div v-if="crisisExpanded" class="crises-list" style="margin-top: 10px;">
