@@ -501,7 +501,7 @@ export const commonStats = [
   { key: 'dispatch_resets', label: 'Dispatch réinitialisés' },
   { key: 'dispatch_interventions_created', label: 'Slots d\'intervention créés' },
   { key: 'dispatch_hs_to_astreinte', label: 'Mises en astreinte (depuis HS)' },
-  { key: 'dispatch_centrale_lead', label: 'Fois en tête de centrale' },
+  { key: 'dispatch_centrale_lead', label: 'Fois en centrale' },
   { key: 'autopsy_reports_generated', label: 'Rapports d\'autopsie générés' },
   { key: 'leave_requests_submitted', label: 'Demandes de congé soumises' },
 ];
@@ -517,6 +517,7 @@ export const achievementTitles = [
   { threshold: 15, label: 'Maître', color: 'deep-purple-accent-2', icon: 'mdi-wizard-hat' },
   { threshold: 18, label: 'Légende', color: 'amber-accent-4', icon: 'mdi-star-circle' },
   { threshold: 22, label: 'Mythe', color: 'orange-accent-4', icon: 'mdi-fire' },
-  { threshold: 26, label: 'Demi-Dieu', color: 'pink-accent-3', icon: 'mdi-lightning-bolt' },
-  { threshold: 30, label: 'Dieu du LSES', color: 'red-accent-4', icon: 'mdi-crown' }
+  { threshold: 26, label: 'Invincible', color: 'pink-accent-3', icon: 'mdi-lightning-bolt' },
+  { threshold: 30, label: 'Demi-Dieu', color: 'red-accent-4', icon: 'mdi-crown' },
+  { threshold: 35, label: 'Dieu du LSES', color: 'red-accent-4', icon: 'mdi-infinity' }
 ];
