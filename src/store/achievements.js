@@ -3,6 +3,7 @@ import { useUserStore } from './user';
 import Achievement from '@/classes/Achievement';
 import Employee from '@/classes/Employee';
 import Swal from 'sweetalert2/dist/sweetalert2.js'
+import logger from '@/functions/logger.js'
 
 export const useAchievementStore = defineStore('achievements', {
   state: () => ({
@@ -49,6 +50,7 @@ export const useAchievementStore = defineStore('achievements', {
           toNotifyIds.forEach(id => {
             const achievement = this.allAchievements.find(a => a.id === id);
             if (achievement) {
+              logger.log(profile.name || employee?.name || 'Système', 'ACHIEVEMENTS', `Déblocage : ${achievement.title}`)
               Swal.fire({
                 title: 'Succès Débloqué !',
                 text: `${achievement.title} : ${achievement.description}`,
@@ -94,6 +96,8 @@ export const useAchievementStore = defineStore('achievements', {
 
       if (!profile.stats) profile.stats = {};
       profile.stats[statName] = (profile.stats[statName] || 0) + amount;
+
+      logger.log(profile.name || 'Système', 'ACHIEVEMENTS', `${statName} : +${amount} (Total: ${profile.stats[statName]})`);
 
       await profile.save();
       await this.checkUnlocks();
