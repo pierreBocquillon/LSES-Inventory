@@ -5,7 +5,7 @@
       <span class="ml-2 text-h5 text-primary">LSES Inventory</span>
     </h1>
     <v-spacer></v-spacer>
-    <v-btn icon variant="plain" @click="$router.push('/achievements')" class="mr-1" title="Achievements">
+    <v-btn icon variant="plain" @click="$router.push('/achievements')" class="mr-1" title="Succès">
       <v-icon size="28" color="primary">mdi-trophy-outline</v-icon>
     </v-btn>
     <div>
