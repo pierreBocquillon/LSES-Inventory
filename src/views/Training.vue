@@ -8,8 +8,9 @@
         <div v-for="(group, trainingName) in groupedTrainingRequests" :key="trainingName" class="mb-3">
           <div class="text-caption font-weight-bold mb-1 text-grey-darken-1">{{ trainingName }}</div>
           <div class="d-flex flex-wrap gap-2">
-            <v-chip v-for="req in group" :key="req.id + req.training" :color="getTrainingColor(req.training)" closable :model-value="true" size="small" @click:close="removeRequest(req)">
+            <v-chip v-for="req in group" :key="req.id + req.training" :color="getTrainingColor(req.training)" :model-value="true" size="small">
               {{ req.name }}
+              <v-icon icon="mdi-close-circle" size="x-small" class="ml-1 v-chip__close" @click.stop="removeRequest(req)"></v-icon>
             </v-chip>
           </div>
         </div>
@@ -671,7 +672,7 @@
     </v-dialog>
 
     <v-card class="flex-grow-1" v-if="!isRestrictedTrainer">
-      <v-data-table :headers="headers" :items="trainees" :search="search" class="h-100" :sort-by="[{ key: 'role', order: 'desc' }]">
+      <v-data-table :headers="headers" :items="trainees" :search="search" class="h-100" :sort-by="[{ key: 'role', order: 'desc' }]" :items-per-page="25">
         <template v-slot:item.name="{ item }">
           <div class="d-flex align-center">
             <v-icon color="blue" v-if="item.sex === 'Homme'" class="mr-2">mdi-gender-male</v-icon>
@@ -1488,7 +1489,8 @@ export default {
             showDenyButton: true,
             confirmButtonText: 'Valider',
             denyButtonText: 'Refuser / Supprimer',
-            cancelButtonText: 'Annuler'
+            cancelButtonText: 'Annuler',
+            target: '#app'
           })
         } else {
           result = await Swal.fire({
@@ -1499,16 +1501,18 @@ export default {
             confirmButtonText: 'Supprimer',
             cancelButtonText: 'Annuler',
             confirmButtonColor: '#d33',
+            target: '#app'
           })
           if (result.isConfirmed) result = { ...result, isConfirmed: false, isDenied: true }
         }
 
         if (result.isDismissed) return;
 
-        const emp = req.employeeObj
-        emp.trainingRequests = emp.trainingRequests.filter(r => r !== req.training)
-
+        const emp = this.employees.find(e => e.id === req.id)
+        if (!emp) return
+        
         if (result.isConfirmed) {
+          emp.trainingRequests = emp.trainingRequests.filter(r => r !== req.training)
           if (!emp.validatedTrainings) emp.validatedTrainings = []
           if (!emp.validatedTrainings.includes(req.training)) {
             emp.validatedTrainings.push(req.training)
@@ -1519,17 +1523,20 @@ export default {
             toast: true,
             position: 'top-end',
             showConfirmButton: false,
-            timer: 3000
+            timer: 3000,
+            target: '#app'
           })
           logger.log(this.userStore.profile.id, 'FORMATION', `Validation de la formation "${req.training}" pour ${req.name}`)
         } else if (result.isDenied) {
+          emp.trainingRequests = emp.trainingRequests.filter(r => r !== req.training)
           Swal.fire({
             icon: 'info',
             title: 'Demande supprimée',
             toast: true,
             position: 'top-end',
             showConfirmButton: false,
-            timer: 3000
+            timer: 3000,
+            target: '#app'
           })
           logger.log(this.userStore.profile.id, 'FORMATION', `Suppression de la formation "${req.training}" pour ${req.name}`)
         }
