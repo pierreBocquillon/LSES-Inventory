@@ -691,7 +691,7 @@
           {{ formatDate(item.arrivalDate) }}
         </template>
 
-        <template v-slot:item.daysAtGrade="{ item }">
+        <template v-slot:item.lastPromotionDate="{ item }">
           <div class="d-flex align-center">
             {{ calculateDays(item.lastPromotionDate) }} jours
             <v-chip v-if="calculateDays(item.lastPromotionDate) >= 28" color="red" size="x-small" class="ml-2" variant="flat">Critique</v-chip>
@@ -771,7 +771,7 @@ export default {
       { title: 'Nom', key: 'name' },
       { title: 'Rôle', key: 'role' },
       { title: 'Arrivée', key: 'arrivalDate' },
-      { title: 'Jours au grade', key: 'daysAtGrade' },
+      { title: 'Jours au grade', key: 'lastPromotionDate' },
       { title: 'Compétences', key: 'badges', sortable: false, align: 'center' },
       { title: 'Suivi', key: 'lastFollowUpDate', align: 'center' },
       { title: 'Actions', key: 'actions', sortable: false, align: 'end' },
