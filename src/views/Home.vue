@@ -2,7 +2,17 @@
   <div class="home-page pa-6">
 
     <!-- Profil -->
-    <v-card class="mx-auto mb-6 rounded-xl" max-width="1000px" elevation="2">
+    <v-card class="mx-auto mb-6 rounded-xl position-relative" max-width="1000px" elevation="2">
+      <v-btn
+        icon
+        variant="text"
+        @click="$router.push('/achievements')"
+        class="position-absolute"
+        style="top: 10px; right: 10px; z-index: 2;"
+        title="Succès"
+      >
+        <v-icon size="28" color="primary">mdi-trophy-outline</v-icon>
+      </v-btn>
       <v-card-text class="pa-6">
         <div class="d-flex align-center justify-center" style="gap: 20px;">
           <div class="text-center">
