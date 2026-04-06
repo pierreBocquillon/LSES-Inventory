@@ -314,6 +314,26 @@ export const achievementList = [
   },
 
   {
+    id: 'leave_first',
+    category: 'Congés',
+    rarity: 'uncommon',
+    title: 'Repos bien mérité',
+    description: 'Soumettez votre première demande de congé.',
+    icon: 'mdi-umbrella-beach',
+    condition: (stats) => (stats.leave_requests_submitted || 0) >= 1
+  },
+  {
+    id: 'leave_veteran',
+    category: 'Congés',
+    rarity: 'rare',
+    title: 'Vamos a la playa',
+    description: 'Soumettez 5 demandes de congé.',
+    icon: 'mdi-palm-tree',
+    progress: (stats) => ({ current: Math.min(stats.leave_requests_submitted || 0, 5), max: 5 }),
+    condition: (stats) => (stats.leave_requests_submitted || 0) >= 5
+  },
+
+  {
     id: 'dispatch_reset',
     category: 'Dispatch',
     rarity: 'epic',
@@ -483,6 +503,7 @@ export const commonStats = [
   { key: 'dispatch_hs_to_astreinte', label: 'Mises en astreinte (depuis HS)' },
   { key: 'dispatch_centrale_lead', label: 'Fois en tête de centrale' },
   { key: 'autopsy_reports_generated', label: 'Rapports d\'autopsie générés' },
+  { key: 'leave_requests_submitted', label: 'Demandes de congé soumises' },
 ];
 
 export const achievementTitles = [

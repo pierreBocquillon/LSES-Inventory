@@ -162,6 +162,16 @@
                     </div>
                     <v-spacer></v-spacer>
                     <v-btn
+                      color="error"
+                      variant="tonal"
+                      prepend-icon="mdi-refresh"
+                      @click="confirmResetUser"
+                      :loading="saving"
+                      class="px-6 mr-2"
+                    >
+                      Réinitialiser
+                    </v-btn>
+                    <v-btn
                       color="success"
                       prepend-icon="mdi-content-save"
                       @click="saveAdminChanges"
@@ -313,7 +323,7 @@ import Achievement from '@/classes/Achievement'
 import { commonStats, achievementTitles } from '@/config/achievements'
 import Profile from '@/classes/Profile'
 import logger from '@/functions/logger'
-import Swal from 'sweetalert2'
+import Swal from 'sweetalert2/dist/sweetalert2.js'
 
 import AchievementGrid from '@/components/achievements/AchievementGrid.vue'
 import AchievementLeaderboard from '@/components/achievements/AchievementLeaderboard.vue'
@@ -460,7 +470,8 @@ export default {
           title: 'Modification enregistrée',
           text: `Le profil de ${this.selectedUser.name} a été mis à jour avec succès.`,
           timer: 2000,
-          showConfirmButton: false
+          showConfirmButton: false,
+          target: '#app'
         })
       } catch (error) {
         console.error(error)
@@ -471,6 +482,57 @@ export default {
         })
       } finally {
         this.saving = false
+      }
+    },
+    async confirmResetUser() {
+      if (!this.selectedUser) return
+
+      const result = await Swal.fire({
+        title: 'Êtes-vous sûr ?',
+        text: `Voulez-vous vraiment réinitialiser TOUS les succès et statistiques de ${this.selectedUser.name} ? Cette action est irréversible.`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ff5252',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Oui, réinitialiser',
+        cancelButtonText: 'Annuler',
+        target: '#app'
+      })
+
+      if (result.isConfirmed) {
+        this.saving = true
+        try {
+          this.selectedUser.achievements = []
+          this.selectedUser.stats = {}
+          this.selectedUser.notified_achievements = []
+          
+          await this.selectedUser.save()
+          
+          logger.log(
+            this.userStore.profile.id, 
+            'ACHIEVEMENTS', 
+            `Réinitialisation complète des succès et statistiques pour ${this.selectedUser.name} par admin.`
+          )
+
+          Swal.fire({
+            icon: 'success',
+            title: 'Réinitialisation effectuée',
+            text: `Le profil de ${this.selectedUser.name} a été remis à zéro.`,
+            timer: 2000,
+            showConfirmButton: false,
+            target: '#app'
+          })
+        } catch (error) {
+          console.error(error)
+          Swal.fire({
+            icon: 'error',
+            title: 'Erreur',
+            text: 'Une erreur est survenue lors de la réinitialisation.',
+            target: '#app'
+          })
+        } finally {
+          this.saving = false
+        }
       }
     }
   },

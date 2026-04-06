@@ -243,6 +243,7 @@ import frLocale from '@fullcalendar/core/locales/fr'
 import Absence from '@/classes/Absence.js'
 import Employee from '@/classes/Employee.js'
 import { useUserStore } from '@/store/user.js'
+import { useAchievementStore } from '@/store/achievements.js'
 import Swal from 'sweetalert2/dist/sweetalert2.js'
 import { SCHEDULE_COLORS } from '@/config/schedule.js'
 import logger from '@/functions/logger.js'
@@ -254,6 +255,7 @@ export default {
   data() {
     return {
       userStore: useUserStore(),
+      achievementStore: useAchievementStore(),
       absences: [],
       employees: [],
       unsubAbsences: null,
@@ -789,6 +791,9 @@ export default {
         }
         
         logger.log(this.userStore.profile.id, 'ABSENCE', logDescription)
+
+        if (this.currentAbsence.type === 'leave' && !this.currentAbsence.id)
+          this.achievementStore.incrementStat('leave_requests_submitted', 1, 48)
 
         Swal.fire({
           icon: 'success',
