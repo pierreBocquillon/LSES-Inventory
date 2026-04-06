@@ -1004,6 +1004,7 @@ import Swal from 'sweetalert2/dist/sweetalert2.js'
 import { rhChecklists } from '@/config/rh_checklists'
 import { rhValidation } from '@/config/rh_validation'
 import { useUserStore } from '@/store/user.js'
+import { useAchievementStore } from '@/store/achievements.js'
 import logger from '@/functions/logger.js'
 import html2canvas from 'html2canvas'
 import {
@@ -1022,6 +1023,7 @@ export default {
   data: () => ({
 
     userStore: useUserStore(),
+    achievementStore: useAchievementStore(),
     profiles: [],
     dialog: false,
 
@@ -2251,6 +2253,8 @@ export default {
         return false
       }
 
+      this.achievementStore.incrementStat('employees_recruited', 1, 1)
+
       const today = new Date().toISOString().split('T')[0]
 
       const newEmployee = new Employee(
@@ -2329,6 +2333,7 @@ export default {
       }
 
       try {
+        const isNew = !this.editedCandidature.id
         const cand = new Candidature(
           this.editedCandidature.id,
           this.editedCandidature.name,
@@ -2340,6 +2345,10 @@ export default {
           this.editedCandidature.answers
         )
         await cand.save()
+
+        if (isNew)
+          await this.achievementStore.incrementStat('applications_created', 1, 0)
+
         this.candidatureFormDialog = false
         Swal.fire({
           icon: 'success',

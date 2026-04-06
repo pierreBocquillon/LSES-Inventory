@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { nextTick } from 'vue'
+import Achievements from '@/views/Achievements.vue'
 
 const maintenanceMode = false
 
@@ -146,6 +147,16 @@ const routes = [
     }
   },
   {
+    name: 'Mes Succès',
+    path: '/achievements',
+    component: Achievements,
+    meta: {
+      needAccount: true,
+      showNav: true,
+      permissions: ['lses']
+    }
+  },
+  {
     name: 'Connexion',
     path: '/login',
     component: () => import("@/views/Login.vue"),
@@ -195,6 +206,14 @@ const routes = [
       permissions: []
     }
   },
+  {
+    path: '/home',
+    redirect: '/'
+  },
+  {
+    path: '/:pathMatch(.*)*',
+    redirect: '/'
+  }
 ]
 
 const router = createRouter({

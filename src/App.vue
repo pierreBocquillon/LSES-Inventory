@@ -63,9 +63,10 @@ import { useTheme } from 'vuetify'
 import { getAuth, signOut, deleteUser } from '@firebase/auth'
 
 import { useUserStore } from '@/store/user.js'
+import { useAchievementStore } from '@/store/achievements.js'
 
 import Profile from "@/classes/Profile.js"
-
+import Employee from "@/classes/Employee.js"
 import Header from "@/components/common/Header.vue"
 
 export default {
@@ -82,6 +83,7 @@ export default {
     return {
       unsub: [],
       userStore: useUserStore(),
+      achievementStore: useAchievementStore(),
       loginModalIsOpen: false,
       ready: false,
     }
@@ -99,6 +101,8 @@ export default {
             this.userStore.uid = user.uid
             this.userStore.isLoggedIn = true
 
+            this.achievementStore.checkUnlocks()
+
             this.ready = true
 
           }else{
@@ -109,6 +113,13 @@ export default {
             }).catch((error) => {
               console.log(error)
             })
+          }
+        }))
+
+        // Listen for HR employee changes (promotions, specialty updates, etc.)
+        this.unsub.push(Employee.listenByUserId(user.uid, async employee => {
+          if (employee && this.userStore.isLoggedIn) {
+            this.achievementStore.checkUnlocks()
           }
         }))
       }else{

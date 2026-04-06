@@ -63,6 +63,24 @@ class Employee {
         })
     }
 
+    static listenByUserId(userId, callback) {
+        const q = query(collection(db, collectionName), where("userId", "==", userId))
+        return onSnapshot(q, snapshot => {
+            if (snapshot.empty) {
+                callback(null)
+            } else {
+                callback(docToInstance(snapshot.docs[0]))
+            }
+        })
+    }
+
+    static async getByUserId(userId) {
+        const q = query(collection(db, collectionName), where("userId", "==", userId))
+        const docs = await getDocs(q)
+        if (docs.empty) return null
+        return docToInstance(docs.docs[0])
+    }
+
     async save() {
         const new_doc = {
             name: this.name,

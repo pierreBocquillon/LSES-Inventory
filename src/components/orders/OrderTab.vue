@@ -203,6 +203,7 @@
 
 <script>
 import { useUserStore } from '@/store/user.js'
+import { useAchievementStore } from '@/store/achievements.js'
 
 import Order from '@/classes/Order.js'
 import History from '@/classes/History.js'
@@ -218,6 +219,7 @@ export default {
     return {
       unsub: [],
       userStore: useUserStore(),
+      achievementStore: useAchievementStore(),
       orders: [],
       instances: [],
       editOrderDialog: false,
@@ -404,6 +406,7 @@ export default {
         history.save()
           .then(() => {
             logger.log(this.userStore.profile.id, 'COMMANDES', `Validation d'une commande chez ${company.icon}${company.name} (${Math.round(orderData.weight * 100) / 100} kg) pour ${price}$`)
+            this.achievementStore.incrementStat('orders_completed', 1, 1)
             order.delete()
             if (showWarning) {
               Swal.fire(

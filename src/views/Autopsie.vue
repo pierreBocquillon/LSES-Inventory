@@ -124,6 +124,7 @@
 
 <script>
 import { useUserStore } from '@/store/user.js'
+import { useAchievementStore } from '@/store/achievements.js'
 
 import colors from 'vuetify/lib/util/colors'
 
@@ -141,6 +142,7 @@ export default {
     return {
       unsub: [],
       userStore: useUserStore(),
+      achievementStore: useAchievementStore(),
       headers: [
         { title: 'Nom', key: 'name', align: 'start' },
         { title: '', key: 'actions', align: 'end', sortable: false },
@@ -493,6 +495,7 @@ export default {
           colors: this.colors
         }
         await generateReport(data, this.$refs.canvasElement)
+        this.achievementStore.incrementStat('autopsy_reports_generated', 1, 2)
       },
     },
 

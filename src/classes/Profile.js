@@ -5,11 +5,22 @@ let collectionName = "profiles"
 
 function docToInstance(document) {
   let data = document.data()
-  return data ? new Profile(document.id, data.name, data.email, data.role, data.permissions, data.activated, data.rejected) : null
+  return data ? new Profile(
+    document.id, 
+    data.name, 
+    data.email, 
+    data.role, 
+    data.permissions, 
+    data.activated, 
+    data.rejected,
+    data.stats,
+    data.achievements,
+    data.notified_achievements
+  ) : null
 }
 
 class Profile {
-  constructor(id, name, email, role, permissions, activated, rejected) {
+  constructor(id, name, email, role, permissions, activated, rejected, stats = {}, achievements = [], notified_achievements = []) {
     this.id = id
     this.name = name
     this.email = email
@@ -17,6 +28,9 @@ class Profile {
     this.permissions = permissions
     this.activated = activated
     this.rejected = rejected
+    this.stats = stats || {}
+    this.achievements = achievements || []
+    this.notified_achievements = notified_achievements || []
   }
 
   static initOne(uid, name, email) {
@@ -114,7 +128,10 @@ class Profile {
       role: this.role,
       permissions: this.permissions,
       activated: this.activated,
-      rejected: this.rejected
+      rejected: this.rejected,
+      stats: this.stats,
+      achievements: this.achievements,
+      notified_achievements: this.notified_achievements
     }
 
     if (this.id) {
