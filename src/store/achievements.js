@@ -82,14 +82,14 @@ export const useAchievementStore = defineStore('achievements', {
       if (!perms.includes('lses')) return;
 
       if (cooldownHours > 0) {
-        if (!profile.statCooldowns) profile.statCooldowns = {};
-        const lastUpdate = profile.statCooldowns[statName] || 0;
+        const cooldownKey = `stat_cooldown_${statName}`;
+        const lastUpdate = parseInt(localStorage.getItem(cooldownKey) || '0');
         const now = Date.now();
         const cooldownMs = cooldownHours * 60 * 60 * 1000;
 
         if (now - lastUpdate < cooldownMs) return false;
 
-        profile.statCooldowns[statName] = now;
+        localStorage.setItem(cooldownKey, now.toString());
       }
 
       if (!profile.stats) profile.stats = {};

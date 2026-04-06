@@ -394,6 +394,26 @@ export const achievementList = [
   },
 
   {
+    id: 'autopsy_report_first',
+    category: 'Autopsie',
+    rarity: 'epic',
+    title: 'Légiste en herbe',
+    description: 'Générez votre premier rapport d\'autopsie en PDF.',
+    icon: 'mdi-file-document-outline',
+    condition: (stats) => (stats.autopsy_reports_generated || 0) >= 1
+  },
+  {
+    id: 'autopsy_report_veteran',
+    category: 'Autopsie',
+    rarity: 'legendary',
+    title: 'La faucheuse',
+    description: 'Générez 10 rapports d\'autopsie en PDF.',
+    icon: 'mdi-skull-scan-outline',
+    progress: (stats) => ({ current: Math.min(stats.autopsy_reports_generated || 0, 10), max: 10 }),
+    condition: (stats) => (stats.autopsy_reports_generated || 0) >= 10
+  },
+
+  {
     id: 'fleet_repa_1',
     category: 'Garage',
     rarity: 'rare',
@@ -462,6 +482,7 @@ export const commonStats = [
   { key: 'dispatch_interventions_created', label: 'Slots d\'intervention créés' },
   { key: 'dispatch_hs_to_astreinte', label: 'Mises en astreinte (depuis HS)' },
   { key: 'dispatch_centrale_lead', label: 'Fois en tête de centrale' },
+  { key: 'autopsy_reports_generated', label: 'Rapports d\'autopsie générés' },
 ];
 
 export const achievementTitles = [
