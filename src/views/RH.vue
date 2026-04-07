@@ -127,7 +127,7 @@
     </v-row>
 
     <v-card class="flex-grow-1">
-      <v-data-table :headers="headers" :items="employees" :search="search" class="h-100" :sort-by="[{ key: 'role', order: 'asc' }]">
+      <v-data-table :headers="headers" :items="employees" :search="search" class="h-100" :sort-by="[{ key: 'role', order: 'asc' }]" items-per-page="50">
         <template v-slot:item.name="{ item }">
           <div class="d-flex align-center">
             <v-icon color="blue" v-if="item.sex === 'Homme'" class="mr-2">mdi-gender-male</v-icon>
