@@ -436,7 +436,7 @@ export function useDispatchActions(state) {
     })
 
     if (src === 'hs' && categoryValue === 'astreinte')
-      achievementStore.incrementStat('dispatch_hs_to_astreinte', 1, 0.5)
+      achievementStore.incrementStat('dispatch_hs_to_astreinte', 1, 2)
     if (categoryValue === 'centrale' && !(dispatch.value?.centrale?.employees || []).length)
       achievementStore.incrementStat('dispatch_centrale_lead', 1, 1)
     quickAddDialog.value = false

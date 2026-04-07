@@ -81,6 +81,15 @@ class Employee {
         return docToInstance(docs.docs[0])
     }
 
+    needsHeliReimbursement() {
+        if (!this.helicopterTrainingDate || this.helicopterTrainingReimbursed) return false
+        const trainingDate = new Date(this.helicopterTrainingDate)
+        const oneMonthLater = new Date(trainingDate)
+        oneMonthLater.setMonth(oneMonthLater.getMonth() + 1)
+        const today = new Date()
+        return today >= oneMonthLater
+    }
+
     async save() {
         const new_doc = {
             name: this.name,

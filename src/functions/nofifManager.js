@@ -1,6 +1,7 @@
 import { reactive, computed } from 'vue'
 import { useUserStore } from '@/store/user.js'
 import Candidature from '@/classes/Candidature.js'
+import Employee from '@/classes/Employee.js'
 
 import Profile from '@/classes/Profile.js'
 import Company from '@/classes/Company.js'
@@ -27,6 +28,7 @@ export const notifState = reactive({
   rhWeeklyTasks: [],
   rhMonthlyTasks: [],
   waitingAbsences: [],
+  employees: [],
   unsubscribers: []
 })
 
@@ -107,6 +109,9 @@ export function initNotifManager() {
 
   notifState.unsubscribers.push(Absence.listenAll(absences => {
     notifState.waitingAbsences = absences.filter(a => a.type === 'leave' && a.status === 'pending')
+  }))
+  notifState.unsubscribers.push(Employee.listenAll(employees => {
+    notifState.employees = employees
   }))
 }
 
@@ -195,6 +200,13 @@ export const rhNotif = computed(() => {
       const diffTime = Math.abs(Date.now() - new Date(task.doneAt))
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
       if (diffDays > 30) count++
+    }
+  })
+
+  // Helicopter Reimbursement Check
+  notifState.employees.forEach(emp => {
+    if (emp.needsHeliReimbursement()) {
+      count++
     }
   })
 

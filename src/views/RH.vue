@@ -139,7 +139,7 @@
               <span>C'est son anniversaire !</span>
             </v-tooltip>
 
-            <v-tooltip location="top" v-if="needsHeliReimbursement(item)">
+            <v-tooltip location="top" v-if="item.needsHeliReimbursement()">
               <template v-slot:activator="{ props }">
                 <v-btn icon variant="text" density="compact" color="red" class="ml-2" v-bind="props" @click="confirmReimbursement(item)">
                   <v-icon>mdi-helicopter</v-icon>
@@ -1600,15 +1600,6 @@ export default {
       return date.getDate() === today.getDate() && date.getMonth() === today.getMonth()
     },
 
-    needsHeliReimbursement(item) {
-      if (!item.helicopterTrainingDate || item.helicopterTrainingReimbursed) return false
-      const trainingDate = new Date(item.helicopterTrainingDate)
-      const oneMonthLater = new Date(trainingDate)
-      oneMonthLater.setMonth(oneMonthLater.getMonth() + 1)
-
-      const today = new Date()
-      return today >= oneMonthLater
-    },
 
     confirmReimbursement(item) {
       Swal.fire({
