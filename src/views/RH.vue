@@ -28,8 +28,6 @@
           Promotions
         </v-btn>
       </v-badge>
-
-
     </div>
 
     <v-row class="mb-2">
@@ -201,6 +199,14 @@
               <template v-slot:activator="{ props }">
                 <v-btn icon variant="text" color="grey-darken-1" class="mr-2" v-bind="props" @click="openStatisticsDialog">
                   <v-icon>mdi-chart-bar</v-icon>
+                </v-btn>
+              </template>
+            </v-tooltip>
+
+            <v-tooltip text="Documents RH" location="top">
+              <template v-slot:activator="{ props }">
+                <v-btn icon variant="text" color="grey-darken-1" class="mr-2" v-bind="props" @click="openDismissalFileDialog">
+                  <v-icon>mdi-file-document-edit-outline</v-icon>
                 </v-btn>
               </template>
             </v-tooltip>
@@ -694,14 +700,14 @@
           <v-spacer></v-spacer>
           <v-btn icon="mdi-close" @click="statisticsDialog = false"></v-btn>
         </v-toolbar>
-        <v-card-text class="pa-4 bg-grey-lighten-4">
+        <v-card-text class="pa-4">
           <v-row class="mb-4">
             <v-col cols="12" md="4">
               <v-card class="py-4 text-center" elevation="2">
                 <div class="text-h3 font-weight-bold text-primary">
                   <AnimatedCounter :key="statsKey" :value="employees.length" :duration="2000" />
                 </div>
-                <div class="text-subtitle-1 text-grey-darken-1">Employés Total</div>
+                <div class="text-subtitle-1 text-grey-lighten-1">Employés Total</div>
               </v-card>
             </v-col>
             <v-col cols="12" md="4">
@@ -709,7 +715,7 @@
                 <div class="text-h3 font-weight-bold text-blue">
                   <AnimatedCounter :key="statsKey" :value="employees.filter(e => e.sex === 'Homme').length" :duration="2000" />
                 </div>
-                <div class="text-subtitle-1 text-grey-darken-1">Hommes</div>
+                <div class="text-subtitle-1 text-grey-lighten-1">Hommes</div>
               </v-card>
             </v-col>
             <v-col cols="12" md="4">
@@ -717,7 +723,7 @@
                 <div class="text-h3 font-weight-bold text-pink">
                   <AnimatedCounter :key="statsKey" :value="employees.filter(e => e.sex === 'Femme').length" :duration="2000" />
                 </div>
-                <div class="text-subtitle-1 text-grey-darken-1">Femmes</div>
+                <div class="text-subtitle-1 text-grey-lighten-1">Femmes</div>
               </v-card>
             </v-col>
           </v-row>
@@ -990,6 +996,126 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+
+    <v-dialog v-model="dismissalFileDialog" max-width="500px">
+      <v-card>
+        <v-card-title class="bg-info text-white d-flex align-center">
+          <v-icon class="mr-2">mdi-file-document-edit</v-icon>
+          <span class="text-h5">Documents RH</span>
+        </v-card-title>
+        <v-card-text class="pt-4">
+          <v-autocomplete
+            v-model="dismissalSelectedEmployee"
+            :items="employees"
+            item-title="name"
+            item-value="id"
+            label="Choisir l'employé"
+            variant="outlined"
+            return-object
+            clearable
+            placeholder="Rechercher un employé..."
+          >
+            <template v-slot:item="{ props, item }">
+              <v-list-item v-bind="props" :subtitle="item.raw.role + (item.raw.cid ? ' - ' + item.raw.cid : '')"></v-list-item>
+            </template>
+          </v-autocomplete>
+
+          <v-select
+            v-model="dismissalType"
+            :items="[
+              { title: 'Licenciement (Raison custom)', value: 'custom' },
+              { title: 'Licenciement (Abandon de poste)', value: 'abandonment' },
+              { title: 'Licenciement (Faute lourde)', value: 'serious_fault' },
+              { title: 'Avertissement (Faute simple)', value: 'simple_fault' },
+              { title: 'Convocation', value: 'summons' },
+              { title: 'Mise à pied', value: 'suspension' }
+            ]"
+            label="Type de document"
+            variant="outlined"
+            class="mt-2"
+          ></v-select>
+
+          <v-textarea
+            v-if="dismissalType !== 'abandonment'"
+            v-model="dismissalReason"
+            label="Raison détaillée"
+            variant="outlined"
+            rows="4"
+            auto-grow
+            class="mt-2"
+            placeholder="Saisissez la raison détaillée (sanction ou licenciement)..."
+          ></v-textarea>
+
+          <v-container v-if="dismissalType === 'suspension'" class="mt-4 px-0">
+            <v-row no-gutters align="center">
+              <v-col cols="12" class="mb-4">
+                <v-text-field
+                  v-model="dismissalSuspensionStartDate"
+                  type="date"
+                  label="Date de début"
+                  variant="outlined"
+                  density="compact"
+                  hide-details
+                ></v-text-field>
+              </v-col>
+              <v-col cols="12">
+                <div class="text-subtitle-2 mb-2 d-flex justify-space-between align-center">
+                  <span>Durée de la mise à pied</span>
+                  <v-chip color="info" size="small" variant="flat">{{ dismissalSuspensionDuration }} jours</v-chip>
+                </div>
+              </v-col>
+              <v-col cols="12">
+                <v-slider
+                  v-model="dismissalSuspensionDuration"
+                  :min="1"
+                  :max="7"
+                  :step="1"
+                  color="info"
+                  track-color="info"
+                  thumb-label="always"
+                  hide-details
+                  @update:model-value="v => dismissalSuspensionDuration = v"
+                ></v-slider>
+              </v-col>
+            </v-row>
+          </v-container>
+          <v-alert
+            v-if="dismissalType === 'abandonment'"
+            type="info"
+            variant="tonal"
+            class="mt-2"
+            density="compact"
+          >
+            Le motif "Abandon de poste" sera utilisé automatiquement.
+          </v-alert>
+
+          <v-file-input
+            label="Importer une signature (Optionnel)"
+            prepend-icon="mdi-signature"
+            variant="outlined"
+            density="compact"
+            class="mt-4"
+            accept="image/*"
+            @update:modelValue="onSignatureUpload"
+            show-size
+            clearable
+            placeholder="PNG ou JPG recommandé"
+          ></v-file-input>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn color="grey" variant="text" @click="dismissalFileDialog = false">Annuler</v-btn>
+          <v-btn color="secondary" variant="outlined" @click="submitDismissalPDF(true)" :disabled="!dismissalSelectedEmployee">
+            <v-icon start>mdi-eye-outline</v-icon>
+            Prévisualiser
+          </v-btn>
+          <v-btn color="info" variant="elevated" @click="submitDismissalPDF(false)" :disabled="!dismissalSelectedEmployee">
+            <v-icon start>mdi-download</v-icon>
+            Générer
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </v-container>
 </template>
 
@@ -1007,6 +1133,7 @@ import { useUserStore } from '@/store/user.js'
 import { useAchievementStore } from '@/store/achievements.js'
 import logger from '@/functions/logger.js'
 import html2canvas from 'html2canvas'
+import { generateDismissalPDF } from '@/functions/dismissalManager.js'
 import {
   Chart as ChartJS,
   registerables
@@ -1200,11 +1327,15 @@ export default {
     showAllEmails: false,
     showCharts: false,
     visibleCharts: {
-      rank: false,
-      gender: false,
-      specialty: false,
-      promotion: false
-    }
+      promotion: false,
+      specialty: false
+    },
+    dismissalFileDialog: false,
+    dismissalSelectedEmployee: null,
+    dismissalType: 'custom',
+    dismissalReason: '',
+    dismissalSuspensionDuration: 3,
+    dismissalSuspensionStartDate: new Date().toISOString().substr(0, 10)
   }),
 
   computed: {
@@ -1792,6 +1923,63 @@ export default {
         months += 12
       }
       return `${years} ans, ${months} mois`
+    },
+
+    openDismissalFileDialog() {
+      this.dismissalSelectedEmployee = null
+      this.dismissalType = 'custom'
+      this.dismissalReason = ''
+      this.dismissalSignature = null
+      this.dismissalSuspensionDuration = 3
+      this.dismissalFileDialog = true
+    },
+
+    submitDismissalPDF(preview = false) {
+      if (!this.dismissalSelectedEmployee) return
+ 
+      let reason = this.dismissalReason
+      if (this.dismissalType === 'abandonment')
+        reason = "Abandon de poste constaté. Suite à une absence prolongée et injustifiée, et malgré nos tentatives de contact restées infructueuses, nous sommes au regret de constater la rupture de votre contrat de travail pour abandon de poste avec effet immédiat."
+ 
+      const issuerEmployee = this.employees.find(e => e.userId === this.userStore.uid)
+      let signerService = 'direction'
+
+      if (issuerEmployee) {
+        const isDirection = ['Directeur', 'Directeur Adjoint'].includes(issuerEmployee.role)
+        const isRH = !isDirection && (issuerEmployee.specialties || []).some(s => {
+          const val = (typeof s === 'string' ? s : (s.value || '')).toLowerCase()
+          return val.includes('rh') || val.includes('ressources')
+        })
+        if (isRH) signerService = 'rh'
+      }
+
+      generateDismissalPDF({
+        employee: this.dismissalSelectedEmployee,
+        reason: reason,
+        type: this.dismissalType,
+        issuer: this.userStore.profile,
+        signerService: signerService,
+        preview: preview,
+        customSignature: this.dismissalSignature,
+        suspensionDuration: this.dismissalSuspensionDuration,
+        suspensionStartDate: this.dismissalSuspensionStartDate
+      })
+ 
+      if (!preview) {
+        this.dismissalFileDialog = false
+      }
+    },
+
+    onSignatureUpload(file) {
+      if (!file) {
+        this.dismissalSignature = null
+        return
+      }
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        this.dismissalSignature = e.target.result
+      }
+      reader.readAsDataURL(file)
     },
 
     calculateDays(dateString) {
@@ -2619,8 +2807,6 @@ export default {
         cancelButtonText: 'Annuler'
       }).then(async (result) => {
         if (result.isConfirmed) {
-          // ... existing logic ... 
-          // Re-implementing deleteFault logic here since it was truncated in view
           try {
             item.simpleFault = null
             await item.save()
