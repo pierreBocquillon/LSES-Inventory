@@ -8,7 +8,9 @@ import logger from '@/functions/logger.js'
 export const useAchievementStore = defineStore('achievements', {
   state: () => ({
     allAchievements: Achievement.getItems(),
-    notificationsEnabled: localStorage.getItem('achievements_notifications_enabled') !== 'false'
+    notificationsEnabled: localStorage.getItem('achievements_notifications_enabled') !== 'false',
+    isChecking: false,
+    isIncrementing: false
   }),
   actions: {
     setNotificationsEnabled(enabled) {
@@ -16,91 +18,105 @@ export const useAchievementStore = defineStore('achievements', {
       localStorage.setItem('achievements_notifications_enabled', enabled);
     },
     async checkUnlocks() {
-      const userStore = useUserStore();
-      const profile = userStore.profile;
-      if (!profile) return;
+      if (this.isChecking) return;
+      this.isChecking = true;
 
-      const perms = profile.permissions || [];
-      if (!perms.includes('lses')) return;
+      try {
+        const userStore = useUserStore();
+        const profile = userStore.profile;
+        if (!profile) return;
 
-      if (!profile.stats) profile.stats = {};
-      if (!profile.achievements) profile.achievements = [];
-      if (!profile.notified_achievements) profile.notified_achievements = [];
+        const perms = profile.permissions || [];
+        if (!perms.includes('lses')) return;
 
-      const employee = await Employee.getByUserId(profile.id);
-      const newlyCalculated = Achievement.checkUnlocks(profile.stats, profile.achievements, profile, employee);
+        if (!profile.stats) profile.stats = {};
+        if (!profile.achievements) profile.achievements = [];
+        if (!profile.notified_achievements) profile.notified_achievements = [];
 
-      if (newlyCalculated.length > 0) {
-        const newlyCalculatedIds = newlyCalculated.map(a => a.id);
-        profile.achievements = [...profile.achievements, ...newlyCalculatedIds];
-      }
+        const employee = await Employee.getByUserId(profile.id);
+        const newlyCalculated = Achievement.checkUnlocks(profile.stats, profile.achievements, profile, employee);
 
-      if (!userStore.achievementsInitialized) {
-        if (profile.achievements.length > 0 && profile.notified_achievements.length === 0) {
+        if (newlyCalculated.length > 0) {
+          const newlyCalculatedIds = newlyCalculated.map(a => a.id);
+          profile.achievements = [...profile.achievements, ...newlyCalculatedIds];
+        }
+
+        if (!userStore.achievementsInitialized) {
+          if (profile.achievements.length > 0 && profile.notified_achievements.length === 0) {
+            profile.notified_achievements = [...profile.achievements];
+            await profile.save();
+          }
+          userStore.achievementsInitialized = true;
+        }
+
+        const toNotifyIds = profile.achievements.filter(id => !profile.notified_achievements.includes(id));
+
+        if (toNotifyIds.length > 0) {
+          if (this.notificationsEnabled) {
+            toNotifyIds.forEach(id => {
+              const achievement = this.allAchievements.find(a => a.id === id);
+              if (achievement) {
+                logger.log(profile.id, 'ACHIEVEMENTS', `Déblocage : ${achievement.title}`)
+                Swal.fire({
+                  title: 'Succès Débloqué !',
+                  text: `${achievement.title} : ${achievement.description}`,
+                  icon: 'success',
+                  toast: true,
+                  position: 'top-end',
+                  showConfirmButton: false,
+                  timer: 12000,
+                  timerProgressBar: true,
+                  background: '#2c3e50',
+                  color: '#fff',
+                  iconColor: '#f1c40f'
+                });
+              }
+            });
+          }
+
           profile.notified_achievements = [...profile.achievements];
           await profile.save();
+        } else if (newlyCalculated.length > 0) {
+          await profile.save();
         }
-        userStore.achievementsInitialized = true;
-      }
-
-      const toNotifyIds = profile.achievements.filter(id => !profile.notified_achievements.includes(id));
-
-      if (toNotifyIds.length > 0) {
-        if (this.notificationsEnabled) {
-          toNotifyIds.forEach(id => {
-            const achievement = this.allAchievements.find(a => a.id === id);
-            if (achievement) {
-              logger.log(profile.id, 'ACHIEVEMENTS', `Déblocage : ${achievement.title}`)
-              Swal.fire({
-                title: 'Succès Débloqué !',
-                text: `${achievement.title} : ${achievement.description}`,
-                icon: 'success',
-                toast: true,
-                position: 'top-end',
-                showConfirmButton: false,
-                timer: 12000,
-                timerProgressBar: true,
-                background: '#2c3e50',
-                color: '#fff',
-                iconColor: '#f1c40f'
-              });
-            }
-          });
-        }
-
-        profile.notified_achievements = [...profile.achievements];
-        await profile.save();
-      } else if (newlyCalculated.length > 0) {
-        await profile.save();
+      } finally {
+        this.isChecking = false;
       }
     },
 
     async incrementStat(statName, amount = 1, cooldownHours = 0) {
-      const userStore = useUserStore();
-      const profile = userStore.profile;
-      if (!profile) return;
+      if (this.isIncrementing) return;
+      this.isIncrementing = true;
 
-      const perms = profile.permissions || [];
-      if (!perms.includes('lses')) return;
+      try {
+        const userStore = useUserStore();
+        const profile = userStore.profile;
+        if (!profile) return;
 
-      if (cooldownHours > 0) {
-        const cooldownKey = `stat_cooldown_${statName}`;
-        const lastUpdate = parseInt(localStorage.getItem(cooldownKey) || '0');
-        const now = Date.now();
-        const cooldownMs = cooldownHours * 60 * 60 * 1000;
+        const perms = profile.permissions || [];
+        if (!perms.includes('lses')) return;
 
-        if (now - lastUpdate < cooldownMs) return false;
+        if (cooldownHours > 0) {
+          const cooldownKey = `stat_cooldown_${statName}`;
+          const lastUpdate = parseInt(localStorage.getItem(cooldownKey) || '0');
+          const now = Date.now();
+          const cooldownMs = cooldownHours * 60 * 60 * 1000;
 
-        localStorage.setItem(cooldownKey, now.toString());
+          if (now - lastUpdate < cooldownMs) return false;
+
+          localStorage.setItem(cooldownKey, now.toString());
+        }
+
+        if (!profile.stats) profile.stats = {};
+        profile.stats[statName] = (profile.stats[statName] || 0) + amount;
+
+        logger.log(profile.id, 'ACHIEVEMENTS', `${statName} : +${amount} (Total: ${profile.stats[statName]})`);
+
+        await profile.save();
+        await this.checkUnlocks();
+      } finally {
+        this.isIncrementing = false;
       }
-
-      if (!profile.stats) profile.stats = {};
-      profile.stats[statName] = (profile.stats[statName] || 0) + amount;
-
-      logger.log(profile.id, 'ACHIEVEMENTS', `${statName} : +${amount} (Total: ${profile.stats[statName]})`);
-
-      await profile.save();
-      await this.checkUnlocks();
     }
   }
 });
