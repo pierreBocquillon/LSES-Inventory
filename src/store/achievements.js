@@ -2,6 +2,7 @@ import { defineStore } from 'pinia';
 import { useUserStore } from './user';
 import Achievement from '@/classes/Achievement';
 import Employee from '@/classes/Employee';
+import Profile from '@/classes/Profile';
 import Swal from 'sweetalert2/dist/sweetalert2.js'
 import logger from '@/functions/logger.js'
 
@@ -116,6 +117,46 @@ export const useAchievementStore = defineStore('achievements', {
         await this.checkUnlocks();
       } finally {
         this.isIncrementing = false;
+      }
+    },
+    async unlockAchievement(id) {
+      try {
+        const userStore = useUserStore();
+        const profile = userStore.profile;
+        if (!profile) return;
+
+        const perms = profile.permissions || [];
+        if (!perms.includes('lses')) return;
+
+        if (!profile.achievements) profile.achievements = [];
+        if (profile.achievements.includes(id)) return;
+
+        profile.achievements.push(id);
+        await profile.save();
+        await this.checkUnlocks();
+      } catch (err) {
+        console.error("Error unlocking achievement", err);
+      }
+    },
+    async unlockAchievementForUser(userId, id) {
+      if (!userId || !id) return;
+      try {
+        const targetProfile = await Profile.getById(userId);
+        if (!targetProfile) return;
+
+        if (!targetProfile.achievements) targetProfile.achievements = [];
+        if (targetProfile.achievements.includes(id)) return;
+
+        targetProfile.achievements.push(id);
+        await targetProfile.save();
+
+        const userStore = useUserStore();
+        if (userStore.profile && userStore.profile.id === userId) {
+          userStore.profile.achievements = [...targetProfile.achievements];
+          await this.checkUnlocks();
+        }
+      } catch (err) {
+        console.error("Error unlocking achievement for user", userId, err);
       }
     }
   }

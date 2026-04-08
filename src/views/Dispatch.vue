@@ -879,6 +879,7 @@ const {
   currentTime,
   isLightTheme,
   localBuffers,
+  employees,
 
   isDirection,
   currentUserEmployeeId,
@@ -980,7 +981,7 @@ const moveAffiliationDownTemplate = (aff) => moveAffiliationDown(aff, affiliatio
 const {
   draggingEmployee, draggingSource, dragOver,
   startDrag, onDragEnd, onDragLeave, dropOn,
-} = useDispatchDragAndDrop(hasLsesPerm, dispatch, autoTurnOffRadio)
+} = useDispatchDragAndDrop(hasLsesPerm, dispatch, autoTurnOffRadio, employees)
 
 
 const localCrisisZip = ref('')

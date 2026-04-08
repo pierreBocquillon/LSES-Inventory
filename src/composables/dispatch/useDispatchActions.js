@@ -55,6 +55,8 @@ export function useDispatchActions(state) {
 
   const toggleTheme = () => {
     isLightTheme.value = !isLightTheme.value
+    if (isLightTheme.value)
+      achievementStore.unlockAchievement('dispatch_light_mode_secret')
   }
 
 
@@ -425,6 +427,7 @@ export function useDispatchActions(state) {
     const empId = quickAddEmployee.value.employeeId || quickAddEmployee.value.id
     const src = quickMoveSourceKey.value
     const emp = employees.value.find(e => e.id === empId)
+    const userId = emp?.userId
     const role = emp?.role || quickAddEmployee.value.role || ''
     const specs = emp ? (emp.specialties || []) : (quickAddEmployee.value.allSpecialties || [])
     if (categoryValue === 'hs') autoTurnOffRadio(empId)
@@ -439,6 +442,10 @@ export function useDispatchActions(state) {
       achievementStore.incrementStat('dispatch_hs_to_astreinte', 1, 2)
     if (categoryValue === 'centrale' && !(dispatch.value?.centrale?.employees || []).length)
       achievementStore.incrementStat('dispatch_centrale_lead', 1, 1)
+
+    if (categoryValue === 'sans_permis' && userId)
+      achievementStore.unlockAchievementForUser(userId, 'dispatch_tout_pt')
+
     quickAddDialog.value = false
   }
 

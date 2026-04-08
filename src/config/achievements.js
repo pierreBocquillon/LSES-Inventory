@@ -412,6 +412,26 @@ export const achievementList = [
     progress: (stats) => ({ current: Math.min(stats.dispatch_centrale_lead || 0, 15), max: 15 }),
     condition: (stats) => (stats.dispatch_centrale_lead || 0) >= 15
   },
+  {
+    id: 'dispatch_light_mode_secret',
+    category: 'Dispatch',
+    rarity: 'rare',
+    secret: true,
+    title: 'Mes yeux !',
+    hint: 'Il fait un peu sombre ici, non ?',
+    description: 'Activer le mode clair du dispatch.',
+    icon: 'mdi-white-balance-sunny',
+    condition: () => false
+  },
+  {
+    id: 'dispatch_tout_pt',
+    category: 'Dispatch',
+    rarity: 'uncommon',
+    title: 'La plante verte du LSES',
+    description: 'Être déplacé dans la catégorie "Tout PT / Sans Permis".',
+    icon: 'mdi-walk',
+    condition: () => false
+  },
 
   {
     id: 'autopsy_report_first',
@@ -484,7 +504,7 @@ export const achievementList = [
     icon: 'mdi-lightbulb-on',
     progress: (stats) => ({ current: Math.min(stats.ideas_suggested || 0, 5), max: 5 }),
     condition: (stats) => (stats.ideas_suggested || 0) >= 5
-  }
+  },
 ];
 
 export const commonStats = [

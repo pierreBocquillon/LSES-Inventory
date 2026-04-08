@@ -2,7 +2,7 @@ import { ref, onBeforeUnmount } from 'vue'
 import Dispatch from '@/classes/Dispatch.js'
 import { useAchievementStore } from '@/store/achievements.js'
 
-export function useDispatchDragAndDrop(hasLsesPerm, dispatch, autoTurnOffRadio) {
+export function useDispatchDragAndDrop(hasLsesPerm, dispatch, autoTurnOffRadio, employees) {
   const achievementStore = useAchievementStore()
   const draggingEmployee = ref(null)
   const draggingSource = ref(null)
@@ -110,6 +110,12 @@ export function useDispatchDragAndDrop(hasLsesPerm, dispatch, autoTurnOffRadio) 
       achievementStore.incrementStat('dispatch_hs_to_astreinte', 1, 2)
     if (targetKey === 'centrale' && !(dispatch.value?.centrale?.employees || []).length)
       achievementStore.incrementStat('dispatch_centrale_lead', 1, 1)
+
+    if (targetKey === 'cat:sans_permis') {
+      const realEmp = employees.value.find(e => e.id === empId)
+      if (realEmp?.userId)
+        achievementStore.unlockAchievementForUser(realEmp.userId, 'dispatch_tout_pt')
+    }
   }
 
   onBeforeUnmount(() => {
