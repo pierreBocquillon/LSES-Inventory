@@ -1,9 +1,11 @@
 <template>
   <v-app-bar app color="surface" dark class="header">
-    <h1 class="d-flex align-center pointer" @click="$router.push('/')">
-      <img :src="require('@/assets/images/logo.png')" height="52" />
-      <span class="ml-2 text-h5 text-primary">LSES Inventory</span>
-    </h1>
+    <router-link to="/" class="text-decoration-none" style="color: inherit;">
+      <h1 class="d-flex align-center pointer">
+        <img :src="require('@/assets/images/logo.png')" height="52" />
+        <span class="ml-2 text-h5 text-primary">LSES Inventory</span>
+      </h1>
+    </router-link>
     <v-spacer></v-spacer>
     <div>
       <v-menu>
@@ -15,7 +17,7 @@
         <v-list style="min-width:250px">
           <template v-for="group in filteredNavItems">
             <template v-for="item in group">
-              <v-list-item v-if="item.link" @click="$router.push(item.link)">
+              <v-list-item v-if="item.link" :to="item.link">
                 <div class="d-flex align-center">
                   <img :src="item.img" height="24" class="mr-2" style="object-fit: contain;" />
                   <h3 class="font-weight-regular">{{ item.title }}</h3>

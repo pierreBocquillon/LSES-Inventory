@@ -24,7 +24,7 @@
             <v-card-text>
               <p class="text-center mb-3">Vous devez être connecté pour accéder à cette page.</p>
               <div class="d-flex flex-column justify-center align-center">
-                <v-btn @click="$router.push('/login')" color="primary" class="mt-3">Aller à la page de connexion</v-btn>
+                <v-btn to="/login" color="primary" class="mt-3">Aller à la page de connexion</v-btn>
               </div>
             </v-card-text>
           </v-card>
@@ -41,7 +41,7 @@
             <v-card-text>
               <p class="text-center mb-3">Vous n'avez pas les autorisations nécessaires pour accéder à cette page.</p>
               <div class="d-flex flex-column justify-center align-center">
-                <v-btn @click="$router.push('/')" color="primary" class="mt-3">Aller à la page d'accueil</v-btn>
+                <v-btn to="/" color="primary" class="mt-3">Aller à la page d'accueil</v-btn>
               </div>
             </v-card-text>
           </v-card>
