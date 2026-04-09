@@ -86,16 +86,16 @@
       <h1 class="text-h4" v-if="!isRestrictedTrainer">Suivi Formation</h1>
       <h1 class="text-h4" v-else>Actions</h1>
       <v-spacer></v-spacer>
-      <v-btn color="indigo" prepend-icon="mdi-lightning-bolt" class="mr-2" @click="openActionDialog">
+      <v-btn color="indigo" prepend-icon="mdi-lightning-bolt" @click="openActionDialog">
         Actions
       </v-btn>
       <v-btn color="orange-darken-2" prepend-icon="mdi-target" class="ml-2" @click="objectivesDialog = true" v-if="!isRestrictedTrainer">
         Objectifs
       </v-btn>
-      <v-btn color="teal" prepend-icon="mdi-format-list-bulleted" class="ml-2 mr-2" @click="openScenarioDialog" v-if="!isRestrictedTrainer">
+      <v-btn color="teal" prepend-icon="mdi-format-list-bulleted" class="ml-2" @click="openScenarioDialog" v-if="!isRestrictedTrainer">
         Voir les simulations
       </v-btn>
-      <v-btn color="blue" prepend-icon="mdi-account-group" @click="allValidationsDialog = true" v-if="!isRestrictedTrainer">
+      <v-btn color="blue" prepend-icon="mdi-account-group" class="ml-2" @click="allValidationsDialog = true" v-if="!isRestrictedTrainer">
         Validations
       </v-btn>
     </div>
