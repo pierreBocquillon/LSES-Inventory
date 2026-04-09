@@ -86,11 +86,8 @@
       <h1 class="text-h4" v-if="!isRestrictedTrainer">Suivi Formation</h1>
       <h1 class="text-h4" v-else>Actions</h1>
       <v-spacer></v-spacer>
-      <v-btn color="purple" prepend-icon="mdi-account-star" class="mr-2" @click="openPromotionDialog" v-if="!isRestrictedTrainer">
-        Proposer une promotion
-      </v-btn>
-      <v-btn color="primary" prepend-icon="mdi-plus" @click="openRequestDialog">
-        Demande de formation
+      <v-btn color="indigo" prepend-icon="mdi-lightning-bolt" class="mr-2" @click="openActionDialog">
+        Actions
       </v-btn>
       <v-btn color="orange-darken-2" prepend-icon="mdi-target" class="ml-2" @click="objectivesDialog = true" v-if="!isRestrictedTrainer">
         Objectifs
@@ -225,16 +222,46 @@
       </v-card>
     </v-dialog>
 
-    <v-dialog v-model="promotionDialog" max-width="500px">
+    <v-dialog v-model="actionDialog" max-width="500px">
       <v-card>
-        <v-card-title class="bg-purple text-white">Proposer une promotion</v-card-title>
+        <v-card-title class="bg-indigo text-white">Système d'Actions</v-card-title>
         <v-card-text class="pt-4">
-          <v-autocomplete v-model="newPromotion.employee" :items="trainees" item-title="name" return-object label="Candidat" variant="outlined" :custom-filter="customFilter"></v-autocomplete>
+          <v-btn-toggle v-model="actionType" color="indigo" mandatory class="mb-4 d-flex" variant="outlined" @update:model-value="actionData.employee = null">
+            <v-btn value="training" prepend-icon="mdi-plus" class="flex-grow-1">Demande Formation</v-btn>
+            <v-btn value="promotion" prepend-icon="mdi-account-star" class="flex-grow-1" :disabled="isRestrictedTrainer">Promotion</v-btn>
+          </v-btn-toggle>
+
+          <v-autocomplete 
+            v-model="actionData.employee" 
+            :items="actionType === 'promotion' ? trainees : employees" 
+            item-title="name" 
+            return-object 
+            label="Choisir un employé" 
+            variant="outlined" 
+            :custom-filter="customFilter"
+          ></v-autocomplete>
+
+          <v-expand-transition>
+            <div v-if="actionType === 'training'">
+              <v-select 
+                v-model="actionData.training" 
+                :items="availableTrainings" 
+                label="Formation demandée" 
+                variant="outlined" 
+                :disabled="!actionData.employee"
+              ></v-select>
+            </div>
+          </v-expand-transition>
+
+          <v-alert v-if="actionType === 'promotion' && actionData.employee" type="info" variant="tonal" class="mt-2" density="compact">
+            Proposition de passage au grade : <strong>{{ getNextRole(actionData.employee.role) }}</strong>
+          </v-alert>
+
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn color="grey" variant="text" @click="promotionDialog = false">Annuler</v-btn>
-          <v-btn color="purple" variant="text" @click="savePromotion">Enregistrer</v-btn>
+          <v-btn color="grey" variant="text" @click="actionDialog = false">Annuler</v-btn>
+          <v-btn color="indigo" variant="text" @click="saveUnifiedAction" :disabled="!actionData.employee">Confirmer</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -444,20 +471,6 @@
       </v-card>
     </v-dialog>
 
-    <v-dialog v-model="requestDialog" max-width="500px">
-      <v-card>
-        <v-card-title class="bg-primary text-white">Noter une demande de formation</v-card-title>
-        <v-card-text class="pt-4">
-          <v-autocomplete v-model="newRequest.employee" :items="employees" item-title="name" return-object label="Employé demandeur" variant="outlined" :custom-filter="customFilter"></v-autocomplete>
-          <v-select v-model="newRequest.training" :items="availableTrainings" label="Formation demandée" variant="outlined" :disabled="!newRequest.employee"></v-select>
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer></v-spacer>
-          <v-btn color="grey" variant="text" @click="requestDialog = false">Annuler</v-btn>
-          <v-btn color="primary" variant="text" @click="saveRequest">Enregistrer</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
 
     <v-dialog v-model="objectivesDialog" fullscreen transition="dialog-bottom-transition">
       <v-card>
@@ -818,14 +831,11 @@ export default {
     severities: ['Légère', 'Moyenne', 'Lourde'],
     newInjury: { bodyPart: null, severity: 'Légère' },
     isAddingManualInjury: false,
-    newRequest: {
+    actionDialog: false,
+    actionType: 'training', // 'training' or 'promotion'
+    actionData: {
       employee: null,
       training: 'Formation Grenouille'
-    },
-    promotionDialog: false,
-    newPromotion: {
-      employee: null,
-
     },
 
     followUpDialog: false,
@@ -1060,8 +1070,8 @@ export default {
       return [...new Set(scenarios)]
     },
     availableTrainings() {
-      if (!this.newRequest.employee) return []
-      const emp = this.newRequest.employee
+      if (!this.actionData.employee) return []
+      const emp = this.actionData.employee
       const allTrainings = TRAININGS_CONFIG.map(t => t.title)
       if (!emp.trainingRequests) return allTrainings
       return allTrainings.filter(t => !emp.trainingRequests.includes(t))
@@ -1459,21 +1469,31 @@ export default {
       }
     },
 
-    openRequestDialog() {
-      this.newRequest = { employee: null, training: 'Formation Grenouille' }
-      this.requestDialog = true
+    openActionDialog() {
+      this.actionData = { employee: null, training: 'Formation Grenouille' }
+      this.actionType = 'training'
+      this.actionDialog = true
+    },
+
+    async saveUnifiedAction() {
+      if (!this.actionData.employee) return
+      if (this.actionType === 'training') {
+        await this.saveRequest()
+      } else {
+        await this.savePromotion()
+      }
     },
 
     async saveRequest() {
-      if (!this.newRequest.employee || !this.newRequest.training) return
+      if (!this.actionData.employee || !this.actionData.training) return
 
       try {
-        const emp = this.newRequest.employee
+        const emp = this.actionData.employee
         if (!emp.trainingRequests) emp.trainingRequests = []
 
         // Avoid duplicates
-        if (!emp.trainingRequests.includes(this.newRequest.training)) {
-          emp.trainingRequests.push(this.newRequest.training)
+        if (!emp.trainingRequests.includes(this.actionData.training)) {
+          emp.trainingRequests.push(this.actionData.training)
           await emp.save()
 
           Swal.fire({
@@ -1484,7 +1504,7 @@ export default {
             showConfirmButton: false,
             timer: 3000
           })
-          logger.log(this.userStore.profile.id, 'FORMATION', `Ajout de la formation "${this.newRequest.training}" pour ${this.newRequest.employee.name}`)
+          logger.log(this.userStore.profile.id, 'FORMATION', `Ajout de la formation "${this.actionData.training}" pour ${this.actionData.employee.name}`)
         } else {
           Swal.fire({
             icon: 'info',
@@ -1495,7 +1515,7 @@ export default {
             timer: 3000
           })
         }
-        this.requestDialog = false
+        this.actionDialog = false
       } catch (e) {
         console.error(e)
         Swal.fire({
@@ -1686,16 +1706,11 @@ export default {
       return currentRole
     },
 
-    openPromotionDialog() {
-      this.newPromotion = { employee: null }
-      this.promotionDialog = true
-    },
-
     async savePromotion() {
-      if (!this.newPromotion.employee) return
+      if (!this.actionData.employee) return
 
       try {
-        const emp = this.newPromotion.employee
+        const emp = this.actionData.employee
         const request = {
           id: Date.now().toString(),
           requestedBy: this.userStore.profile.name,
@@ -1707,7 +1722,7 @@ export default {
         emp.rankPromotionRequest = request
         await emp.save()
 
-        this.promotionDialog = false
+        this.actionDialog = false
         Swal.fire({
           icon: 'success',
           title: 'Proposition envoyée',
