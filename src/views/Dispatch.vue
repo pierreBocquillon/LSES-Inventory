@@ -15,13 +15,13 @@
            <div class="d-flex align-center">
              <v-icon size="13" color="cyan" class="mr-1">mdi-radio-handheld</v-icon>
              <span class="mr-1 text-grey-lighten-1">LSES:</span>
-             <input v-if="isDirection && dispatch" :value="dispatch.lsesRadio" @change="Dispatch.updateField('lsesRadio', $event.target.value)" class="freq-input" placeholder="---" />
+              <input v-if="isDirection && dispatch" :value="localBuffers['lses-radio'] ?? dispatch.lsesRadio" @input="onLsesRadioInput($event.target.value)" @change="onLsesRadioInput($event.target.value)" class="freq-input" placeholder="---" />
              <span v-else class="freq-display text-cyan font-weight-bold">{{ dispatch?.lsesRadio || '---' }}</span>
            </div>
            <div class="d-flex align-center">
              <v-icon size="13" color="orange" class="mr-1">mdi-radio-tower</v-icon>
              <span class="mr-1 text-grey-lighten-1">Commune:</span>
-             <input v-if="isDirection && dispatch" :value="dispatch.communeRadio" @change="Dispatch.updateField('communeRadio', $event.target.value)" class="freq-input" placeholder="---" />
+              <input v-if="isDirection && dispatch" :value="localBuffers['commune-radio'] ?? dispatch.communeRadio" @input="onCommuneRadioInput($event.target.value)" @change="onCommuneRadioInput($event.target.value)" class="freq-input" placeholder="---" />
              <span v-else class="freq-display text-orange font-weight-bold">{{ dispatch?.communeRadio || '---' }}</span>
            </div>
         </div>
@@ -955,7 +955,10 @@ const {
   autoTurnOffRadio, toggleRadioStatus, onRadioAssign, removeRadio, addRadio,
   addInterventionSlot, setInterSlotType, setInterSlotStatus, removeInterventionSlot, onInterSlotLocationInput,
   setCentraleType, setCentraleReturnStatus, clearCentrale, onCentraleLocationInput, setCentraleEmpRole,
-  onNotepadInput, confirmResetDispatch,
+  onNotepadInput,
+  onLsesRadioInput,
+  onCommuneRadioInput,
+  confirmResetDispatch,
   confirmAddPatate, openQuickMoveDialog, confirmQuickAdd,
   promptAddTemporaryEmployee, promptEditTemporaryEmployee,
   promptAddAffiliation, promptEditAffiliation, confirmDeleteAffiliation,

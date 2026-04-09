@@ -352,6 +352,26 @@ export function useDispatchActions(state) {
     })
   }
 
+  const onLsesRadioInput = (val) => {
+    if (!isDirection.value) return
+    localBuffers.value['lses-radio'] = val
+    debounceUpdate('global', 'lsesRadio', () => {
+      Dispatch.updateField('lsesRadio', val).then(() => {
+        if (localBuffers.value['lses-radio'] === val) delete localBuffers.value['lses-radio']
+      })
+    })
+  }
+
+  const onCommuneRadioInput = (val) => {
+    if (!isDirection.value) return
+    localBuffers.value['commune-radio'] = val
+    debounceUpdate('global', 'communeRadio', () => {
+      Dispatch.updateField('communeRadio', val).then(() => {
+        if (localBuffers.value['commune-radio'] === val) delete localBuffers.value['commune-radio']
+      })
+    })
+  }
+
 
   const resetDispatch = async () => {
     if (!hasLsesPerm.value) return
@@ -636,6 +656,8 @@ export function useDispatchActions(state) {
     onCentraleLocationInput,
     setCentraleEmpRole,
     onNotepadInput,
+    onLsesRadioInput,
+    onCommuneRadioInput,
     resetDispatch,
     confirmResetDispatch,
 
