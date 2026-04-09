@@ -226,7 +226,7 @@
       <v-card>
         <v-card-title class="bg-indigo text-white">Système d'Actions</v-card-title>
         <v-card-text class="pt-4">
-          <v-btn-toggle v-model="actionType" color="indigo" mandatory class="mb-4 d-flex" variant="outlined" @update:model-value="actionData.employee = null">
+          <v-btn-toggle v-model="actionType" color="blue-lighten-3" mandatory class="mb-4 d-flex" variant="outlined" @update:model-value="actionData.employee = null">
             <v-btn value="training" prepend-icon="mdi-plus" class="flex-grow-1">Demande Formation</v-btn>
             <v-btn value="promotion" prepend-icon="mdi-account-star" class="flex-grow-1" :disabled="isRestrictedTrainer">Promotion</v-btn>
           </v-btn-toggle>
@@ -2080,3 +2080,4 @@ export default {
   }
 }
 </script>
+
