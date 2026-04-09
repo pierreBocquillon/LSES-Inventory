@@ -970,6 +970,31 @@ export default {
   display: none !important;
 }
 
+:deep(.fc-popover) {
+  background-color: #102129 !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5) !important;
+  border-radius: 8px !important;
+  z-index: 10000 !important;
+}
+:deep(.fc-popover-header) {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+  color: white !important;
+  padding: 8px 12px !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-radius: 8px 8px 0 0 !important;
+}
+:deep(.fc-popover-title) {
+  font-weight: 600 !important;
+}
+:deep(.fc-popover-close) {
+  color: white !important;
+  opacity: 0.7;
+}
+:deep(.fc-popover-body) {
+  padding: 8px !important;
+}
+
 .action-btn {
   transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
