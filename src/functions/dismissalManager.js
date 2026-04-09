@@ -56,11 +56,15 @@ export async function generateDismissalPDF(data) {
     doc.text(`Le ${reportDate}`, pageWidth - margin, yPosition, { align: 'right' })
     yPosition += 20
 
-    let subject = 'Objet : Notification de rupture de contrat'
-    if (type === 'simple_fault') subject = "Objet : Notification d'avertissement - Faute simple"
-    else if (type === 'serious_fault') subject = "Objet : Notification de rupture de contrat - Faute lourde"
-    else if (type === 'summons') subject = "Objet : Convocation à un entretien"
-    else if (type === 'suspension') subject = "Objet : Notification de mise à pied disciplinaire"
+    const subjects = {
+      'simple_fault': "Notification d'avertissement - Faute simple",
+      'serious_fault': "Notification de rupture de contrat - Faute lourde",
+      'summons': "Convocation à un entretien",
+      'suspension': "Notification de mise à pied disciplinaire",
+      'abandonment': "Notification de rupture de contrat - Abandon de poste",
+      'custom': "Notification de rupture de contrat"
+    }
+    const subject = `Objet : ${subjects[type] || subjects['custom']}`
 
     doc.setFont('helvetica', 'bold')
     doc.setFontSize(12)
@@ -89,7 +93,7 @@ export async function generateDismissalPDF(data) {
       const duration = data.suspensionDuration || 1
       const start = data.suspensionStartDate ? new Date(data.suspensionStartDate) : new Date()
       const end = new Date(start)
-      end.setDate(start.getDate() + (duration - 1))
+      end.setDate(start.getDate() + parseInt(duration))
 
       const fmt = (d) => `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getFullYear()}`
       const formattedStart = fmt(start)
@@ -164,7 +168,16 @@ export async function generateDismissalPDF(data) {
     if (preview) {
       window.open(doc.output('bloburl'), '_blank')
     } else {
-      const fileName = `LSES - Rupture de contrat - ${name}.pdf`
+      const fileNames = {
+        'simple_fault': "Avertissement",
+        'serious_fault': "Rupture de contrat - Faute lourde",
+        'summons': "Convocation",
+        'suspension': "Mise a pied",
+        'abandonment': "Rupture de contrat - Abandon de poste",
+        'custom': "Rupture de contrat"
+      }
+      const typeLabel = fileNames[type] || fileNames['custom']
+      const fileName = `LSES - ${typeLabel} - ${name}.pdf`
       doc.save(fileName)
     }
 
