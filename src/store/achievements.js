@@ -25,7 +25,7 @@ export const useAchievementStore = defineStore('achievements', {
       try {
         const userStore = useUserStore();
         const profile = userStore.profile;
-        if (!profile) return;
+        if (!profile || profile.achievementsBanned) return;
 
         const perms = profile.permissions || [];
         if (!perms.includes('lses')) return;
@@ -92,7 +92,7 @@ export const useAchievementStore = defineStore('achievements', {
       try {
         const userStore = useUserStore();
         const profile = userStore.profile;
-        if (!profile) return;
+        if (!profile || profile.achievementsBanned) return;
 
         const perms = profile.permissions || [];
         if (!perms.includes('lses')) return;
@@ -123,7 +123,7 @@ export const useAchievementStore = defineStore('achievements', {
       try {
         const userStore = useUserStore();
         const profile = userStore.profile;
-        if (!profile) return;
+        if (!profile || profile.achievementsBanned) return;
 
         const perms = profile.permissions || [];
         if (!perms.includes('lses')) return;
@@ -142,7 +142,7 @@ export const useAchievementStore = defineStore('achievements', {
       if (!userId || !id) return;
       try {
         const targetProfile = await Profile.getById(userId);
-        if (!targetProfile) return;
+        if (!targetProfile || targetProfile.achievementsBanned) return;
 
         if (!targetProfile.achievements) targetProfile.achievements = [];
         if (targetProfile.achievements.includes(id)) return;

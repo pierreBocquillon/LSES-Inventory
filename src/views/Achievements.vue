@@ -64,6 +64,9 @@
     <v-container>
       <v-tabs-window v-model="activeTab">
         <v-tabs-window-item value="mine">
+          <v-alert v-if="userStore.profile?.achievementsBanned" type="error" variant="tonal" class="mb-6 rounded-xl border-dashed" icon="mdi-account-cancel">
+            Vous êtes banni du système de succès. Votre progression est bloquée et vous n'apparaissez plus dans le classement global.
+          </v-alert>
           <AchievementGrid />
         </v-tabs-window-item>
 
@@ -80,7 +83,12 @@
             <v-icon size="32">mdi-account</v-icon>
           </v-avatar>
           <div>
-            <div class="text-h4 font-weight-black mb-1">{{ viewedUser?.name }}</div>
+            <div class="d-flex align-center mb-1">
+              <div class="text-h4 font-weight-black mr-3">{{ viewedUser?.name }}</div>
+              <v-chip v-if="viewedUser?.achievementsBanned" color="error" variant="flat" size="small" class="font-weight-black" prepend-icon="mdi-account-cancel">
+                BANNI
+              </v-chip>
+            </div>
             <v-chip v-if="viewedUser" :color="getUserTitle(viewedUser).color" size="small" variant="flat" class="font-weight-black" :prepend-icon="getUserTitle(viewedUser).icon">
               {{ getUserTitle(viewedUser).label.toUpperCase() }}
             </v-chip>
@@ -181,6 +189,27 @@
                       Enregistrer
                     </v-btn>
                   </div>
+
+                  <v-row class="mb-4">
+                    <v-col cols="12">
+                      <div class="d-flex align-center bg-white-opacity-5 pa-4 rounded-xl border border-opacity-10 border-white">
+                        <v-icon :color="selectedUser.achievementsBanned ? 'error' : 'success'" size="32" class="mr-4">
+                          {{ selectedUser.achievementsBanned ? 'mdi-account-cancel' : 'mdi-account-check' }}
+                        </v-icon>
+                        <div>
+                          <div class="text-subtitle-1 font-weight-bold">Bannissement du système de succès</div>
+                          <div class="text-caption opacity-60">L'utilisateur ne pourra plus gagner de succès et sera masqué du classement global.</div>
+                        </div>
+                        <v-spacer></v-spacer>
+                        <v-switch
+                          v-model="selectedUser.achievementsBanned"
+                          color="error"
+                          hide-details
+                          inset
+                        ></v-switch>
+                      </div>
+                    </v-col>
+                  </v-row>
 
                   <v-tabs v-model="adminTab" bg-color="transparent" color="primary" class="mb-4">
                     <v-tab value="achievements" prepend-icon="mdi-trophy-variant">Succès</v-tab>
@@ -393,7 +422,7 @@ export default {
     },
     sortedRanking() {
       return [...this.adminUsers]
-        .filter(u => u.permissions?.includes('lses') && (u.achievements?.length || 0) > 0)
+        .filter(u => u.permissions?.includes('lses') && (u.achievements?.length || 0) > 0 && !u.achievementsBanned)
         .sort((a, b) => (b.achievements?.length || 0) - (a.achievements?.length || 0))
     },
     currentTitle() {
@@ -418,10 +447,9 @@ export default {
     fetchAdminUsers() {
       this.unsub = Profile.listenByActivated(true, users => {
         this.adminUsers = users
-        if (this.selectedUser) {
-          const updated = users.find(u => u.id === this.selectedUser.id)
-          if (updated) this.selectedUser = updated
-        }
+        // Note: We don't update this.selectedUser automatically anymore 
+        // to avoid losing local changes (like toggling a ban) when 
+        // Firestore notifies other unrelated changes.
       })
     },
     openUserView(user) {
@@ -462,7 +490,7 @@ export default {
         logger.log(
           this.userStore.profile.id, 
           'ACHIEVEMENTS', 
-          `Modification manuelle par admin pour ${this.selectedUser.name}. Succès: [${this.selectedUser.achievements?.join(', ')}]. Stats: {${statsSummaries}}`
+          `Modification manuelle par admin pour ${this.selectedUser.name}. Banni: ${this.selectedUser.achievementsBanned}. Succès: [${this.selectedUser.achievements?.join(', ')}]. Stats: {${statsSummaries}}`
         )
 
         Swal.fire({
@@ -505,6 +533,7 @@ export default {
           this.selectedUser.achievements = []
           this.selectedUser.stats = {}
           this.selectedUser.notified_achievements = []
+          this.selectedUser.achievementsBanned = false
           
           await this.selectedUser.save()
           
