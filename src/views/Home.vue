@@ -421,7 +421,8 @@ export default {
       const emp = this.newRequest.employee
       const allTrainings = TRAININGS_CONFIG.map(t => t.title)
       if (!emp.trainingRequests) return allTrainings
-      return allTrainings.filter(t => !emp.trainingRequests.includes(t))
+      const currentTrainings = emp.trainingRequests.map(r => typeof r === 'object' ? r.training : r)
+      return allTrainings.filter(t => !currentTrainings.includes(t))
     },
     availableSpecialties() {
       if (!this.newPromotion.employee) return []
@@ -455,8 +456,12 @@ export default {
         if (!emp.trainingRequests) emp.trainingRequests = []
 
         // Avoid duplicates
-        if (!emp.trainingRequests.includes(this.newRequest.training)) {
-          emp.trainingRequests.push(this.newRequest.training)
+        const currentTrainings = emp.trainingRequests.map(r => typeof r === 'object' ? r.training : r)
+        if (!currentTrainings.includes(this.newRequest.training)) {
+          emp.trainingRequests.push({
+            training: this.newRequest.training,
+            date: new Date().toISOString()
+          })
           await emp.save()
 
           Swal.fire({

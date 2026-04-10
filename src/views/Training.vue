@@ -11,6 +11,7 @@
             <v-chip v-for="req in group" :key="req.id + req.training" :color="getTrainingColor(req.training)" :model-value="true" size="small">
               {{ req.name }}
               <v-icon icon="mdi-close-circle" size="x-small" class="ml-1 v-chip__close" @click.stop="removeRequest(req)"></v-icon>
+              <v-tooltip activator="parent" location="top">Demandé le {{ formatDate(req.requestDate) }}</v-tooltip>
             </v-chip>
           </div>
         </div>
@@ -945,11 +946,14 @@ export default {
       this.employees.forEach(e => {
         if (e.trainingRequests && e.trainingRequests.length > 0) {
           e.trainingRequests.forEach(r => {
+            const isObj = typeof r === 'object' && r !== null
             reqs.push({
               id: e.id,
               name: e.name,
-              training: r,
-              employeeObj: e
+              training: isObj ? r.training : r,
+              requestDate: isObj ? r.date : null,
+              employeeObj: e,
+              rawRequest: r
             })
           })
         }
@@ -962,6 +966,15 @@ export default {
         if (!groups[req.training]) groups[req.training] = []
         groups[req.training].push(req)
       })
+
+      for (const training in groups) {
+        groups[training].sort((a, b) => {
+          if (!a.requestDate) return -1
+          if (!b.requestDate) return 1
+          return new Date(a.requestDate) - new Date(b.requestDate)
+        })
+      }
+
       return groups
     },
     promotionRequests() {
@@ -1074,7 +1087,8 @@ export default {
       const emp = this.actionData.employee
       const allTrainings = TRAININGS_CONFIG.map(t => t.title)
       if (!emp.trainingRequests) return allTrainings
-      return allTrainings.filter(t => !emp.trainingRequests.includes(t))
+      const currentTrainings = emp.trainingRequests.map(r => typeof r === 'object' ? r.training : r)
+      return allTrainings.filter(t => !currentTrainings.includes(t))
     },
     availableTrainingsToAdd() {
       if (!this.selectedTrainingEmployee) return []
@@ -1210,6 +1224,12 @@ export default {
     formatDate(dateString) {
       if (!dateString) return '-'
       return new Date(dateString).toLocaleDateString('fr-FR')
+    },
+
+    shortDate(dateString) {
+      if (!dateString) return ''
+      const date = new Date(dateString)
+      return date.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })
     },
 
     calculateDays(dateString) {
@@ -1491,9 +1511,12 @@ export default {
         const emp = this.actionData.employee
         if (!emp.trainingRequests) emp.trainingRequests = []
 
-        // Avoid duplicates
-        if (!emp.trainingRequests.includes(this.actionData.training)) {
-          emp.trainingRequests.push(this.actionData.training)
+        const currentTrainings = emp.trainingRequests.map(r => typeof r === 'object' ? r.training : r)
+        if (!currentTrainings.includes(this.actionData.training)) {
+          emp.trainingRequests.push({
+            training: this.actionData.training,
+            date: new Date().toISOString()
+          })
           await emp.save()
 
           Swal.fire({
@@ -1573,7 +1596,7 @@ export default {
         if (!emp) return
         
         if (result.isConfirmed) {
-          emp.trainingRequests = emp.trainingRequests.filter(r => r !== req.training)
+          emp.trainingRequests = emp.trainingRequests.filter(r => (typeof r === 'object' ? r.training : r) !== req.training)
           if (!emp.validatedTrainings) emp.validatedTrainings = []
           if (!emp.validatedTrainings.includes(req.training)) {
             emp.validatedTrainings.push(req.training)
@@ -1589,7 +1612,7 @@ export default {
           })
           logger.log(this.userStore.profile.id, 'FORMATION', `Validation de la formation "${req.training}" pour ${req.name}`)
         } else if (result.isDenied) {
-          emp.trainingRequests = emp.trainingRequests.filter(r => r !== req.training)
+          emp.trainingRequests = emp.trainingRequests.filter(r => (typeof r === 'object' ? r.training : r) !== req.training)
           Swal.fire({
             icon: 'info',
             title: 'Demande supprimée',
