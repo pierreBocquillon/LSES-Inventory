@@ -209,6 +209,7 @@ export default {
           item.role = 'User'
           item.permissions = []
           await item.save()
+          logger.log(this.userStore.profile.id, 'UTILISATEURS', `Suppression/Désactivation de l'utilisateur ${item.name}`)
 
           Swal.fire({
             icon: 'success',

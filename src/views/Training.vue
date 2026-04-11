@@ -2094,6 +2094,7 @@ export default {
           try {
             emp.rankPromotionRequest = null
             await emp.save()
+            logger.log(this.userStore.profile.id, 'FORMATION', `Suppression de la demande de promotion de ${emp.name}`)
             Swal.fire({
               icon: 'success',
               title: 'Supprimée',
@@ -2131,6 +2132,7 @@ export default {
           voterName: this.userStore.profile.name || 'Inconnu'
         }
         await emp.save()
+        logger.log(this.userStore.profile.id, 'FORMATION', `Vote "${type.toUpperCase()}" pour la promotion de ${emp.name}. Avis: ${text}`)
         this.achievementStore.incrementStat('promotion_votes', 1, 1)
       }
     },
@@ -2264,6 +2266,8 @@ export default {
         this.selectedTrainee.competencyProgress[compId] = 'seen'
       }
       await this.selectedTrainee.save()
+      const status = this.isCompetencySeen(compId) ? 'VUE' : 'NON VUE'
+      logger.log(this.userStore.profile.id, 'FORMATION', `Compétence ${compId} marquée comme ${status} pour ${this.selectedTrainee.name}`)
     },
 
     async toggleSubCompetency(subId) {
@@ -2281,6 +2285,8 @@ export default {
       }
 
       await this.selectedTrainee.save()
+      const status = this.isSubCompetencyValidated(subId) ? 'VALIDÉE' : 'NON VALIDÉE'
+      logger.log(this.userStore.profile.id, 'FORMATION', `Sous-compétence ${subId} marquée comme ${status} pour ${this.selectedTrainee.name}`)
     },
 
     getCompetencyProgress(competency) {
