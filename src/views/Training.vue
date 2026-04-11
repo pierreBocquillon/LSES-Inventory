@@ -93,6 +93,9 @@
       <v-btn color="orange-darken-2" prepend-icon="mdi-target" class="ml-2" @click="objectivesDialog = true" v-if="!isRestrictedTrainer">
         Objectifs
       </v-btn>
+      <v-btn color="deep-orange" prepend-icon="mdi-calendar-check" class="ml-2" @click="weeklyObjectivesDialog = true" v-if="!isRestrictedTrainer">
+        Objectifs Hebdo
+      </v-btn>
       <v-btn color="teal" prepend-icon="mdi-format-list-bulleted" class="ml-2" @click="openScenarioDialog" v-if="!isRestrictedTrainer">
         Voir les simulations
       </v-btn>
@@ -708,6 +711,122 @@
       </v-card>
     </v-dialog>
 
+    <v-dialog v-model="weeklyObjectivesDialog" max-width="800px" scrollable>
+      <v-card>
+        <v-card-title class="bg-deep-orange text-white d-flex align-center">
+          <v-icon start>mdi-calendar-check</v-icon>
+          Objectifs Hebdomadaires
+          <v-spacer></v-spacer>
+          <v-btn icon="mdi-close" variant="text" @click="weeklyObjectivesDialog = false"></v-btn>
+        </v-card-title>
+        <v-card-text class="pa-4">
+          <div class="mb-4" v-if="weeklyObjectives.length > 0">
+            <div class="d-flex justify-space-between align-center mb-1">
+              <span class="text-caption font-weight-bold text-deep-orange">Progression de la semaine</span>
+              <span class="text-caption font-weight-bold">{{ weeklyObjectivesProgress }}%</span>
+            </div>
+            <v-progress-linear
+              :model-value="weeklyObjectivesProgress"
+              color="deep-orange"
+              height="8"
+              rounded
+              striped
+            ></v-progress-linear>
+            <div class="d-flex justify-center mt-2">
+              <v-sheet color="rgba(0,0,0,0.3)" class="px-4 py-1 rounded-pill d-flex align-center" border style="border: 1px solid rgba(255, 110, 64, 0.2)">
+                <v-icon color="deep-orange-darken-3" size="small" start>mdi-clock-outline</v-icon>
+                <span class="text-caption font-weight-bold text-white">
+                  Échéance : <span class="text-deep-orange-darken-3 ml-1">{{ weeklyObjectivesDeadlineStr }}</span>
+                </span>
+              </v-sheet>
+            </div>
+          </div>
+
+          <div class="d-flex align-center mb-4" v-if="isTrainingManager">
+            <v-text-field
+              v-model="newWeeklyObjective"
+              label="Nouvel objectif"
+              variant="outlined"
+              density="compact"
+              hide-details
+              class="mr-2"
+              @keyup.enter="addWeeklyObjective"
+              prepend-inner-icon="mdi-plus-circle-outline"
+            ></v-text-field>
+            <v-autocomplete
+              v-model="selectedTraineeForObjective"
+              :items="employees.filter(e => ['Interne', 'Résident'].includes(e.role))"
+              item-title="name"
+              item-value="id"
+              label="Médecin (Optionnel)"
+              variant="outlined"
+              density="compact"
+              hide-details
+              class="mr-2"
+              clearable
+              style="max-width: 250px"
+              return-object
+            ></v-autocomplete>
+            <v-btn color="success" icon="mdi-plus" size="small" @click="addWeeklyObjective" :disabled="!newWeeklyObjective"></v-btn>
+          </div>
+
+          <v-divider class="mb-4" v-if="isTrainingManager"></v-divider>
+
+          <v-list density="compact" v-if="weeklyObjectives.length > 0" class="pa-0">
+            <v-list-item v-for="task in weeklyObjectives" :key="task.id" class="px-0 py-1">
+              <template v-slot:prepend>
+                <v-checkbox-btn
+                  :model-value="task.done"
+                  color="success"
+                  @update:model-value="toggleWeeklyObjective(task.id)"
+                ></v-checkbox-btn>
+              </template>
+              
+              <v-list-item-title :class="{ 'text-decoration-line-through text-grey': task.done }" class="text-wrap">
+                <div class="d-flex align-center flex-wrap">
+                  <span class="font-weight-bold mr-2">{{ task.text }}</span>
+                  <v-chip v-if="task.traineeName" size="x-small" color="primary" variant="tonal" label class="mr-2">
+                    <v-icon start size="x-small">mdi-account</v-icon>
+                    {{ task.traineeName }}
+                    <v-tooltip activator="parent" location="top" v-if="activeDispatchEmployeeIds.includes(task.traineeId)">
+                      {{ task.traineeName }} est actuellement en service sur le Dispatch
+                    </v-tooltip>
+                    <v-icon
+                      v-if="activeDispatchEmployeeIds.includes(task.traineeId) && !task.done"
+                      size="14"
+                      color="deep-orange"
+                      class="ml-1"
+                    >
+                      mdi-school
+                    </v-icon>
+                  </v-chip>
+                </div>
+                <div v-if="task.done" class="text-caption text-grey mt-1">
+                  <v-icon size="x-small" start>mdi-account-check</v-icon>
+                  Géré par <strong>{{ task.doneBy || 'Inconnu' }}</strong> le {{ formatDate(task.doneAt) }}
+                </div>
+              </v-list-item-title>
+
+              <template v-slot:append v-if="isTrainingManager">
+                <v-btn icon="mdi-delete" size="x-small" color="error" variant="text" @click="removeWeeklyObjective(task.id)"></v-btn>
+              </template>
+            </v-list-item>
+          </v-list>
+          <div v-else class="text-center py-8 text-grey font-italic">
+            <v-icon size="large" class="mb-2">mdi-clipboard-text-outline</v-icon>
+            <div>Aucun objectif fixé pour cette semaine.</div>
+          </div>
+        </v-card-text>
+        <v-card-actions v-if="weeklyObjectives.length > 0">
+          <v-btn color="error" variant="tonal" size="small" prepend-icon="mdi-refresh" @click="resetWeeklyObjectives" v-if="isTrainingManager">
+            Réinitialiser pour la semaine
+          </v-btn>
+          <v-spacer></v-spacer>
+          <v-btn color="primary" variant="text" @click="weeklyObjectivesDialog = false">Fermer</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
     <v-card class="flex-grow-1" v-if="!isRestrictedTrainer">
       <v-data-table :headers="headers" :items="trainees" :search="search" class="h-100" :sort-by="[{ key: 'role', order: 'desc' }]" :items-per-page="25">
         <template v-slot:item.name="{ item }">
@@ -777,6 +896,8 @@
 import Employee from '@/classes/Employee'
 import Guide from '@/classes/Guide'
 import Specialty from '@/classes/Specialty'
+import TrainingObjective from '@/classes/TrainingObjective'
+import Dispatch from '@/classes/Dispatch'
 import { trainingCompetencies } from '@/config/training_competencies'
 
 import { OBJECTIFS } from '@/config/objectives'
@@ -847,6 +968,16 @@ export default {
     selectedTrainingEmployee: null,
     newValidatedTraining: null,
 
+    // Weekly Objectives
+    weeklyObjectivesDialog: false,
+    weeklyObjectives: [],
+    lastWeeklyObjectiveReset: null,
+    newWeeklyObjective: '',
+    selectedTraineeForObjective: null,
+
+    dispatchState: null,
+    unsubDispatch: null,
+
     // Guides logic
     guideDialog: false,
     currentGuide: null,
@@ -912,6 +1043,21 @@ export default {
       return this.employees.find(e => e.userId === this.userStore.uid)
     },
 
+    isTrainingManager() {
+      const profile = this.userStore.profile
+      if (!profile) return false
+
+      const permissions = profile.permissions || []
+      const isAdminDev = permissions.some(p => ['admin', 'dev'].includes(p))
+      if (isAdminDev) return true
+
+      const employee = this.currentUserEmployee
+      if (employee && employee.chiefSpecialties && employee.chiefSpecialties.includes('formation')) {
+        return true
+      }
+      return false
+    },
+
     canSeeGuides() {
       const permissions = this.userStore.profile?.permissions || []
       const canSee = !this.isRestrictedTrainer || permissions.includes('restricted_trainer')
@@ -940,6 +1086,54 @@ export default {
     },
     trainees() {
       return this.employees.filter(e => ['Interne', 'Résident'].includes(e.role)).sort((a, b) => a.name.localeCompare(b.name))
+    },
+    activeDispatchEmployeeIds() {
+      if (!this.dispatchState) return []
+      const ids = []
+      if (this.dispatchState.centrale && this.dispatchState.centrale.employees)
+        this.dispatchState.centrale.employees.forEach(e => ids.push(e.employeeId || e.id))
+      if (this.dispatchState.interventions) {
+        this.dispatchState.interventions.forEach(slot => {
+          if (slot.employees)
+            slot.employees.forEach(e => ids.push(e.employeeId || e.id))
+        })
+      }
+      if (this.dispatchState.patates)
+        this.dispatchState.patates.forEach(p => ids.push(p.employeeId || p.id))
+      return ids
+    },
+    activeObjectivesByTrainee() {
+      const map = new Map()
+      this.weeklyObjectives.forEach(obj => {
+        if (!obj.done && obj.traineeId) {
+          if (!map.has(obj.traineeId)) map.set(obj.traineeId, [])
+          map.get(obj.traineeId).push(obj.text)
+        }
+      })
+      return map
+    },
+
+    weeklyObjectivesProgress() {
+      if (!this.weeklyObjectives || this.weeklyObjectives.length === 0) return 0
+      const done = this.weeklyObjectives.filter(t => t.done).length
+      return Math.round((done / this.weeklyObjectives.length) * 100)
+    },
+
+    weeklyObjectivesDeadlineStr() {
+      const d = new Date()
+      const day = d.getDay()
+      const diff = (day === 0) ? 1 : (8 - day)
+      const nextMon = new Date(d)
+      nextMon.setDate(d.getDate() + diff)
+      nextMon.setHours(0, 0, 0, 0)
+      
+      return nextMon.toLocaleDateString('fr-FR', {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long',
+        hour: '2-digit',
+        minute: '2-digit'
+      }).replace(':', 'h')
     },
     trainingRequests() {
       let reqs = []
@@ -1120,6 +1314,14 @@ export default {
     }))
     this.unsub.push(Specialty.listenAll((list) => {
       this.specialties = list
+    }))
+
+    this.unsub.push(TrainingObjective.listen((data) => {
+      this.weeklyObjectives = data.tasks || []
+      this.lastWeeklyObjectiveReset = data.lastReset || null
+    }))
+    this.unsub.push(Dispatch.listenGlobal((st) => {
+      this.dispatchState = st
     }))
 
     this.unsub.push(Guide.listenAll(async (guides) => {
@@ -1486,6 +1688,62 @@ export default {
         case 'Moyenne': return 'orange'
         case 'Lourde': return 'red'
         default: return 'grey'
+      }
+    },
+
+    async addWeeklyObjective() {
+      if (!this.newWeeklyObjective) return
+      try {
+        const traineeId = this.selectedTraineeForObjective?.id || null
+        const traineeName = this.selectedTraineeForObjective?.name || null
+        await TrainingObjective.addTask(this.weeklyObjectives, this.lastWeeklyObjectiveReset, this.newWeeklyObjective, traineeId, traineeName)
+        logger.log(this.userStore.profile.id, 'FORMATION', `Ajout objectif hebdo: ${this.newWeeklyObjective}${traineeName ? ' pour ' + traineeName : ''}`)
+        this.newWeeklyObjective = ''
+        this.selectedTraineeForObjective = null
+      } catch (e) { console.error(e) }
+    },
+
+    async removeWeeklyObjective(taskId) {
+      const result = await Swal.fire({
+        title: 'Supprimer cet objectif ?',
+        text: "Cette action est irréversible.",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Oui, supprimer',
+        cancelButtonText: 'Annuler',
+        confirmButtonColor: '#d33'
+      })
+      if (result.isConfirmed) {
+        try {
+          const task = this.weeklyObjectives.find(t => t.id === taskId)
+          const taskName = task ? task.text : taskId
+          await TrainingObjective.removeTask(this.weeklyObjectives, this.lastWeeklyObjectiveReset, taskId)
+          logger.log(this.userStore.profile.id, 'FORMATION', `Suppression objectif hebdo: ${taskName}`)
+        } catch (e) { console.error(e) }
+      }
+    },
+
+    async toggleWeeklyObjective(taskId) {
+      try {
+        const userName = this.userStore.profile?.name || 'Inconnu'
+        await TrainingObjective.toggleTask(this.weeklyObjectives, this.lastWeeklyObjectiveReset, taskId, userName)
+      } catch (e) { console.error(e) }
+    },
+
+    async resetWeeklyObjectives() {
+      const result = await Swal.fire({
+        title: 'Réinitialiser les objectifs ?',
+        text: "Tous les objectifs seront décochés pour la nouvelle semaine.",
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Oui, réinitialiser',
+        cancelButtonText: 'Annuler'
+      })
+      if (result.isConfirmed) {
+        try {
+          await TrainingObjective.reset(this.weeklyObjectives)
+          logger.log(this.userStore.profile.id, 'FORMATION', 'Réinitialisation des objectifs hebdomadaires')
+        } catch (e) { console.error(e) }
       }
     },
 
@@ -2103,4 +2361,3 @@ export default {
   }
 }
 </script>
-
